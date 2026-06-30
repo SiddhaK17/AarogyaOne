@@ -1,0 +1,52 @@
+# ==========================================
+# AAROGYAONE - BACKEND REQUIREMENTS
+# ==========================================
+
+# --- Web Framework & Server ---
+fastapi==0.111.0          # The core web framework for building the APIs
+uvicorn[standard]==0.30.1 # The lightning-fast ASGI server that runs FastAPI
+python-multipart==0.0.9   # Required by FastAPI to handle file uploads (images/audio)
+
+# --- Environment & Configuration ---
+python-dotenv==1.0.1      # Loads your secret API keys and database URLs from the .env file
+
+# --- Database & Caching ---
+sqlalchemy==2.0.31        # The ORM that lets you write Python instead of raw SQL queries
+psycopg2-binary==2.9.9    # The adapter that allows Python to talk to PostgreSQL
+redis==5.0.7              # Connects to your Redis cache for speed and Celery queues
+
+# --- Background Workers ---
+celery==5.4.0             # Manages the background task queue for heavy AI inference
+
+# --- Security & Authentication ---
+pydantic[email]==2.7.4    # Data validation and email format checking
+python-jose[cryptography]==3.3.0 # Generates and decodes secure JWT login tokens
+passlib[bcrypt]==1.7.4    # Hashes passwords so they are never stored as plain text
+
+# --- Data Science & Optimization ---
+pandas==2.2.2             # Handles complex data manipulation and tabular data
+numpy==1.26.4             # Core mathematical operations
+joblib==1.4.2             # Saves and loads your trained tabular ML models (.pkl files)
+ortools==9.10.4067        # Google's optimization engine for the resource redistribution
+
+# --- Tabular Machine Learning ---
+lightgbm==4.3.0           # Tree-based model for predicting inventory demand
+xgboost==2.1.0            # Tree-based model for calculating hospital health scores
+
+# --- Deep Learning (GPU Accelerated for RTX 4070) ---
+# Note: The extra-index-url tells pip to download the specific CUDA 12.1 version of PyTorch
+--extra-index-url https://download.pytorch.org/whl/cu121
+torch==2.3.1              # Core PyTorch library for running local neural networks
+torchaudio==2.3.1         # PyTorch extension for processing voice complaints
+torchvision==0.18.1       # PyTorch extension for image processing
+
+# --- NLP, Speech & Vision (Hugging Face) ---
+transformers==4.41.2      # Downloads and runs IndicBERT and IndicWhisper
+accelerate==0.31.0        # Optimizes heavy models to run faster on your GPU
+bitsandbytes==0.43.1      # Compresses models (quantization) to save VRAM if needed
+librosa==0.10.2           # Extracts features from uploaded audio files
+soundfile==0.12.1         # Reads and writes audio files securely
+
+# --- Report Generation ---
+jinja2==3.1.4             # Injects your database data into HTML templates
+pdfkit==1.0.0             # Converts the HTML templates into downloadable PDFs

@@ -1,0 +1,71 @@
+# ==========================================
+# AAROGYAONE - MASTER .GITIGNORE
+# ==========================================
+
+# ------------------------------------------
+# 1. Environment & Secrets (CRITICAL)
+# ------------------------------------------
+.env
+.env.local
+.env.*.local
+*.pem
+secrets/
+
+# ------------------------------------------
+# 2. Python & Backend (FastAPI / Celery)
+# ------------------------------------------
+# Virtual Environments
+venv/
+env/
+.venv/
+# Compiled Python files
+__pycache__/
+*.py[cod]
+*$py.class
+# Pytest & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ------------------------------------------
+# 3. Node.js & Frontend (Next.js)
+# ------------------------------------------
+# Dependencies
+node_modules/
+frontend/node_modules/
+package-lock.json
+# Next.js build output
+.next/
+frontend/.next/
+out/
+build/
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ------------------------------------------
+# 4. AI & Machine Learning Artifacts
+# ------------------------------------------
+# Do not upload heavy model weights to GitHub!
+*.pt
+*.pth
+*.pkl
+*.h5
+*.onnx
+# Ignore local datasets and model outputs
+ai_models/datasets/*
+!ai_models/datasets/.gitkeep
+ai_models/trained_models/*
+!ai_models/trained_models/.gitkeep
+
+# ------------------------------------------
+# 5. OS & Editor Configurations
+# ------------------------------------------
+# Mac / Windows system files
+.DS_Store
+Thumbs.db
+# VS Code / IDE settings
+.vscode/
+.idea/
+*.swp
