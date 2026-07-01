@@ -30,11 +30,11 @@ import {
 
 /* ─── Mock Data ─── */
 const bedCategories = [
-  { name: 'General Beds', total: 80, occupied: 38, reserved: 4, icon: BedDouble, color: '#14b8a6' },
+  { name: 'General Beds', total: 80, occupied: 38, reserved: 4, icon: BedDouble, color: '#1E3ABA' },
   { name: 'ICU Beds', total: 20, occupied: 14, reserved: 2, icon: Heart, color: '#ef4444' },
   { name: 'Emergency Beds', total: 12, occupied: 8, reserved: 1, icon: ShieldAlert, color: '#f59e0b' },
   { name: 'Isolation Beds', total: 10, occupied: 3, reserved: 0, icon: ShieldAlert, color: '#8b5cf6' },
-  { name: 'Pediatric Beds', total: 15, occupied: 6, reserved: 1, icon: Baby, color: '#06b6d4' },
+  { name: 'Pediatric Beds', total: 15, occupied: 6, reserved: 1, icon: Baby, color: '#06B6D4' },
   { name: 'Maternity Beds', total: 10, occupied: 7, reserved: 1, icon: Users, color: '#ec4899' },
 ];
 
@@ -173,8 +173,8 @@ export default function BedManagementPage() {
                 <AreaChart data={occupancyTrend}>
                   <defs>
                     <linearGradient id="genGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.1} />
-                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#1E3ABA" stopOpacity={0.1} />
+                      <stop offset="95%" stopColor="#1E3ABA" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="icuGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#ef4444" stopOpacity={0.1} />
@@ -189,7 +189,7 @@ export default function BedManagementPage() {
                     itemStyle={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }}
                     labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700 }}
                   />
-                  <Area type="monotone" dataKey="general" stroke="#14b8a6" strokeWidth={2} fill="url(#genGrad)" name="General" />
+                  <Area type="monotone" dataKey="general" stroke="#1E3ABA" strokeWidth={2} fill="url(#genGrad)" name="General" />
                   <Area type="monotone" dataKey="icu" stroke="#ef4444" strokeWidth={2} fill="url(#icuGrad)" name="ICU" />
                   <Area type="monotone" dataKey="emergency" stroke="#f59e0b" strokeWidth={2} fill="transparent" name="Emergency" />
                 </AreaChart>

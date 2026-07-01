@@ -49,13 +49,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
 
   return (
     <aside
-      className={`fixed top-0 left-0 z-40 h-screen bg-[#0B1120] border-r border-slate-800/50 flex flex-col transition-all duration-300 ${
+      className={`fixed top-0 left-0 z-40 h-screen bg-brand-navy border-r border-slate-800/50 flex flex-col transition-all duration-300 ${
         collapsed ? 'w-[72px]' : 'w-[260px]'
       }`}
     >
       {/* Logo */}
       <div className="h-[72px] flex items-center gap-3 px-5 border-b border-slate-800/50 flex-shrink-0">
-        <div className="bg-gradient-to-br from-teal-500 to-blue-600 p-2 rounded-xl shadow-lg shadow-teal-500/20 flex-shrink-0">
+        <div className="bg-gradient-to-br from-brand-cyan to-brand-blue p-2 rounded-xl shadow-lg shadow-brand-cyan/20 flex-shrink-0">
           <Activity className="h-5 w-5 text-white" />
         </div>
         {!collapsed && (
@@ -86,20 +86,20 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               title={collapsed ? item.label : undefined}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group ${
                 isActive
-                  ? 'bg-teal-500/10 text-teal-400 shadow-sm'
+                  ? 'bg-brand-cyan/10 text-brand-cyan shadow-sm'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
               }`}
             >
               <Icon
                 className={`h-[18px] w-[18px] flex-shrink-0 ${
                   isActive
-                    ? 'text-teal-400'
+                    ? 'text-brand-cyan'
                     : 'text-slate-500 group-hover:text-slate-300'
                 }`}
               />
               {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
               {isActive && !collapsed && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-teal-400" />
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-cyan" />
               )}
             </Link>
           );

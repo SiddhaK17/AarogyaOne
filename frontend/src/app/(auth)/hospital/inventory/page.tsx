@@ -248,7 +248,7 @@ export default function InventoryPage() {
                 itemStyle={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }}
                 labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700 }}
               />
-              <Bar dataKey="used" fill="#14b8a6" radius={[0, 6, 6, 0]} name="Units Used" />
+              <Bar dataKey="used" fill="#06B6D4" radius={[0, 6, 6, 0]} name="Units Used" />
             </BarChart>
           </ResponsiveContainer>
         </div>

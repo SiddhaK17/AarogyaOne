@@ -116,16 +116,16 @@ export default function StatisticsPage() {
                 <AreaChart data={weeklyTrend}>
                   <defs>
                     <linearGradient id="statsOpdGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#06B6D4" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
                   <XAxis dataKey="day" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', padding: '10px 14px', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }} itemStyle={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }} labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700 }} />
-                  <Area type="monotone" dataKey="opd" stroke="#14b8a6" strokeWidth={2.5} fill="url(#statsOpdGrad)" name="OPD" />
-                  <Area type="monotone" dataKey="ipd" stroke="#6366f1" strokeWidth={2} fill="transparent" name="IPD" />
+                  <Area type="monotone" dataKey="opd" stroke="#06B6D4" strokeWidth={2.5} fill="url(#statsOpdGrad)" name="OPD" />
+                  <Area type="monotone" dataKey="ipd" stroke="#1E3ABA" strokeWidth={2} fill="transparent" name="IPD" />
                   <Area type="monotone" dataKey="emergency" stroke="#ef4444" strokeWidth={2} fill="transparent" name="Emergency" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -178,7 +178,7 @@ export default function StatisticsPage() {
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <YAxis dataKey="dept" type="category" tick={{ fontSize: 11, fill: '#475569', fontWeight: 600 }} axisLine={false} tickLine={false} width={90} />
                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', padding: '10px 14px' }} itemStyle={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }} />
-                <Bar dataKey="patients" fill="#6366f1" radius={[0, 6, 6, 0]} name="Patients" />
+                <Bar dataKey="patients" fill="#1E3ABA" radius={[0, 6, 6, 0]} name="Patients" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -193,7 +193,7 @@ export default function StatisticsPage() {
                 <XAxis dataKey="hour" tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 600 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', padding: '10px 14px' }} itemStyle={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }} />
-                <Bar dataKey="count" fill="#14b8a6" radius={[4, 4, 0, 0]} name="Patients" />
+                <Bar dataKey="count" fill="#06B6D4" radius={[4, 4, 0, 0]} name="Patients" />
               </BarChart>
             </ResponsiveContainer>
           </div>

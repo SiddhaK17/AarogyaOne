@@ -95,8 +95,8 @@ export default function HospitalDashboard() {
     <div className="space-y-8">
       {/* Page Header */}
       <div>
-        <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-          Hospital Dashboard
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          Hospital <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-blue">Dashboard</span>
         </h1>
         <p className="text-sm text-slate-500 font-medium mt-1">
           PHC Kothrud, Pune · District: Pune · Last synced: 2 minutes ago
@@ -148,9 +148,9 @@ export default function HospitalDashboard() {
         {/* AI Health Score */}
         <div className="lg:col-span-3">
           <Card padding="lg" className="h-full flex flex-col items-center justify-center text-center relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-teal-50/50 via-transparent to-blue-50/50" />
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan/10 via-transparent to-brand-blue/10" />
             <div className="relative z-10">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 border border-teal-200/50 text-teal-700 text-[10px] font-bold mb-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan text-[10px] font-bold mb-4">
                 <BrainCircuit className="h-3 w-3" />
                 AI HEALTH SCORE
               </div>
@@ -174,8 +174,8 @@ export default function HospitalDashboard() {
                   />
                   <defs>
                     <linearGradient id="scoreGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#14b8a6" />
-                      <stop offset="100%" stopColor="#2563eb" />
+                      <stop offset="0%" stopColor="#06B6D4" />
+                      <stop offset="100%" stopColor="#1E3ABA" />
                     </linearGradient>
                   </defs>
                 </svg>
@@ -291,12 +291,12 @@ export default function HospitalDashboard() {
                 <AreaChart data={weeklyOPD}>
                   <defs>
                     <linearGradient id="opdGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#06B6D4" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="ipdGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      <stop offset="5%" stopColor="#1E3ABA" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#1E3ABA" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -313,8 +313,8 @@ export default function HospitalDashboard() {
                     itemStyle={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }}
                     labelStyle={{ color: '#94a3b8', fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}
                   />
-                  <Area type="monotone" dataKey="opd" stroke="#14b8a6" strokeWidth={2.5} fill="url(#opdGrad)" name="OPD" />
-                  <Area type="monotone" dataKey="ipd" stroke="#6366f1" strokeWidth={2.5} fill="url(#ipdGrad)" name="IPD" />
+                  <Area type="monotone" dataKey="opd" stroke="#06B6D4" strokeWidth={2.5} fill="url(#opdGrad)" name="OPD" />
+                  <Area type="monotone" dataKey="ipd" stroke="#1E3ABA" strokeWidth={2.5} fill="url(#ipdGrad)" name="IPD" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>

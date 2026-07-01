@@ -15,6 +15,8 @@ export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
         collapsed ? 'left-[72px]' : 'left-[260px]'
       }`}
     >
+      {/* Top Brand Gradient Line */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-cyan via-brand-blue to-brand-navy" />
       {/* Left section */}
       <div className="flex items-center gap-4">
         <button
@@ -64,7 +66,7 @@ export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
               Medical Superintendent
             </p>
           </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-blue-600 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-teal-500/20">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-brand-cyan/20">
             AM
           </div>
         </div>

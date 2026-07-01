@@ -2,7 +2,7 @@ import React from 'react';
 
 interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'healthy' | 'warning' | 'critical' | 'info' | 'neutral';
+  variant?: 'healthy' | 'warning' | 'critical' | 'info' | 'neutral' | 'high-risk';
   size?: 'sm' | 'md';
   dot?: boolean;
 }
@@ -19,6 +19,7 @@ export default function Badge({
     critical: 'bg-rose-50 text-rose-700 border-rose-200/60',
     info: 'bg-blue-50 text-blue-700 border-blue-200/60',
     neutral: 'bg-slate-100 text-slate-600 border-slate-200/60',
+    'high-risk': 'bg-orange-50 text-orange-700 border-orange-200/60',
   };
 
   const dotColors: Record<string, string> = {
@@ -27,6 +28,7 @@ export default function Badge({
     critical: 'bg-rose-500',
     info: 'bg-blue-500',
     neutral: 'bg-slate-400',
+    'high-risk': 'bg-orange-500',
   };
 
   const sizes: Record<string, string> = {
