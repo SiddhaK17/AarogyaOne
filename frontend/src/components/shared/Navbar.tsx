@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { Bell, Search, Mic, Menu } from 'lucide-react';
 
 interface NavbarProps {
@@ -9,6 +10,9 @@ interface NavbarProps {
 }
 
 export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
+  const pathname = usePathname();
+  const isGovernment = pathname?.startsWith('/government');
+
   return (
     <header
       className={`fixed top-0 right-0 z-30 h-[72px] bg-white/80 backdrop-blur-xl border-b border-slate-200/60 flex items-center justify-between px-6 lg:px-8 transition-all duration-300 ${
@@ -58,17 +62,35 @@ export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
 
         {/* User profile */}
         <div className="flex items-center gap-3">
-          <div className="hidden sm:block text-right">
-            <p className="text-sm font-bold text-slate-900 leading-tight">
-              Dr. Arjun Mehta
-            </p>
-            <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-              Medical Superintendent
-            </p>
-          </div>
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-brand-cyan/20">
-            AM
-          </div>
+          {isGovernment ? (
+            <>
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-bold text-slate-900 leading-tight">
+                  Rajesh Kumar
+                </p>
+                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                  PWD Operations Officer
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-brand-cyan/20">
+                RK
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-bold text-slate-900 leading-tight">
+                  Dr. Arjun Mehta
+                </p>
+                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                  Medical Superintendent
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-brand-cyan/20">
+                AM
+              </div>
+            </>
+          )}
         </div>
       </div>
     </header>

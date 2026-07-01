@@ -19,6 +19,7 @@ import {
   LogOut,
   Activity,
   ChevronLeft,
+  CheckCircle2,
 } from 'lucide-react';
 
 const navItems = [
@@ -39,6 +40,17 @@ const secondaryItems = [
   { label: 'Settings', href: '/hospital/settings', icon: Settings },
 ];
 
+const govtNavItems = [
+  { label: 'Dashboard', href: '/government/dashboard', icon: LayoutDashboard },
+  { label: 'Assigned Tasks', href: '/government/tasks', icon: FileText },
+  { label: 'Completed Work', href: '/government/completed', icon: CheckCircle2 },
+];
+
+const govtSecondaryItems = [
+  { label: 'Notifications', href: '/government/notifications', icon: Bell },
+  { label: 'Settings', href: '/government/settings', icon: Settings },
+];
+
 interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
@@ -46,6 +58,11 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const isGovernment = pathname?.startsWith('/government');
+
+  const items = isGovernment ? govtNavItems : navItems;
+  const secItems = isGovernment ? govtSecondaryItems : secondaryItems;
+  const portalLabel = isGovernment ? 'Government Portal' : 'Hospital Portal';
 
   return (
     <aside
@@ -69,14 +86,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {!collapsed && (
         <div className="px-5 py-4 border-b border-slate-800/50">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-            Hospital Portal
+            {portalLabel}
           </span>
         </div>
       )}
 
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 no-scrollbar">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;
           return (
@@ -108,7 +125,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         {/* Separator */}
         <div className="!my-4 border-t border-slate-800/50" />
 
-        {secondaryItems.map((item) => {
+        {secItems.map((item) => {
           const isActive = pathname === item.href;
           const Icon = item.icon;
           return (
