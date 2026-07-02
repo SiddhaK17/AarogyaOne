@@ -1,3 +1,11 @@
+<<<<<<< feature/government-portal
+export default function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <>{children}</>;
+=======
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -287,4 +295,5 @@ export default function CitizenLayout({ children }: { children: React.ReactNode 
 
     </div>
   );
+>>>>>>> main
 }

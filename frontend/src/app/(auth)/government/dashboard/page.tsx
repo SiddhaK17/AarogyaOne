@@ -1,0 +1,392 @@
+'use client';
+
+import React, { useState } from 'react';
+import Card, { CardHeader } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Link from 'next/link';
+import {
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  Award,
+  Building,
+  ArrowRight,
+  TrendingUp,
+  FileText,
+  ShieldAlert,
+} from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from 'recharts';
+
+/* ─── Mock Department Data ─── */
+const DEPARTMENTS = [
+  { id: 'pwd', name: 'Public Works Department (PWD)', lead: 'Rajesh Kumar' },
+  { id: 'biomedical', name: 'Biomedical Engineering Team', lead: 'Anil Deshmukh' },
+  { id: 'medical_store', name: 'District Medical Store', lead: 'Dr. Sunita Rao' },
+  { id: 'electricity', name: 'Electricity Board', lead: 'Vikas Patil' },
+  { id: 'water', name: 'Water Supply Department', lead: 'Sanjay More' },
+];
+
+const MOCK_DATA_BY_DEPT: Record<string, any> = {
+  pwd: {
+    stats: [
+      { label: 'Avg. Resolution Time', value: '24.2 hrs', icon: Clock, change: '-3.1 hrs from last week', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+      { label: 'Tasks Completed', value: '148', icon: CheckCircle2, change: '+12 this week', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Pending Work', value: '9', icon: AlertCircle, change: '4 active, 5 scheduled', color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Overdue Tasks', value: '1', icon: AlertTriangle, change: 'Due 2 days ago', color: 'text-rose-600', bg: 'bg-rose-50' },
+      { label: 'High Priority Resolved', value: '38', icon: Award, change: '100% compliance rate', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    ],
+    weeklyTrend: [
+      { day: 'Mon', completed: 8, assigned: 6 },
+      { day: 'Tue', completed: 12, assigned: 10 },
+      { day: 'Wed', completed: 9, assigned: 12 },
+      { day: 'Thu', completed: 15, assigned: 11 },
+      { day: 'Fri', completed: 18, assigned: 14 },
+      { day: 'Sat', completed: 6, assigned: 4 },
+      { day: 'Sun', completed: 4, assigned: 2 },
+    ],
+    issueTypes: [
+      { name: 'Civil Repairs', count: 45, color: '#1E3ABA' },
+      { name: 'Plumbing & Leak', count: 32, color: '#06B6D4' },
+      { name: 'Roads & Access', count: 18, color: '#6366F1' },
+      { name: 'Structural', count: 14, color: '#F59E0B' },
+    ],
+    urgentTasks: [
+      { id: 'TSK-201', hospital: 'PHC Kothrud', issue: 'Main water pipeline leakage in OPD ward', priority: 'High', daysOpen: 1 },
+      { id: 'TSK-204', hospital: 'CHC Warje', issue: 'Cracked ceiling plaster in emergency ward', priority: 'Medium', daysOpen: 3 },
+    ]
+  },
+  biomedical: {
+    stats: [
+      { label: 'Avg. Resolution Time', value: '12.8 hrs', icon: Clock, change: '-1.5 hrs from last week', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+      { label: 'Tasks Completed', value: '94', icon: CheckCircle2, change: '+8 this week', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Pending Work', value: '5', icon: AlertCircle, change: '3 active, 2 scheduled', color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Overdue Tasks', value: '0', icon: AlertTriangle, change: 'All current', color: 'text-rose-600', bg: 'bg-rose-50' },
+      { label: 'High Priority Resolved', value: '29', icon: Award, change: '100% compliance rate', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    ],
+    weeklyTrend: [
+      { day: 'Mon', completed: 4, assigned: 5 },
+      { day: 'Tue', completed: 6, assigned: 4 },
+      { day: 'Wed', completed: 9, assigned: 8 },
+      { day: 'Thu', completed: 8, assigned: 10 },
+      { day: 'Fri', completed: 11, assigned: 9 },
+      { day: 'Sat', completed: 3, assigned: 2 },
+      { day: 'Sun', completed: 2, assigned: 1 },
+    ],
+    issueTypes: [
+      { name: 'Ventilators', count: 28, color: '#1E3ABA' },
+      { name: 'ECG Monitors', count: 35, color: '#06B6D4' },
+      { name: 'Oxygen Plants', count: 12, color: '#6366F1' },
+      { name: 'X-Ray Machines', count: 9, color: '#F59E0B' },
+    ],
+    urgentTasks: [
+      { id: 'TSK-302', hospital: 'District Hospital Pune', issue: 'ICU Ventilator showing calibration error', priority: 'Critical', daysOpen: 0 },
+      { id: 'TSK-305', hospital: 'PHC Baner', issue: 'Defibrillator battery backup failing', priority: 'High', daysOpen: 1 },
+    ]
+  },
+  medical_store: {
+    stats: [
+      { label: 'Avg. Resolution Time', value: '6.4 hrs', icon: Clock, change: '-2.0 hrs from last week', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+      { label: 'Tasks Completed', value: '254', icon: CheckCircle2, change: '+35 this week', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Pending Work', value: '14', icon: AlertCircle, change: 'Inventory replenishing', color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Overdue Tasks', value: '2', icon: AlertTriangle, change: 'Critical vaccine stock delay', color: 'text-rose-600', bg: 'bg-rose-50' },
+      { label: 'High Priority Resolved', value: '92', icon: Award, change: '98% compliance rate', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    ],
+    weeklyTrend: [
+      { day: 'Mon', completed: 25, assigned: 28 },
+      { day: 'Tue', completed: 32, assigned: 30 },
+      { day: 'Wed', completed: 28, assigned: 32 },
+      { day: 'Thu', completed: 42, assigned: 40 },
+      { day: 'Fri', completed: 38, assigned: 35 },
+      { day: 'Sat', completed: 15, assigned: 12 },
+      { day: 'Sun', completed: 10, assigned: 15 },
+    ],
+    issueTypes: [
+      { name: 'Critical Meds', count: 120, color: '#1E3ABA' },
+      { name: 'Vaccines', count: 65, color: '#06B6D4' },
+      { name: 'Surgical Kits', count: 48, color: '#6366F1' },
+      { name: 'IV Fluids', count: 32, color: '#F59E0B' },
+    ],
+    urgentTasks: [
+      { id: 'TSK-401', hospital: 'PHC Hadapsar', issue: 'Insulin Glargine stock depleted below threshold', priority: 'High', daysOpen: 1 },
+      { id: 'TSK-403', hospital: 'CHC Warje', issue: 'Oral Rehydration Salts emergency stock low', priority: 'Medium', daysOpen: 2 },
+    ]
+  },
+  electricity: {
+    stats: [
+      { label: 'Avg. Resolution Time', value: '2.1 hrs', icon: Clock, change: '-0.8 hrs from last week', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+      { label: 'Tasks Completed', value: '28', icon: CheckCircle2, change: '+2 this week', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Pending Work', value: '1', icon: AlertCircle, change: '1 scheduled inspection', color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Overdue Tasks', value: '0', icon: AlertTriangle, change: 'All current', color: 'text-rose-600', bg: 'bg-rose-50' },
+      { label: 'High Priority Resolved', value: '18', icon: Award, change: '100% compliance rate', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    ],
+    weeklyTrend: [
+      { day: 'Mon', completed: 2, assigned: 3 },
+      { day: 'Tue', completed: 5, assigned: 4 },
+      { day: 'Wed', completed: 3, assigned: 2 },
+      { day: 'Thu', completed: 6, assigned: 7 },
+      { day: 'Fri', completed: 8, assigned: 6 },
+      { day: 'Sat', completed: 2, assigned: 1 },
+      { day: 'Sun', completed: 1, assigned: 0 },
+    ],
+    issueTypes: [
+      { name: 'Main Power Line', count: 12, color: '#1E3ABA' },
+      { name: 'UPS & Inverter', count: 18, color: '#06B6D4' },
+      { name: 'Generator Fuel', count: 6, color: '#6366F1' },
+      { name: 'Short Circuits', count: 4, color: '#F59E0B' },
+    ],
+    urgentTasks: [
+      { id: 'TSK-501', hospital: 'PHC Kothrud', issue: 'Frequent voltage fluctuations causing IT issues', priority: 'High', daysOpen: 0 },
+    ]
+  },
+  water: {
+    stats: [
+      { label: 'Avg. Resolution Time', value: '4.8 hrs', icon: Clock, change: '-1.2 hrs from last week', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+      { label: 'Tasks Completed', value: '42', icon: CheckCircle2, change: '+5 this week', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Pending Work', value: '2', icon: AlertCircle, change: '1 inspection, 1 WIP', color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Overdue Tasks', value: '1', icon: AlertTriangle, change: 'Delay in lab reports', color: 'text-rose-600', bg: 'bg-rose-50' },
+      { label: 'High Priority Resolved', value: '15', icon: Award, change: '96% compliance rate', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    ],
+    weeklyTrend: [
+      { day: 'Mon', completed: 3, assigned: 4 },
+      { day: 'Tue', completed: 5, assigned: 3 },
+      { day: 'Wed', completed: 4, assigned: 5 },
+      { day: 'Thu', completed: 8, assigned: 7 },
+      { day: 'Fri', completed: 10, assigned: 9 },
+      { day: 'Sat', completed: 2, assigned: 2 },
+      { day: 'Sun', completed: 1, assigned: 1 },
+    ],
+    issueTypes: [
+      { name: 'Water Tank Leak', count: 15, color: '#1E3ABA' },
+      { name: 'Purity Concerns', count: 20, color: '#06B6D4' },
+      { name: 'Pump Malfunction', count: 8, color: '#6366F1' },
+      { name: 'Sewage Issues', count: 5, color: '#F59E0B' },
+    ],
+    urgentTasks: [
+      { id: 'TSK-602', hospital: 'CHC Warje', issue: 'Suspicion of drinking water contamination', priority: 'Critical', daysOpen: 0 },
+    ]
+  }
+};
+
+export default function GovernmentDashboard() {
+  const [selectedDeptId, setSelectedDeptId] = useState('pwd');
+  const deptData = MOCK_DATA_BY_DEPT[selectedDeptId] || MOCK_DATA_BY_DEPT.pwd;
+  const currentDept = DEPARTMENTS.find(d => d.id === selectedDeptId) || DEPARTMENTS[0];
+
+  return (
+    <div className="space-y-8">
+      {/* Top Section */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 bg-gradient-to-br from-brand-navy to-slate-900 text-white p-6 lg:p-8 rounded-3xl shadow-xl shadow-slate-900/10">
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-brand-cyan text-xs font-black tracking-widest uppercase">
+            <Building className="h-4 w-4" /> Government authorities portal
+          </div>
+          <h1 className="text-3xl font-black tracking-tight">Department Performance Analytics</h1>
+          <p className="text-sm text-slate-300 font-medium">
+            Monitor response efficiency, resolution rate, and AI-assigned tasks for {currentDept.name} (Officer in Charge: {currentDept.lead}).
+          </p>
+        </div>
+
+        {/* Department Switcher */}
+        <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/15 w-fit">
+          <span className="text-xs font-bold text-slate-300 pl-2">Dept:</span>
+          <select
+            value={selectedDeptId}
+            onChange={(e) => setSelectedDeptId(e.target.value)}
+            className="bg-brand-navy/80 text-white border-0 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-cyan focus:outline-none cursor-pointer"
+          >
+            {DEPARTMENTS.map((dept) => (
+              <option key={dept.id} value={dept.id}>
+                {dept.name.split(' (')[0]}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* ─── Summary KPIs ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {deptData.stats.map((stat: any) => {
+          const Icon = stat.icon;
+          return (
+            <Card key={stat.label} padding="md" hover className="flex flex-col justify-between">
+              <div>
+                <div className={`p-2 rounded-xl ${stat.bg} w-fit mb-4`}>
+                  <Icon className={`h-5 w-5 ${stat.color}`} />
+                </div>
+                <h4 className="text-sm font-bold text-slate-500">{stat.label}</h4>
+                <p className="text-2xl font-black text-slate-950 mt-1 tracking-tight">{stat.value}</p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold block uppercase">{stat.change}</span>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Weekly Trend Chart */}
+        <Card className="lg:col-span-2">
+          <CardHeader
+            title="Weekly Completion Activity"
+            subtitle="Comparison of completed repairs against newly assigned tasks over the last 7 days"
+            action={
+              <Badge variant="healthy" dot>
+                Online
+              </Badge>
+            }
+          />
+          <div className="h-[300px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={deptData.weeklyTrend} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#06B6D4" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="colorAssigned" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1E3ABA" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#1E3ABA" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} fontWeight={600} tickLine={false} />
+                <YAxis stroke="#94A3B8" fontSize={11} fontWeight={600} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0F172A', borderRadius: '16px', border: 'none', color: '#fff' }}
+                  labelStyle={{ fontWeight: 'bold' }}
+                />
+                <Area type="monotone" dataKey="completed" name="Completed Tasks" stroke="#06B6D4" strokeWidth={3} fillOpacity={1} fill="url(#colorCompleted)" />
+                <Area type="monotone" dataKey="assigned" name="Assigned Tasks" stroke="#1E3ABA" strokeWidth={2} strokeDasharray="5 5" fillOpacity={1} fill="url(#colorAssigned)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        {/* Issue Distribution by Type */}
+        <Card>
+          <CardHeader
+            title="Task Distribution"
+            subtitle="Volume of service requests by issue category"
+          />
+          <div className="h-[220px] w-full mt-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={deptData.issueTypes} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="name" stroke="#94A3B8" fontSize={10} fontWeight={600} tickLine={false} />
+                <YAxis stroke="#94A3B8" fontSize={11} fontWeight={600} tickLine={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0F172A', borderRadius: '16px', border: 'none', color: '#fff' }}
+                />
+                <Bar dataKey="count" name="Total Issues" radius={[8, 8, 0, 0]}>
+                  {deptData.issueTypes.map((entry: any, index: number) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="mt-4 space-y-2">
+            {deptData.issueTypes.map((type: any) => (
+              <div key={type.name} className="flex items-center justify-between text-xs font-semibold">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: type.color }} />
+                  <span className="text-slate-600">{type.name}</span>
+                </div>
+                <span className="text-slate-900 font-extrabold">{type.count} issues</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </div>
+
+      {/* Urgent Issues and Workflow Summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Urgent Assigned Tasks */}
+        <Card className="lg:col-span-2">
+          <CardHeader
+            title="Urgent Service Orders"
+            subtitle="High-priority infrastructure tasks needing immediate inspection or feedback"
+            action={
+              <Link href="/government/tasks">
+                <Button variant="ghost" size="sm" className="text-brand-blue flex items-center gap-1 font-bold">
+                  View All Tasks <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            }
+          />
+          <div className="space-y-4">
+            {deptData.urgentTasks.length > 0 ? (
+              deptData.urgentTasks.map((task: any) => (
+                <div
+                  key={task.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-bold text-slate-500">{task.id}</span>
+                      <Badge variant={task.priority === 'Critical' ? 'critical' : 'warning'} dot>
+                        {task.priority}
+                      </Badge>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">{task.daysOpen} days open</span>
+                    </div>
+                    <h5 className="text-sm font-bold text-slate-900">{task.issue}</h5>
+                    <p className="text-xs font-semibold text-slate-500">{task.hospital}</p>
+                  </div>
+                  <Link href="/government/tasks">
+                    <Button variant="outline" size="sm">
+                      Update Task
+                    </Button>
+                  </Link>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-slate-400 font-bold text-sm">
+                No urgent tasks pending assignment.
+              </div>
+            )}
+          </div>
+        </Card>
+
+        {/* AI Routing Workflow Alert */}
+        <Card className="bg-[#FAF5FF] border-[#E8D5FF]/60 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="p-3 bg-purple-100 text-purple-700 rounded-2xl w-fit">
+              <ShieldAlert className="h-6 w-6" />
+            </div>
+            <div>
+              <h4 className="text-lg font-black text-slate-950 tracking-tight">AI Dispatcher Network</h4>
+              <p className="text-xs text-slate-500 font-medium mt-1 leading-relaxed">
+                Hospital staff report issues via text or voice. AarogyaPulse's **NLP Classifier** automatically parses the description, flags urgency, matches it to standard repair categories, and routes it directly to your department queue.
+              </p>
+            </div>
+            <div className="bg-white/60 p-4 rounded-xl border border-purple-100 text-[11px] font-bold text-purple-950 space-y-1">
+              <span className="uppercase text-[9px] tracking-wider text-purple-600 block mb-1">Active Model</span>
+              <p>Classification Accuracy: 94.6%</p>
+              <p>Average Dispatch Delay: &lt; 4 seconds</p>
+            </div>
+          </div>
+          <div className="pt-4 border-t border-purple-200/50 mt-4">
+            <span className="text-[10px] text-purple-600 font-bold flex items-center gap-1">
+              <TrendingUp className="h-3 w-3" /> Auto-Routing is functioning normally
+            </span>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
