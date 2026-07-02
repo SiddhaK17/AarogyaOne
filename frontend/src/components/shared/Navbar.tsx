@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Bell, Search, Mic, Menu } from 'lucide-react';
 
@@ -12,6 +12,38 @@ interface NavbarProps {
 export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
   const pathname = usePathname();
   const isGovernment = pathname?.startsWith('/government');
+  const isDHIC = pathname?.startsWith('/dhic');
+  const isCitizen = pathname?.startsWith('/citizen');
+
+  const [profileName, setProfileName] = useState('');
+  const [profileRole, setProfileRole] = useState('');
+
+  useEffect(() => {
+    const getCookie = (name: string) => {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]*)'));
+      return match ? decodeURIComponent(match[2]) : '';
+    };
+
+    const cookieName = getCookie('user_name');
+    const cookieRole = getCookie('user_role');
+
+    if (cookieName) setProfileName(cookieName);
+    if (cookieRole) setProfileRole(cookieRole);
+  }, [pathname]);
+
+  const getInitials = (name: string, defaultInitials: string) => {
+    if (!name) return defaultInitials;
+    // Clean and split words
+    const cleanName = name.replace(/^(Dr\.|Mr\.|Mrs\.|Ms\.)\s+/i, '');
+    const parts = cleanName.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    if (parts.length === 1 && parts[0]) {
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+    return defaultInitials;
+  };
 
   return (
     <header
@@ -62,32 +94,63 @@ export default function Navbar({ collapsed, onToggleSidebar }: NavbarProps) {
 
         {/* User profile */}
         <div className="flex items-center gap-3">
-          {isGovernment ? (
+          {isGovernment && (
             <>
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-bold text-slate-900 leading-tight">
-                  Rajesh Kumar
+                  {profileName || 'Rajesh Kumar'}
                 </p>
                 <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                  PWD Operations Officer
+                  {profileRole || 'PWD Operations Officer'}
                 </p>
               </div>
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-brand-cyan/20">
-                RK
+                {getInitials(profileName, 'RK')}
               </div>
             </>
-          ) : (
+          )}
+          {isDHIC && (
             <>
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-bold text-slate-900 leading-tight">
-                  Dr. Arjun Mehta
+                  {profileName || 'Dr. Priya Sharma'}
                 </p>
                 <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
-                  Medical Superintendent
+                  {profileRole || 'District Health Officer'}
                 </p>
               </div>
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-brand-cyan/20">
-                AM
+                {getInitials(profileName, 'PS')}
+              </div>
+            </>
+          )}
+          {isCitizen && (
+            <>
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-bold text-slate-900 leading-tight">
+                  {profileName || 'Rahul Sharma'}
+                </p>
+                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                  {profileRole || 'Citizen User'}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-brand-cyan/20">
+                {getInitials(profileName, 'RS')}
+              </div>
+            </>
+          )}
+          {!isGovernment && !isDHIC && !isCitizen && (
+            <>
+              <div className="hidden sm:block text-right">
+                <p className="text-sm font-bold text-slate-900 leading-tight">
+                  {profileName || 'Dr. Arjun Mehta'}
+                </p>
+                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                  {profileRole || 'Medical Superintendent'}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-cyan to-brand-blue flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-brand-cyan/20">
+                {getInitials(profileName, 'AM')}
               </div>
             </>
           )}

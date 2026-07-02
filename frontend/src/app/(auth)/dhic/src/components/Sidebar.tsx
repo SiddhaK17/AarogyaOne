@@ -20,16 +20,16 @@ import {
 import { useState } from "react";
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "District Dashboard" },
-  { to: "/map", icon: Map, label: "Live District Map" },
-  { to: "/hospitals", icon: Building2, label: "Hospital Intelligence" },
-  { to: "/resources", icon: GitBranch, label: "Resource Management" },
-  { to: "/alerts", icon: Bell, label: "AI Alert Centre" },
-  { to: "/feedback", icon: MessageSquare, label: "Citizen Feedback" },
-  { to: "/infrastructure", icon: Server, label: "Infrastructure" },
-  { to: "/reports", icon: FileBarChart, label: "Executive Reports" },
-  { to: "/assistant", icon: Bot, label: "AI Decision Assistant" },
-  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "/dhic", icon: LayoutDashboard, label: "District Dashboard" },
+  { to: "/dhic/map", icon: Map, label: "Live District Map" },
+  { to: "/dhic/hospitals", icon: Building2, label: "Hospital Intelligence" },
+  { to: "/dhic/resources", icon: GitBranch, label: "Resource Management" },
+  { to: "/dhic/alerts", icon: Bell, label: "AI Alert Centre" },
+  { to: "/dhic/feedback", icon: MessageSquare, label: "Citizen Feedback" },
+  { to: "/dhic/infrastructure", icon: Server, label: "Infrastructure" },
+  { to: "/dhic/reports", icon: FileBarChart, label: "Executive Reports" },
+  { to: "/dhic/assistant", icon: Bot, label: "AI Decision Assistant" },
+  { to: "/dhic/settings", icon: Settings, label: "Settings" },
 ];
 
 export default function Sidebar() {
@@ -37,7 +37,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   const isActive = (to: string) => {
-    if (to === "/") return pathname === "/";
+    if (to === "/dhic") return pathname === "/dhic";
     return pathname.startsWith(to);
   };
 
