@@ -47,15 +47,48 @@ yarn-error.log*
 # ------------------------------------------
 # 4. AI & Machine Learning Artifacts
 # ------------------------------------------
-# Do not upload heavy model weights to GitHub!
+
+# Model weights
 *.pt
 *.pth
 *.pkl
 *.h5
 *.onnx
-# Ignore local datasets and model outputs
+
+# HuggingFace base model (keep tokenizer/config, ignore large weights)
+backend/app/intelligence/store/weights/indic-bert-base/pytorch_model.bin
+
+# Fine-tuned models
+backend/app/intelligence/store/weights/aarogya-grievance-classifier/
+
+# Generated datasets
+backend/app/intelligence/store/datasets/grievances_v1.json
+
+# Training outputs
+backend/app/intelligence/store/results/
+backend/app/intelligence/store/logs/
+backend/app/intelligence/store/checkpoints/
+
+# HuggingFace Trainer
+runs/
+checkpoint-*/
+
+# Python build artifacts
+*.egg-info/
+dist/
+
+# Cache
+.cache/
+.ipynb_checkpoints/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Legacy AI folders
 ai_models/datasets/*
 !ai_models/datasets/.gitkeep
+
 ai_models/trained_models/*
 !ai_models/trained_models/.gitkeep
 
