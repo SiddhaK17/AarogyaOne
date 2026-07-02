@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
   ClipboardList, Search, Sparkles, ShieldAlert, 
@@ -9,7 +9,7 @@ import {
 import { getComplaints, Complaint } from "../mockDb";
 import Timeline from "../components/timeline";
 
-export default function TrackComplaintPage() {
+function TrackComplaintContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const initialId = searchParams.get("id") || "";
@@ -242,3 +242,16 @@ export default function TrackComplaintPage() {
     </div>
   );
 }
+
+export default function TrackComplaintPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[300px] text-slate-500 font-bold text-sm">
+        Loading Tracker Details...
+      </div>
+    }>
+      <TrackComplaintContent />
+    </Suspense>
+  );
+}
+

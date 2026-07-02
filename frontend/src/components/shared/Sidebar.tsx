@@ -2,7 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import {
   LayoutDashboard,
   Package,
@@ -20,6 +22,18 @@ import {
   Activity,
   ChevronLeft,
   CheckCircle2,
+  Home,
+  Search,
+  Map,
+  ClipboardList,
+  BrainCircuit,
+  Info,
+  User,
+  GitBranch,
+  MessageSquare,
+  Server,
+  FileBarChart,
+  Bot,
 } from 'lucide-react';
 
 const navItems = [
@@ -41,14 +55,38 @@ const secondaryItems = [
 ];
 
 const govtNavItems = [
-  { label: 'Dashboard', href: '/government/dashboard', icon: LayoutDashboard },
-  { label: 'Assigned Tasks', href: '/government/tasks', icon: FileText },
-  { label: 'Completed Work', href: '/government/completed', icon: CheckCircle2 },
+  { label: 'Pending Issues', href: '/government/dashboard', icon: AlertTriangle },
+  { label: 'Action Panel', href: '/government/tasks', icon: ClipboardList },
+  { label: 'Resolved Archive', href: '/government/completed', icon: CheckCircle2 },
 ];
 
 const govtSecondaryItems = [
-  { label: 'Notifications', href: '/government/notifications', icon: Bell },
-  { label: 'Settings', href: '/government/settings', icon: Settings },
+  { label: 'System Health', href: '/government/system', icon: Server },
+  { label: 'Department Audit', href: '/government/reports', icon: FileBarChart },
+];
+
+const citizenNavItems = [
+  { label: 'Dashboard', href: '/citizen', icon: Home },
+  { label: 'File a Grievance', href: '/citizen/report', icon: FileText },
+  { label: 'Hospital Search', href: '/citizen/search', icon: Search },
+  { label: 'Nearby Centres', href: '/citizen/nearby', icon: Map },
+  { label: 'Track Complaint', href: '/citizen/track', icon: ClipboardList },
+  { label: 'AI Health Assistant', href: '/citizen/assistant', icon: BrainCircuit },
+  { label: 'About & Tech', href: '/citizen/about', icon: Info },
+  { label: 'Profile & Settings', href: '/citizen/profile', icon: User },
+];
+
+const dhicNavItems = [
+  { label: 'District Dashboard', href: '/dhic', icon: LayoutDashboard },
+  { label: 'Live District Map', href: '/dhic/map', icon: Map },
+  { label: 'Hospital Intelligence', href: '/dhic/hospitals', icon: Building2 },
+  { label: 'Resource Management', href: '/dhic/resources', icon: GitBranch },
+  { label: 'AI Alert Centre', href: '/dhic/alerts', icon: Bell },
+  { label: 'Citizen Feedback', href: '/dhic/feedback', icon: MessageSquare },
+  { label: 'Infrastructure', href: '/dhic/infrastructure', icon: Server },
+  { label: 'Executive Reports', href: '/dhic/reports', icon: FileBarChart },
+  { label: 'AI Decision Assistant', href: '/dhic/assistant', icon: Bot },
+  { label: 'Settings', href: '/dhic/settings', icon: Settings },
 ];
 
 interface SidebarProps {
@@ -58,11 +96,61 @@ interface SidebarProps {
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const isGovernment = pathname?.startsWith('/government');
+  const isDHIC = pathname?.startsWith('/dhic');
+  const isCitizen = pathname?.startsWith('/citizen');
 
-  const items = isGovernment ? govtNavItems : navItems;
-  const secItems = isGovernment ? govtSecondaryItems : secondaryItems;
-  const portalLabel = isGovernment ? 'Government Portal' : 'Hospital Portal';
+  const handleSignOut = async () => {
+    try {
+      const isFirebaseConfigured = 
+        process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
+        process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'PLACEHOLDER_API_KEY';
+      if (isFirebaseConfigured) {
+        await signOut(auth);
+      }
+    } catch (err) {
+      console.error("Error signing out of Firebase: ", err);
+    } finally {
+      const cookiesToClear = [
+        'aarogya_token',
+        'portal_role',
+        'user_name',
+        'user_role',
+        'hospital_designation',
+        'dhic_district'
+      ];
+      cookiesToClear.forEach(cookie => {
+        document.cookie = `${cookie}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;`;
+      });
+
+      let loginTarget = '/login';
+      if (isGovernment) loginTarget += '?role=government';
+      else if (isDHIC) loginTarget += '?role=dhic';
+      else if (isCitizen) loginTarget += '?role=citizen';
+      else loginTarget += '?role=hospital';
+      
+      router.push(loginTarget);
+    }
+  };
+
+  let items = navItems;
+  let secItems = secondaryItems;
+  let portalLabel = 'Hospital Portal';
+
+  if (isGovernment) {
+    items = govtNavItems;
+    secItems = govtSecondaryItems;
+    portalLabel = 'Government Portal';
+  } else if (isDHIC) {
+    items = dhicNavItems;
+    secItems = [];
+    portalLabel = 'District Command';
+  } else if (isCitizen) {
+    items = citizenNavItems;
+    secItems = [];
+    portalLabel = 'Citizen Gateway';
+  }
 
   return (
     <aside
@@ -160,7 +248,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           {!collapsed && <span>Collapse</span>}
         </button>
 
-        <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 text-sm font-semibold transition-all mt-1">
+        <button
+          onClick={handleSignOut}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 text-sm font-semibold transition-all mt-1"
+        >
           <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
           {!collapsed && <span>Sign Out</span>}
         </button>
