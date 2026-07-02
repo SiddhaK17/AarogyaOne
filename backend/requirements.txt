@@ -41,11 +41,18 @@ torchaudio==2.3.1         # PyTorch extension for processing voice complaints
 torchvision==0.18.1       # PyTorch extension for image processing
 
 # --- NLP, Speech & Vision (Hugging Face) ---
-transformers==4.41.2      # Downloads and runs IndicBERT and IndicWhisper
+transformers==4.41.2      # Hugging Face Transformers (IndicBERT & Whisper)
 accelerate==0.31.0        # Optimizes heavy models to run faster on your GPU
 bitsandbytes==0.43.1      # Compresses models (quantization) to save VRAM if needed
 librosa==0.10.2           # Extracts features from uploaded audio files
 soundfile==0.12.1         # Reads and writes audio files securely
+
+sentencepiece==0.2.0      # Tokenizer required for IndicBERT and Whisper
+safetensors==0.4.3         # Fast and secure model weight loading
+huggingface-hub==0.36.2    # Downloads and manages Hugging Face models
+datasets==5.0.0            # Dataset utilities for AI pipelines
+matplotlib==3.9.0          # Training metrics and evaluation visualizations
+scikit-learn==1.5.0        # Evaluation metrics, train/validation split
 
 # --- Report Generation ---
 jinja2==3.1.4             # Injects your database data into HTML templates

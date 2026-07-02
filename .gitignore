@@ -92,6 +92,20 @@ ai_models/datasets/*
 ai_models/trained_models/*
 !ai_models/trained_models/.gitkeep
 
+# Hugging Face cached models
+backend/app/intelligence/store/weights/huggingface_cache/
+
+# Audio recordings
+backend/app/intelligence/store/audio/
+
+# Generated transcripts
+backend/app/intelligence/store/transcripts/
+
+backend/app/intelligence/store/datasets/test_sample.json
+*.safetensors
+
+backend/app/intelligence/store/weights/aarogya-grievance-classifier-backup/
+
 # ------------------------------------------
 # 5. OS & Editor Configurations
 # ------------------------------------------

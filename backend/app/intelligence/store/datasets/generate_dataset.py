@@ -144,7 +144,7 @@ HOSPITAL_TYPES: List[str] = [
     "ESI Hospital", "Railway Hospital", "Military Hospital",
     "AYUSH Hospital", "TB Sanatorium", "Leprosy Hospital",
     "Mental Health Centre", "Cancer Centre", "Trauma Centre",
-    "Civil Hospital", "General Hospital",
+    "Civil Hospital", "General Hospital", "Maternity Hospital", "Polyclinic"
 ]
 
 
@@ -178,6 +178,37 @@ MEDICINES: List[str] = [
     "Measles Vaccine", "Pentavalent Vaccine", "Rabeprazole", "Sucralfate",
     "Tranexamic Acid", "Aminophylline", "Deriphylline", "Phenobarbitone",
     "Chlorpheniramine", "Cetirizine", "Levocetirizine", "Betahistine",
+    "Cefotaxime", "Fluoxetine", "Sertraline", "Escitalopram", "Alprazolam",
+    "Clonazepam", "Lorazepam", "Amitriptyline", "Domperidone", "Loperamide",
+    "Lansoprazole", "Esomeprazole", "Oxycodone", "Fentanyl", "Midazolam",
+    "Vecuronium", "Atracurium", "Neostigmine", "Glycopyrrolate", "Buprenorphine",
+    "Deriphylline", "Asthalin", "Liv 52", "Ashwagandha", "Ayush Kwath", "Zandu Balm",
+    "Puspanjali", "Baidyanath", "Dabur Chyawanprash", "Amrutanjan", "Kailas Jeevan", "Eno Fruit Salt",
+    "Relispray", "Odomos", "Soframycin", "Burnol", "Betadine Ointment", "Ciplox", "Ciplox D",
+    "Ofloxacin", "Norflox", "Cefpodoxime", "Cefuroxime", "Linezolid", "Clindamycin",
+    "Meropenem", "Piperacillin", "Tazobactam", "Vancomycin", "Teicoplanin", "Colistin",
+    "Amikacin", "Gentamicin", "Streptomycin", "Kanamycin", "Capreomycin", "Cycloserine",
+    "Ethionamide", "PAS", "Bedaquiline", "Delamanid", "Pretomanid", "Levothyroxine",
+    "Carbimazole", "Propylthiouracil", "Metoprolol", "Bisoprolol", "Nebivolol", "Carvedilol",
+    "Telmisartan", "Olmesartan", "Valsartan", "Ramipril", "Lisinopril", "Perindopril",
+    "Nifedipine", "Diltiazem", "Verapamil", "Spironolactone", "Eplerenone", "Torasemide",
+    "Chlorthalidone", "Indapamide", "Clonidine", "Methyldopa", "Prazosin", "Terazosin",
+    "Tamsulosin", "Silodosin", "Alfuzosin", "Finasteride", "Dutasteride", "Sildenafil",
+    "Tadalafil", "Udenafil", "Vardenafil", "Alprostadil", "Testosterone", "Estrogen",
+    "Progesterone", "Levonorgestrel", "Mifepristone", "Misoprostol", "Dinoprostone",
+    "Oxytocin", "Carboprost", "Methylergometrine", "Tranexamic Acid", "Ethamsylate",
+    "Vitamin A", "Vitamin B Complex", "Vitamin E", "Vitamin K", "Iron Sucrose",
+    "Ferric Carboxymaltose", "Erythropoietin", "Darbepoetin", "Filgrastim", "Pegfilgrastim",
+    "Heparin", "Enoxaparin", "Dalteparin", "Fondaparinux", "Rivaroxaban", "Apixaban",
+    "Dabigatran", "Edoxaban", "Clopidogrel", "Prasugrel", "Ticagrelor", "Aspirin",
+    "Abciximab", "Eptifibatide", "Tirofiban", "Alteplase", "Tenecteplase", "Streptokinase",
+    "Urokinase", "Somatostatin", "Octreotide", "Vasopressin", "Terlipressin", "Desmopressin",
+    "Insulin Aspart", "Insulin Lispro", "Insulin Glulisine", "Insulin Detemir", "Insulin Glargine",
+    "Insulin Degludec", "Sitagliptin", "Vildagliptin", "Saxagliptin", "Linagliptin",
+    "Teneligliptin", "Dapagliflozin", "Empagliflozin", "Canagliflozin", "Remogliflozin",
+    "Liraglutide", "Dulaglutide", "Semaglutide", "Exenatide", "Pramlintide", "Acarbose",
+    "Voglibose", "Miglitol", "Pioglitazone", "Rosiglitazone", "Repaglinide", "Nateglinide",
+    "Glipizide", "Gliclazide", "Glimepiride", "Tolbutamide", "Chlorpropamide", "Metformin"
 ]
 
 MEDICAL_EQUIPMENT: List[str] = [
@@ -201,7 +232,38 @@ MEDICAL_EQUIPMENT: List[str] = [
     "Ryle tube", "Ambu bag", "N95 mask", "PPE kit", "Surgical gloves",
     "Surgical gown", "Boyle apparatus", "Doppler machine", "CPAP machine",
     "BiPAP machine", "Blood warmer", "Bone drill", "Plaster saw",
-    "Dermatoscope", "Slit lamp", "Fundoscope", "Tonometer",
+    "Dermatoscope", "Slit lamp", "Fundoscope", "Tonometer", "ECG Monitor",
+    "Sterilizer", "Suction Pump", "Operation Lights", "Patient Monitor",
+    "Portable X-Ray", "Dialyzer", "Pacemaker programmer", "Heart-lung machine",
+    "EEG machine", "EMG machine", "Holter monitor", "ABG analyzer",
+    "Oxygen Mask", "Thermometer", "Weighing Scale", "Height Scale",
+    "Tuning Fork", "Reflex Hammer", "Torch", "Tongue Depressor",
+    "Nasal Speculum", "Vaginal Speculum", "Proctoscope", "Sigmoidoscope",
+    "Bone Marrow Needle", "Biopsy Gun", "Cryosurgery Unit", "Cautery Machine",
+    "Tourniquet", "Resuscitation Kit", "Incubator", "Bili Light",
+    "Anesthesia Machine", "Arterial Blood Gas Analyzer", "Autotransfusion Unit",
+    "Ballard Score Tape", "Bandages", "Bedpan", "Bilirubinometer", "Bipap Machine",
+    "Blood Bank Refrigerator", "Blood Collection Tubes", "Blood Gas Analyzer",
+    "Blood Glucose Meter", "Blood Irradiation Machine", "Blood Pressure Cuff",
+    "C-Arm", "Capillary Tubes", "Cardiac Output Monitor", "Cardiotocograph",
+    "Casting Material", "Catheter", "Central Venous Catheter", "Centrifuge",
+    "Chest Tube", "Coagulometer", "Colostomy Bag", "Colposcope", "Continuous Glucose Monitor",
+    "CPAP Machine", "Crutches", "Cryotome", "CT Scanner", "Curette", "Cystoscope",
+    "Defibrillator Paddles", "Dental Drill", "Dental Probe", "Dental Scaler", "Dental Syringe",
+    "Dermatome", "Dialysis Catheter", "Dialysis Machine", "Diathermy Machine", "Doppler Ultrasound",
+    "Echocardiogram", "EEG Cap", "EKG Machine", "Electrocautery", "Electroencephalograph",
+    "Electromyograph", "Electron Microscope", "Electrosurgical Unit", "Endoscope",
+    "Endotracheal Tube", "Enema Kit", "Epidural Needle", "Esophagoscope", "Excimer Laser",
+    "External Fixator", "Feeding Tube", "Fetal Doppler", "Fetal Scalp Electrode",
+    "Foley Catheter", "Forceps", "Fluoroscope", "Galvanometer", "Gamma Camera",
+    "Gastric Tube", "Gastroscope", "Glucometer", "Goniometer", "Gurney", "Haemocytometer",
+    "Haemodialysis Machine", "Haemoglobinometer", "Hearing Aid", "Heart-Lung Machine",
+    "Hemodialyzer", "Holter Monitor", "Hospital Bed", "Hypodermic Needle", "Hysteroscope",
+    "Ice Bag", "Incubator", "Infusion Pump", "Inhaler", "Insulin Pump", "Intraaortic Balloon Pump",
+    "Intravenous Bag", "Intravenous Catheter", "Intravenous Pole", "Iontophoresis Machine",
+    "Laparoscope", "Laryngoscope", "Laser Scalpel", "Linear Accelerator", "Lithotripter",
+    "Lumbar Puncture Needle", "Magnetic Resonance Imaging", "Mammography Unit", "Mayo Stand",
+    "Medical Halogen Penlight", "Medical Ventilator", "Microscope", "Microtome", "Nasogastric Tube"
 ]
 
 DISEASES: List[str] = [
@@ -223,6 +285,29 @@ DISEASES: List[str] = [
     "Malnutrition", "Vitamin Deficiency", "Pre-eclampsia", "Eclampsia",
     "Postpartum Haemorrhage", "Neonatal Jaundice", "Birth Asphyxia",
     "Acute Gastritis", "Peptic Ulcer", "Gallstones", "Pancreatitis",
+    "Food Poisoning", "Heat Stroke", "Dehydration", "Sunburn", "Frostbite",
+    "Piles", "Hemorrhoids", "Fissure", "Fistula", "Kidney Stones", "UTI Infection",
+    "Polycystic Ovary Syndrome", "Endometriosis", "Migraine", "Tension Headache",
+    "Vertigo", "Stye", "Ear Infection", "Toothache", "Mouth Ulcer", "Throat Infection",
+    "Tonsil Infection", "Swine Flu", "Bird Flu", "Zika Virus", "Nipah Virus", "Scrub Typhus",
+    "Gout", "Lupus", "Psoriasis", "Eczema", "Dermatitis", "Acne", "Rosacea",
+    "Vitiligo", "Melasma", "Alopecia", "Dandruff", "Ringworm", "Athlete's Foot",
+    "Jock Itch", "Candidiasis", "Thrush", "Herpes", "Syphilis", "Gonorrhea",
+    "Chlamydia", "Trichomoniasis", "Bacterial Vaginosis", "Pelvic Inflammatory Disease",
+    "Cervicitis", "Vaginitis", "Vulvitis", "Balanitis", "Prostatitis", "Epididymitis",
+    "Orchitis", "Urethritis", "Cystitis", "Pyelonephritis", "Glomerulonephritis",
+    "Nephrotic Syndrome", "Acute Kidney Injury", "Polycystic Kidney Disease",
+    "Kidney Failure", "Urolithiasis", "Nephrolithiasis", "Hydronephrosis", "Enlarged Prostate",
+    "Benign Prostatic Hyperplasia", "Prostate Cancer", "Testicular Cancer", "Penile Cancer",
+    "Ovarian Cancer", "Uterine Cancer", "Endometrial Cancer", "Vaginal Cancer",
+    "Vulvar Cancer", "Fibroids", "Adenomyosis", "Ovarian Cysts", "Ectopic Pregnancy",
+    "Miscarriage", "Stillbirth", "Premature Birth", "Low Birth Weight", "Macrosomia",
+    "Gestational Diabetes", "Placenta Previa", "Placental Abruption", "Amniotic Fluid Embolism",
+    "Cerebral Palsy", "Spina Bifida", "Down Syndrome", "Cleft Lip", "Cleft Palate",
+    "Congenital Heart Defect", "Clubfoot", "Muscular Dystrophy", "Cystic Fibrosis",
+    "Sickle Cell Anemia", "Thalassemia", "Hemophilia", "Von Willebrand Disease",
+    "Leukemia", "Lymphoma", "Multiple Myeloma", "Hodgkin's Lymphoma", "Non-Hodgkin's Lymphoma",
+    "Melanoma", "Basal Cell Carcinoma", "Squamous Cell Carcinoma", "Sarcoma", "Osteosarcoma"
 ]
 
 GOVERNMENT_SCHEMES: List[str] = [
@@ -243,6 +328,12 @@ GOVERNMENT_SCHEMES: List[str] = [
     "Chief Minister Comprehensive Health Insurance Scheme",
     "Mukhyamantri Amrutum Yojana", "Biju Swasthya Kalyan Yojana",
     "Karunya Health Scheme", "Aarogyasri Scheme",
+    "Mukhyamantri Chiranjeevi Swasthya Bima Yojana", "Mahaatma Jyotirao Phule Jan Arogya Yojana",
+    "YSR Aarogyasri", "Dr. YSR Kanti Velugu", "Kanti Velugu", "Chief Minister's Comprehensive Health Insurance Scheme",
+    "Amma Vodi", "Kalyana Lakshmi", "Shaadi Mubarak", "Beti Bachao Beti Padhao",
+    "Poshan Abhiyaan", "Integrated Child Development Services", "Mid-Day Meal Scheme",
+    "National Rural Health Mission", "National Urban Health Mission", "Swachh Bharat Mission",
+    "National Water Mission", "Jal Jeevan Mission", "Ujjwala Yojana", "Saubhagya Yojana"
 ]
 
 INFRASTRUCTURE_PROBLEMS: List[str] = [
@@ -254,6 +345,16 @@ INFRASTRUCTURE_PROBLEMS: List[str] = [
     "seepage in walls", "dampness", "broken taps", "overflowing septic tank",
     "exposed electrical wiring", "missing manhole covers", "broken signboards",
     "crumbling foundation", "rusty iron beams", "non-functional lift",
+    "broken stretchers", "rusted wheelchairs", "damaged patient beds",
+    "broken chairs in waiting area", "dysfunctional AC units", "flickering tube lights",
+    "short circuit in wiring", "broken switchboards", "loose hanging wires",
+    "no ventilation in wards", "broken exhaust fans", "clogged washbasins",
+    "no doors in toilets", "broken toilet seats", "no latches on doors",
+    "leaking plumbing pipes", "water dripping from AC", "damaged false ceiling",
+    "broken window panes", "missing window grills", "rusted hospital gates",
+    "broken elevator doors", "lift stuck between floors", "foul smell from drains",
+    "garbage dumped in corridors", "stray dogs in hospital", "rats in patient wards",
+    "cockroaches in canteen", "mosquito breeding in stagnant water"
 ]
 
 STAFF_DESIGNATIONS: List[str] = [
@@ -266,6 +367,15 @@ STAFF_DESIGNATIONS: List[str] = [
     "Store Keeper", "Dietician", "Physiotherapist", "Counsellor",
     "Dental Surgeon", "Ophthalmologist", "ENT Specialist", "Dermatologist",
     "Psychiatrist", "Orthopaedic Surgeon", "Cardiologist",
+    "Neurologist", "Nephrologist", "Urologist", "Gastroenterologist",
+    "Endocrinologist", "Oncologist", "Pulmonologist", "Rheumatologist",
+    "Hematologist", "Neonatologist", "Plastic Surgeon", "Neurosurgeon",
+    "Cardiothoracic Surgeon", "Pediatric Surgeon", "Vascular Surgeon",
+    "Chief Medical Officer", "Resident Medical Officer", "Nursing Superintendent",
+    "Matron", "Head Nurse", "ICU Nurse", "OT Nurse", "Dialysis Technician",
+    "ECG Technician", "Blood Bank Technician", "Pharmacy Assistant",
+    "Receptionist", "Billing Clerk", "Record Keeper", "Lift Operator",
+    "Plumber", "Electrician", "Carpenter", "Gardener", "Driver", "Peon"
 ]
 
 HOSPITAL_AREAS: List[str] = [
@@ -280,6 +390,21 @@ HOSPITAL_AREAS: List[str] = [
     "Toilet Block", "Staff Room", "Doctor Chamber", "Duty Room",
     "Record Room", "Ambulance Bay", "Mortuary", "Dressing Room",
     "Injection Room", "Vaccination Room", "Dialysis Unit",
+    "Burn Ward", "Emergency", "Trauma Centre", "Radiology", "MRI Room",
+    "Registration Counter", "Waiting Hall", "Lift", "Parking", "Washroom",
+    "Pharmacy", "Medical Store", "Isolation Ward", "COVID Ward",
+    "Triage Area", "Physiotherapy Department", "Psychiatry Ward",
+    "Dietary Department", "Laundry", "CSSD", "Incinerator Area",
+    "Generator Room", "Oxygen Plant", "Water Treatment Plant",
+    "Sewage Treatment Plant", "Security Cabin", "Help Desk",
+    "May I Help You Counter", "Cash Counter", "Discharge Counter",
+    "Blood Sample Collection Room", "Report Delivery Counter",
+    "Endoscopy Room", "Bronchoscopy Room", "Cath Lab",
+    "Dialysis Waiting Area", "Chemotherapy Day Care",
+    "Radiotherapy Department", "Brachytherapy Room", "PET CT Room",
+    "DEXA Scan Room", "Mammography Room", "Audiology Clinic",
+    "Speech Therapy Room", "Occupational Therapy Room",
+    "Prosthetics & Orthotics Department", "Yoga & Naturopathy Centre"
 ]
 
 BEHAVIOUR_ISSUES: List[str] = [
@@ -292,6 +417,18 @@ BEHAVIOUR_ISSUES: List[str] = [
     "referring to private clinics for commission", "not explaining treatment",
     "ignoring patient complaints", "being impatient with elderly",
     "unprofessional conduct", "not maintaining hygiene",
+    "playing games on mobile", "watching videos during duty hours",
+    "gossiping with other staff instead of working", "eating food at registration desk",
+    "sleeping on duty", "intoxicated on duty", "smelling of alcohol",
+    "chewing tobacco or pan masala in ward", "spitting in hospital corners",
+    "using foul language with patient relatives", "threatening patients",
+    "physically assaulting patients", "refusing to change soiled bedsheets",
+    "refusing to clean bedpan", "asking for bribe to issue birth certificate",
+    "asking for bribe to issue death certificate", "asking for bribe to hand over dead body",
+    "favouritism in queue management", "bypassing queue for known people",
+    "refusing admission without valid reason", "forcefully discharging critical patient",
+    "not answering emergency calls", "ignoring monitors alarms",
+    "giving wrong medication due to negligence", "not checking patient vitals regularly"
 ]
 
 WEATHER_EVENTS: List[str] = [
@@ -309,10 +446,23 @@ PATIENT_GROUPS: List[str] = [
     "dialysis patients", "maternity patients",
 ]
 
+EMOTIONS: List[str] = [
+    "angry", "worried", "terrified", "frustrated", "hopeless", "panicked",
+    "helpless", "disappointed", "confused", "urgent", "critical", "distressed",
+    "upset", "crying", "shocked", "desperate", "furious", "outraged",
+    "annoyed", "irritated", "exhausted", "tired", "broken", "scared",
+    "fearful", "anxious", "nervous", "stressed", "overwhelmed", "agitated",
+    "pissed off", "mad", "livid", "heartbroken", "devastated", "shattered",
+    "in pain", "suffering", "agonized", "tormented", "miserable", "depressed",
+    "suicidal", "lost", "abandoned", "neglected", "ignored", "unheard",
+    "cheated", "betrayed", "deceived", "robbed", "exploited", "harassed"
+]
+
 URGENCY_WORDING = [
     "URGENT:", "Please help:", "Emergency:", "Very urgent -", "Need immediate action.",
     "Act fast.", "Critical issue!", "Life threatening situation.", "Fix this soon.",
-    "Can someone please help?", "Require immediate attention.", "Do something quickly."
+    "Can someone please help?", "Require immediate attention.", "Do something quickly.",
+    "Help me!!", "Please jaldi help karo.", "Very critical."
 ]
 
 
@@ -320,6 +470,7 @@ URGENCY_WORDING = [
 #  SECTION 3 — MULTILINGUAL SENTENCE STRUCTURES
 # ════════════════════════════════════════════════════════════════════════════
 
+# Introducing extreme diversity in spelling, length, tone, and grammar
 SENTENCE_PATTERNS: Dict[str, List[str]] = {
     "English": [
         # Formal
@@ -334,7 +485,7 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "We are facing {phrase} in {area} and it is getting worse every day",
         "Urgent attention needed for {phrase} in {area} of this hospital",
         
-        # Informal / Short / SMS-style
+        # Informal / Short / SMS-style / WhatsApp style
         "No {phrase} since {time}",
         "Need help with {phrase} urgently",
         "{phrase} is a big issue",
@@ -345,6 +496,68 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{phrase} - fix it",
         "Why no action on {phrase}?",
         "Terrible {phrase} in {area}",
+        "pls check {phrase} in {area}",
+        "v bad {phrase} at {area}",
+        "{area} has {phrase}!!!",
+        
+        # Extreme short
+        "No doctor",
+        "No oxygen",
+        "No water",
+        "Need ambulance",
+        "{phrase}!!",
+        "fix {phrase}",
+        
+        # Emotional / Distress
+        "My father has been waiting for 6 hours. {phrase} at {area}",
+        "Nobody is helping. {phrase} is destroying us",
+        "My mother is serious. We are facing {phrase}",
+        "The nurse shouted at us. And there is {phrase}",
+        "Nobody answered. We are frustrated by {phrase}",
+        "I am so worried. {phrase} at {area} is a disaster",
+        "Feeling hopeless. {phrase} since {time}",
+        
+        # Broken grammar / Spelling mistakes
+        "{phrase} in ambulence very bad",
+        "no docter available for {phrase}",
+        "medicin not there {phrase}",
+        "emargency is bad {phrase}",
+        "recieption is closed {phrase}",
+        "{area} is very poor {phrase}",
+        "hospital is not doing {phrase}",
+        "wardd is dirty {phrase}",
+        "docter saab not helping with {phrase}",
+        "dokter not coming {phrase}",
+
+        # Code-switching / Mixed Language
+        "Doctor nahi aaye. {phrase} is happening",
+        "Medicine stock khatam hai. Fix {phrase}",
+        "Ward madhe pani leak hot aahe. {phrase}",
+        "ICU la current nahi aahe. {phrase} issue",
+        "Doctor sir not available. {phrase}",
+        "Please jaldi help karo. {phrase}",
+        "Operation theatre madhe AC nahi aahe. {phrase}",
+        "Sir {phrase} in {area} please solve karo",
+        
+        # Additional SMS / Broken / Code-switch
+        "plzz hlp with {phrase} at {area}",
+        "{phrase} prob in {area} doc not cming",
+        "doc saab plz see {phrase}",
+        "emrgncy ward me {phrase} ka issue",
+        "bhot problem hai {phrase} ki waja se",
+        "yrr koi toh suno {phrase} chalu hai",
+        "hospital walo ne {phrase} ka kch nhi kiya",
+        "{phrase} k liye kon jimmedar hai",
+        "kya majak chal rha hai {phrase}",
+        "this hospital is worst bcuz of {phrase}",
+        "staff is so rude when asked about {phrase}",
+        "0 rating due to {phrase} in {area}",
+        "sirjee {phrase} at {area} dekho jara",
+        "we need {phrase} sorted asap",
+        "can neone help with {phrase}??",
+        "WTF is this {phrase} at {area}!!!",
+        "omg {phrase} is so bad here",
+        "bhai {phrase} ka kya karna hai",
     ],
     "Hindi": [
         "{area} में {phrase} की गंभीर समस्या है",
@@ -357,11 +570,31 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} में {phrase} की किसी को चिंता नहीं, मरीज़ बेबस हैं",
         "हम {area} में {phrase} से जूझ रहे हैं और हालात बिगड़ रहे हैं",
         "{area} में {phrase} की तत्काल जाँच ज़रूरी है",
+        
+        # Informal / Code-switching
         "{time} से {phrase} नहीं है",
         "{phrase} ठीक करो",
         "{area} में {phrase} बहुत खराब है",
         "तुरंत {phrase} पर ध्यान दें",
         "कोई {phrase} नहीं सुन रहा",
+        "Medicine khatam. {phrase}",
+        "ICU mein light nahi hai. {phrase}",
+        "Doctor sir help nahi kar rahe. {phrase}",
+        "Please jaldi fix karo {phrase}",
+        "No doctor came. {phrase} problem hai",
+        
+        # Additional broken / slangs / extreme code switch
+        "{area} me {phrase} ka bawal macha hai",
+        "koi {phrase} ko theek nai kar raha",
+        "kab se bol rahe hai {phrase} ke bare me",
+        "doctor ko farq nahi padta {phrase} से",
+        "mujhe discharge chahiye bcuz of {phrase}",
+        "{phrase} ka solution do bhai",
+        "{phrase} ke karan dimag kharab hai",
+        "sir {phrase} bahut serious matter hai",
+        "hospital ka {phrase} ekdum bekar hai",
+        "jaldi se {phrase} ka intezam karo",
+        "kripya karke {phrase} solve karein",
     ],
     "Marathi": [
         "{area} मध्ये {phrase} ची गंभीर समस्या आहे",
@@ -372,9 +605,15 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{time} पासून {area} मधील {phrase} बद्दल तक्रार आहे पण काहीच झाले नाही",
         "कृपया {area} मधील {phrase} चे तात्काळ निराकरण करा",
         "{area} मध्ये {phrase} कोणालाही पर्वा नाही, रुग्ण हतबल आहेत",
+        
+        # Informal / Code-switching
         "{phrase} लवकर ठीक करा",
         "{time} पासून {phrase} चा त्रास आहे",
         "{area} मध्ये {phrase} खूप खराब आहे",
+        "Doctor madhe konich nahi. {phrase}",
+        "Emergency aahe. {phrase}",
+        "Ward madhe pani leak hot aahe. {phrase}",
+        "Please help. {phrase} problem aahe",
     ],
     "Tamil": [
         "{area} இல் {phrase} என்ற தீவிர பிரச்சனை உள்ளது",
@@ -387,6 +626,7 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{time} ஆக {area} இல் {phrase} குறித்து புகார் கொடுத்தும் நடவடிக்கை இல்லை",
         "{phrase} சரியில்லை",
         "{time} முதல் {phrase} பிரச்சனை",
+        "Please help. {phrase} பிரச்சனை",
     ],
     "Telugu": [
         "{area} లో {phrase} తీవ్ర సమస్య ఉంది",
@@ -399,6 +639,7 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{time} నుండి {area} లో {phrase} ఫిర్యాదు ఉన్నా ఏమీ జరగలేదు",
         "{phrase} త్వరగా పరిష్కరించండి",
         "{time} నుండి {phrase} సమస్య ఉంది",
+        "Very urgent. {phrase} సమస్య",
     ],
     "Bengali": [
         "{area} তে {phrase} এর গুরুতর সমস্যা আছে",
@@ -411,6 +652,11 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{time} ধরে {area} তে {phrase} এর অভিযোগ করেও কিছু হয়নি",
         "{phrase} ঠিক করুন",
         "{time} থেকে {phrase} এর সমস্যা",
+        "আমরা {phrase} এর কারণে খুব সমস্যায় আছি",
+        "হাসপাতালে {phrase} নেই",
+        "{area} তে {phrase} ঠিক নেই, প্লিজ হেল্প করুন",
+        "doc aseni. {phrase} problem hochhe",
+        "khub urgent! {phrase} solve korun",
     ],
     "Gujarati": [
         "{area} માં {phrase} ની ગંભીર સમસ્યા છે",
@@ -422,6 +668,10 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} માં {phrase} ની કોઈને ચિંતા નથી, દર્દીઓ લાચાર છે",
         "{time} થી {area} માં {phrase} ની ફરિયાદ છે છતાં કંઈ થયું નથી",
         "{phrase} જલ્દી ઠીક કરો",
+        "{area} માં {phrase} નો પ્રોબ્લેમ છે",
+        "દર્દી ની હાલત ખરાબ છે, {phrase} નથી",
+        "please {phrase} જલ્દી સોલ્વ કરો",
+        "emergency છે, {phrase} ની મદદ કરો",
     ],
     "Kannada": [
         "{area} ನಲ್ಲಿ {phrase} ಗಂಭೀರ ಸಮಸ್ಯೆ ಇದೆ",
@@ -433,6 +683,10 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} ನಲ್ಲಿ {phrase} ಯಾರಿಗೂ ಕಾಳಜಿ ಇಲ್ಲ, ರೋಗಿಗಳು ಅಸಹಾಯಕರು",
         "{time} ಇಂದ {area} ನಲ್ಲಿ {phrase} ದೂರು ಕೊಟ್ಟರೂ ಏನೂ ಆಗಿಲ್ಲ",
         "{phrase} ಸರಿಪಡಿಸಿ",
+        "{area} ದಲ್ಲಿ {phrase} ಇಲ್ಲ",
+        "ತುರ್ತು! {phrase} ಬೇಕಾಗಿದೆ",
+        "hospital nalli {phrase} problem ide",
+        "plz help, {phrase} aagide",
     ],
     "Malayalam": [
         "{area} ൽ {phrase} ഗുരുതരമായ പ്രശ്നം ഉണ്ട്",
@@ -444,6 +698,10 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} ൽ {phrase} ആർക്കും ശ്രദ്ധയില്ല, രോഗികൾ നിസ്സഹായരാണ്",
         "{time} ആയി {area} ൽ {phrase} പരാതിപ്പെട്ടിട്ടും ഒന്നും ചെയ്തിട്ടില്ല",
         "{phrase} പരിഹരിക്കുക",
+        "{phrase} ഇല്ലാതെ രോഗികൾ ബുദ്ധിമുട്ടുന്നു",
+        "{area} ൽ {phrase} ഇല്ല",
+        "emergency aanu, {phrase} issue solve cheyyu",
+        "plz help, {phrase} problem undu",
     ],
     "Punjabi": [
         "{area} ਵਿੱਚ {phrase} ਦੀ ਗੰਭੀਰ ਸਮੱਸਿਆ ਹੈ",
@@ -455,6 +713,9 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} ਵਿੱਚ {phrase} ਕਿਸੇ ਨੂੰ ਫ਼ਿਕਰ ਨਹੀਂ, ਮਰੀਜ਼ ਬੇਵੱਸ ਹਨ",
         "{time} ਤੋਂ {area} ਵਿੱਚ {phrase} ਦੀ ਸ਼ਿਕਾਇਤ ਹੈ ਪਰ ਕੁਝ ਨਹੀਂ ਹੋਇਆ",
         "{phrase} ਜਲਦੀ ਠੀਕ ਕਰੋ",
+        "{phrase} ਦਾ ਬਹੁਤ ਮਾੜਾ ਹਾਲ ਹੈ",
+        "ਕੋਈ ਡਾਕਟਰ ਨਹੀਂ ਆਇਆ, {phrase} ਦੀ ਦਿੱਕਤ ਹੈ",
+        "plz jaldi dekho {phrase} in {area}",
     ],
     "Odia": [
         "{area} ରେ {phrase} ର ଗମ୍ଭୀର ସମସ୍ୟା ଅଛି",
@@ -463,6 +724,8 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} ରେ {phrase} ର ପରିସ୍ଥିତି ବହୁତ ଖରାପ",
         "ଦୟାକରି {area} ରେ {phrase} ତୁରନ୍ତ ସମାଧାନ କରନ୍ତୁ",
         "{area} ରେ {phrase} କାହାକୁ ଚିନ୍ତା ନାହିଁ, ରୋଗୀ ଅସହାୟ",
+        "{phrase} ଜଲଦି ଠିକ୍ କରନ୍ତୁ",
+        "hospital re {phrase} problem achi",
     ],
     "Assamese": [
         "{area} ত {phrase} ৰ গুৰুতৰ সমস্যা আছে",
@@ -471,6 +734,8 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} ত {phrase} ৰ অৱস্থা বহুত বেয়া",
         "অনুগ্ৰহ কৰি {area} ত {phrase} ততালিকে সমাধান কৰক",
         "{area} ত {phrase} ৰ চিন্তা কাৰো নাই, ৰোগী অসহায়",
+        "{phrase} জলদি ঠিক কৰক",
+        "emergency! {phrase} problem asey",
     ],
     "Urdu": [
         "{area} میں {phrase} کا سنگین مسئلہ ہے",
@@ -479,6 +744,8 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} میں {phrase} کی صورتحال بہت خراب ہے",
         "براہ کرم {area} میں {phrase} کا فوری حل کریں",
         "{area} میں {phrase} کسی کو فکر نہیں، مریض بے بس ہیں",
+        "{phrase} جلدی ٹھیک کرو",
+        "{area} me {phrase} bohot kharab hai",
     ],
     "Konkani": [
         "{area} ंत {phrase} ची गंबीर समस्या आसा",
@@ -486,36 +753,42 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
         "{area} ंत {phrase} खातीर दुयेंती त्रासांत आसात",
         "उपकार करून {area} ंत {phrase} ताकतिकेन सोडयात",
         "{area} ंत {phrase} कोणाकूच पडून वचूंक ना",
+        "plz {phrase} sodo",
     ],
     "Sindhi": [
         "{area} ۾ {phrase} جو ڳاڙهو مسئلو آهي",
         "{time} کان {area} ۾ {phrase}، ڪا به عمل ناهي ٿيو",
         "{area} ۾ {phrase} سبب مريض پريشان آهن",
         "مهرباني ڪري {area} ۾ {phrase} فوري طور تي حل ڪريو",
+        "{phrase} جلدي ٺيڪ ڪريو",
     ],
     "Manipuri": [
         "{area} দা {phrase} গী অচেৎপা থোকপা সমস্যা লৈরে",
         "{time} দগী {area} দা {phrase}, করম্বা লৈত্রে",
         "{area} দা {phrase} না মরীজশিং অৱাবা ফংলিবা",
         "চানবিদুনা {area} দা {phrase} হকশেল থিংগৎপীরক্কদবনি",
+        "{phrase} য়াম্না থুনা ঠিক তৌবীয়ু",
     ],
     "Bodo": [
         "{area} आव {phrase} नि जोबोद समस्या दं",
         "{time} निफ्राय {area} आव {phrase}, जेबो खामानि लानाय जायाखै",
         "{area} आव {phrase} जाहोनाव गोजौनफोर जेंना मोनथि",
         "अननायनो {area} आव {phrase} गोख्रों लाफां सोमजि हो",
+        "{phrase} थाबैनो मोजां खालाम",
     ],
     "Dogri": [
         "{area} च {phrase} दी गम्भीर समस्या ऐ",
         "{time} तों {area} च {phrase}, कोई कार्रवाई नेई होई",
         "{area} च {phrase} दी वजा कन्नै मरीज़ परेशान न",
         "मेहरबानी करियै {area} च {phrase} दा फ़ौरन हल करो",
+        "{phrase} जल्दी ठीक करो",
     ],
     "Kashmiri": [
         "{area} منز {phrase} بڈ مسئلہ چھُ",
         "{time} پیٹھ {area} منز {phrase}، کانہہ ایکشن چھُ نہ گومُت",
         "{area} منز {phrase} بَپتھ مریض پریشان چھِ",
         "مہربٲنی کٔرِتھ {area} منز {phrase} فوری حل کٔرِو",
+        "{phrase} جلدی ٹھیک کرو",
     ],
     "Sanskrit": [
         "{area} क्षेत्रे {phrase} इति गुरुतरा समस्या वर्तते",
@@ -533,10 +806,12 @@ SENTENCE_PATTERNS: Dict[str, List[str]] = {
 CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
 
     "Infrastructure": {
-        "English": ["roof is leaking badly", "walls have deep cracks", "floor tiles are broken", "ceiling plaster is falling", "staircase railing is broken", "doors cannot close", "windows are shattered", "drainage is completely blocked", "building looks unsafe"],
-        "Hindi": ["छत से पानी टपक रहा है", "दीवारों में दरारें हैं", "फर्श की टाइलें टूटी हैं", "छत का प्लास्टर गिर रहा है", "सीढ़ी की रेलिंग टूटी है", "दरवाज़े बंद नहीं होते", "खिड़कियाँ टूटी हुई हैं", "नाली बंद है", "इमारत असुरक्षित है"],
-        "Marathi": ["छत गळतंय", "भिंतींना तडे गेलेत", "फरशी तुटलीय", "प्लास्टर पडतंय", "रेलिंग तुटलीय", "दरवाजे बंद होत नाहीत", "खिडक्या फुटल्या", "गटार तुंबलीय"],
-        "Tamil": ["கூரை கசிகிறது", "சுவரில் விரிசல்", "தரைத்தகடு உடைந்தது", "பூச்சு விழுகிறது", "படிக்கட்டு உடைந்தது", "கதவு மூடாது", "ஜன்னல் உடைந்தது", "வடிகால் அடைப்பு"],
+        "English": ["roof is leaking badly", "walls have deep cracks", "floor tiles are broken", "ceiling plaster is falling", "staircase railing is broken", "doors cannot close", "windows are shattered", "drainage is completely blocked", "building looks unsafe", "lift not working", "compound wall broken", "termites in walls", "seepage everywhere", "parking area flooded",
+            "the building foundation is crumbling", "elevator doors are jammed", "wheelchair ramp is broken", "waiting room chairs are rusted and broken", "no fans working in the waiting hall", "tube lights flickering in ward", "exposed electrical wires everywhere", "stagnant water outside OPD", "hospital gate is broken", "no signage for departments", "ward windows have no glass", "roof leaks during rain", "plaster falling on beds"],
+        "Hindi": ["छत से पानी टपक रहा है", "दीवारों में दरारें हैं", "फर्श की टाइलें टूटी हैं", "छत का प्लास्टर गिर रहा है", "सीढ़ी की रेलिंग टूटी है", "दरवाज़े बंद नहीं होते", "खिड़कियाँ टूटी हुई हैं", "नाली बंद है", "इमारत असुरक्षित है",
+            "लिफ्ट खराब पड़ी है", "दीवारों में सीलन है", "इंतज़ार करने की कुर्सियाँ टूटी हैं", "मरीज़ों के ऊपर प्लास्टर गिर रहा है", "तार लटक रहे हैं", "ओपीडी के बाहर पानी भरा है", "हॉस्पिटल का गेट टूटा हुआ है", "व्हीलचेयर रैंप टूटा है", "वार्ड में लाइट नहीं जल रही"],
+        "Marathi": ["छत गळतंय", "भिंतींना तडे गेलेत", "फरशी तुटलीय", "प्लास्टर पडतंय", "रेलिंग तुटलीय", "दरवाजे बंद होत नाहीत", "खिडक्या फुटल्या", "गटार तुंबलीय", "लिफ्ट बंद आहे", "वेटिंग रूममधल्या खुर्च्या मोडल्यात", "वायर उघड्या आहेत"],
+        "Tamil": ["கூரை கசிகிறது", "சுவரில் விரிசல்", "தரைத்தகடு உடைந்தது", "பூச்சு விழுகிறது", "படிக்கட்டு உடைந்தது", "கதவு மூடாது", "ஜன்னல் உடைந்தது", "வடிகால் அடைப்பு", "மின்தூக்கி இயங்கவில்லை", "காத்திருப்போர் அறையில் நாற்காலிகள் உடைந்தன", "கதவுகள் இல்லை"],
         "Telugu": ["కురుస్తున్న పైకప్పు", "గోడల్లో పగుళ్ళు", "పగిలిన ఫ్లోర్ టైల్స్", "ఊడిపడుతున్న ప్లాస్టర్", "విరిగిన రెయిలింగ్", "తలుపులు మూసుకోవు", "విరిగిన కిటికీలు", "బ్లాక్ అయిన మురుగు"],
         "Bengali": ["ছাদ থেকে জল পড়ছে", "দেওয়ালে ফাটল", "ভাঙা মেঝে", "প্লাস্টার খসে পড়ছে", "রেলিং ভাঙা", "দরজা বন্ধ হয় না", "জানালা ভাঙা", "নর্দমা বন্ধ"],
         "Gujarati": ["છત ટપકે છે", "દીવાલોમાં તિરાડ", "ટાઈલ્સ તૂટી ગઈ", "પ્લાસ્ટર ખરી રહ્યું છે", "રેલિંગ તૂટી ગઈ", "દરવાજા બંધ નથી થતા", "બારીઓ તૂટેલી", "ગટર ભરાયેલ"],
@@ -551,10 +826,12 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Medicine Stock": {
-        "English": ["essential medicines are out of stock", "insulin not available for diabetic patients", "antibiotics unavailable in pharmacy", "paracetamol has been unavailable for days", "blood pressure medicines have run out", "ORS packets not being given", "TB medicines not in stock", "vaccines are unavailable", "emergency drugs expired"],
-        "Hindi": ["ज़रूरी दवाइयों का स्टॉक ख़त्म है", "शुगर मरीज़ों को इंसुलिन नहीं मिल रहा", "एंटीबायोटिक दवाइयाँ नहीं हैं", "कई दिनों से पेरासिटामोल नहीं मिला", "बीपी की दवाइयाँ ख़त्म हो गईं", "ओआरएस पैकेट नहीं दिए जा रहे", "टीबी की दवा स्टॉक में नहीं", "टीके उपलब्ध नहीं", "इमरजेंसी दवाइयाँ एक्सपायर हो चुकी हैं"],
-        "Marathi": ["आवश्यक औषधांचा साठा संपला", "इन्सुलिन उपलब्ध नाही", "अँटीबायोटिक्स नाहीत", "पॅरासिटामॉल मिळत नाही", "बीपीची औषधे संपली", "ओआरएस पॅकेट मिळत नाहीत", "टीबीची औषधे नाहीत"],
-        "Tamil": ["அத்தியாவசிய மருந்துகள் இல்லை", "இன்சுலின் கிடைக்கவில்லை", "ஆண்டிபயாடிக் மருந்துகள் இல்லை", "பாராசிட்டமால் பல நாட்களாக கிடைக்கவில்லை", "ரத்த அழுத்த மாத்திரைகள் தீர்ந்தன", "தடுப்பூசிகள் இல்லை"],
+        "English": ["essential medicines are out of stock", "insulin not available for diabetic patients", "antibiotics unavailable in pharmacy", "paracetamol has been unavailable for days", "blood pressure medicines have run out", "ORS packets not being given", "TB medicines not in stock", "vaccines are unavailable", "emergency drugs expired", "no iron tablets", "vitamin b12 out of stock", "calcium tablets not given", "saline is finished",
+            "cough syrup unavailable", "IV fluids running out", "dengue testing kits not there", "anti-rabies vaccine not in stock", "anti-snake venom missing", "thyroid medicines out of stock", "painkillers not being distributed", "first aid supplies missing", "bandages and cotton not available", "hand sanitizer out of stock", "surgical masks out of stock", "gloves not provided", "steroids are missing", "life saving drugs not found"],
+        "Hindi": ["ज़रूरी दवाइयों का स्टॉक ख़त्म है", "शुगर मरीज़ों को इंसुलिन नहीं मिल रहा", "एंटीबायोटिक दवाइयाँ नहीं हैं", "कई दिनों से पेरासिटामोल नहीं मिला", "बीपी की दवाइयाँ ख़त्म हो गईं", "ओआरएस पैकेट नहीं दिए जा रहे", "टीबी की दवा स्टॉक में नहीं", "टीके उपलब्ध नहीं", "इमरजेंसी दवाइयाँ एक्सपायर हो चुकी हैं",
+            "रेबीज़ का इंजेक्शन नहीं है", "सांप काटने की दवा नहीं है", "खांसी का सिरप नहीं मिल रहा", "पेनकिलर नहीं दे रहे", "पट्टी और रुई भी नहीं है", "ग्लव्स नहीं हैं", "दवाइयाँ बाहर से लानी पड़ रही हैं"],
+        "Marathi": ["आवश्यक औषधांचा साठा संपला", "इन्सुलिन उपलब्ध नाही", "अँटीबायोटिक्स नाहीत", "पॅरासिटामॉल मिळत नाही", "बीपीची औषधे संपली", "ओआरएस पॅकेट मिळत नाहीत", "टीबीची औषधे नाहीत", "रेबीजची लस उपलब्ध नाही", "सर्पदंशावर औषध नाही", "बाहेरून औषधे आणावी लागत आहेत"],
+        "Tamil": ["அத்தியாவசிய மருந்துகள் இல்லை", "இன்சுலின் கிடைக்கவில்லை", "ஆண்டிபயாடிக் மருந்துகள் இல்லை", "பாராசிட்டமால் பல நாட்களாக கிடைக்கவில்லை", "ரத்த அழுத்த மாத்திரைகள் தீர்ந்தன", "தடுப்பூசிகள் இல்லை", "நாய்க்கடி ஊசி இல்லை", "வலி நிவாரணிகள் கிடைக்கவில்லை", "வெளியில் மருந்து வாங்க சொல்கிறார்கள்"],
         "Telugu": ["అవసరమైన మందులు అందుబాటులో లేవు", "ఇన్సులిన్ దొరకడం లేదు", "యాంటీబయాటిక్స్ లేవు", "పారాసిటమాల్ చాలా రోజులుగా లేదు", "బీపీ మందులు అయిపోయాయి", "వ్యాక్సిన్లు అందుబాటులో లేవు"],
         "Bengali": ["প্রয়োজনীয় ওষুধের স্টক শেষ", "ইনসুলিন পাওয়া যাচ্ছে না", "অ্যান্টিবায়োটিক নেই", "প্যারাসিটামল অনেকদিন ধরে নেই", "বিপির ওষুধ ফুরিয়ে গেছে", "টিকা পাওয়া যাচ্ছে না"],
         "Gujarati": ["જરૂરી દવાઓનો સ્ટોક ખતમ છે", "ઇન્સ્યુલિન ઉપલબ્ધ નથી", "એન્ટિબાયોટિક દવાઓ નથી", "પેરાસિટામોલ ઘણા દિવસથી મળતી નથી", "બીપીની દવાઓ ખૂટી ગઈ"],
@@ -565,7 +842,7 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Medical Equipment": {
-        "English": ["ventilator is not working", "ECG machine is broken", "X-ray machine has been down for weeks", "ultrasound machine malfunctioning", "defibrillator is missing from emergency", "pulse oximeter not available", "BP monitor giving wrong readings", "oxygen concentrator is faulty"],
+        "English": ["ventilator is not working", "ECG machine is broken", "X-ray machine has been down for weeks", "ultrasound machine malfunctioning", "defibrillator is missing from emergency", "pulse oximeter not available", "BP monitor giving wrong readings", "oxygen concentrator is faulty", "MRI machine closed", "CT scanner under maintenance", "dialysis machine is broken"],
         "Hindi": ["वेंटिलेटर काम नहीं कर रहा", "ईसीजी मशीन खराब है", "एक्स-रे मशीन हफ़्तों से बंद है", "अल्ट्रासाउंड मशीन ठीक से काम नहीं कर रही", "इमरजेंसी में डीफ़िब्रिलेटर नहीं है", "पल्स ऑक्सीमीटर उपलब्ध नहीं", "बीपी मशीन ग़लत रीडिंग दे रही"],
         "Marathi": ["व्हेंटिलेटर काम करत नाही", "ईसीजी मशीन बंद आहे", "एक्स-रे मशीन आठवड्यांपासून बंद", "अल्ट्रासाउंड खराब आहे", "डिफिब्रिलेटर नाही"],
         "Tamil": ["வென்டிலேட்டர் வேலை செய்யவில்லை", "ஈசிஜி இயந்திரம் பழுதடைந்துள்ளது", "எக்ஸ்-ரே இயந்திரம் வாரங்களாக செயல்படவில்லை", "அல்ட்ராசவுண்ட் சரியாக வேலை செய்யவில்லை"],
@@ -579,10 +856,12 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Doctor Availability": {
-        "English": ["doctor did not come today", "specialist doctor never available", "no doctor in emergency at night", "only one doctor for entire hospital", "doctor comes late every day", "surgeon not available for weeks", "gynaecologist posted but never present", "paediatrician not available"],
-        "Hindi": ["आज डॉक्टर नहीं आए", "स्पेशलिस्ट डॉक्टर कभी उपलब्ध नहीं", "रात में इमरजेंसी में कोई डॉक्टर नहीं", "पूरे अस्पताल में सिर्फ़ एक डॉक्टर", "डॉक्टर रोज़ लेट आते हैं", "हफ़्तों से सर्जन उपलब्ध नहीं", "गायनेकोलॉजिस्ट तैनात है पर आती नहीं"],
-        "Marathi": ["आज डॉक्टर आले नाहीत", "स्पेशलिस्ट कधीच नसतात", "रात्री इमर्जन्सीत डॉक्टर नाही", "संपूर्ण हॉस्पिटलमध्ये एकच डॉक्टर", "डॉक्टर दररोज उशीरा येतात"],
-        "Tamil": ["இன்று மருத்துவர் வரவில்லை", "சிறப்பு மருத்துவர் எப்போதும் இல்லை", "இரவு நேரத்தில் அவசர சிகிச்சையில் மருத்துவர் இல்லை", "முழு மருத்துவமனைக்கும் ஒரே ஒரு மருத்துவர்"],
+        "English": ["doctor did not come today", "specialist doctor never available", "no doctor in emergency at night", "only one doctor for entire hospital", "doctor comes late every day", "surgeon not available for weeks", "gynaecologist posted but never present", "paediatrician not available", "no orthopaedic doctor", "cardiologist is on leave",
+            "OPD doctors leave before time", "doctor is attending private clinic instead of hospital", "no senior resident on duty", "junior doctors are overwhelmed", "doctor refuses to check patients properly", "doctor spends only 1 minute per patient", "eye specialist absent for a month", "dental surgeon is on strike", "dermatologist is not there", "neurologist post is vacant"],
+        "Hindi": ["आज डॉक्टर नहीं आए", "स्पेशलिस्ट डॉक्टर कभी उपलब्ध नहीं", "रात में इमरजेंसी में कोई डॉक्टर नहीं", "पूरे अस्पताल में सिर्फ़ एक डॉक्टर", "डॉक्टर रोज़ लेट आते हैं", "हफ़्तों से सर्जन उपलब्ध नहीं", "गायनेकोलॉजिस्ट तैनात है पर आती नहीं",
+            "डॉक्टर समय से पहले चले जाते हैं", "प्राइवेट क्लिनिक में मरीज़ देखते हैं", "बच्चों का डॉक्टर नहीं है", "हड्डी का डॉक्टर छुट्टी पर है", "डॉक्टर ठीक से चेक नहीं करते", "सीनियर डॉक्टर नहीं आते", "डेंटिस्ट हड़ताल पर हैं"],
+        "Marathi": ["आज डॉक्टर आले नाहीत", "स्पेशलिस्ट कधीच नसतात", "रात्री इमर्जन्सीत डॉक्टर नाही", "संपूर्ण हॉस्पिटलमध्ये एकच डॉक्टर", "डॉक्टर दररोज उशीरा येतात", "डॉक्टर वेळेपूर्वी निघून जातात", "प्रायव्हेट क्लिनिकला प्राधान्य देतात", "लहान मुलांचे डॉक्टर नाहीत", "हाडांचे डॉक्टर सुट्टीवर आहेत"],
+        "Tamil": ["இன்று மருத்துவர் வரவில்லை", "சிறப்பு மருத்துவர் எப்போதும் இல்லை", "இரவு நேரத்தில் அவசர சிகிச்சையில் மருத்துவர் இல்லை", "முழு மருத்துவமனைக்கும் ஒரே ஒரு மருத்துவர்", "மருத்துவர்கள் முன்னதாகவே கிளம்புகின்றனர்", "குழந்தைகள் மருத்துவர் இல்லை"],
         "Telugu": ["ఈ రోజు డాక్టర్ రాలేదు", "స్పెషలిస్ట్ డాక్టర్ ఎప్పుడూ అందుబాటులో ఉండరు", "రాత్రి ఎమర్జెన్సీలో డాక్టర్ లేరు", "మొత్తం ఆస్పత్రికి ఒక్క డాక్టర్"],
         "Bengali": ["আজ ডাক্তার আসেননি", "স্পেশালিস্ট ডাক্তার কখনো থাকেন না", "রাতে ইমার্জেন্সিতে কোনো ডাক্তার নেই", "পুরো হাসপাতালে মাত্র একজন ডাক্তার"],
         "Gujarati": ["આજે ડૉક્ટર આવ્યા નથી", "સ્પેશિયાલિસ્ટ ક્યારેય ઉપલબ્ધ નથી", "રાત્રે ઇમરજન્સીમાં ડૉક્ટર નથી", "આખી હોસ્પિટલમાં એક જ ડૉક્ટર"],
@@ -593,7 +872,7 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Nurse Behaviour": {
-        "English": ["nurse was very rude to patient", "nurse shouted at elderly patient", "staff nurse demanding money from patient", "nurse refused to attend to patient at night", "nursing staff sleeping during duty", "nurse not giving medicines on time", "nurse behaving rudely with family"],
+        "English": ["nurse was very rude to patient", "nurse shouted at elderly patient", "staff nurse demanding money from patient", "nurse refused to attend to patient at night", "nursing staff sleeping during duty", "nurse not giving medicines on time", "nurse behaving rudely with family", "nurse playing on mobile phone"],
         "Hindi": ["नर्स ने मरीज़ से बदतमीज़ी की", "नर्स ने बुज़ुर्ग मरीज़ पर चिल्लाया", "नर्स मरीज़ से पैसे माँग रही है", "रात में नर्स ने मरीज़ को देखने से मना किया", "नर्स ड्यूटी पर सो रही थी", "नर्स समय पर दवा नहीं दे रही", "नर्स परिवार से बुरा बर्ताव कर रही"],
         "Marathi": ["नर्सने रुग्णाशी उद्धटपणे वागले", "नर्सने वृद्ध रुग्णावर ओरडले", "नर्स पैसे मागतेय", "रात्री नर्सने रुग्णाकडे पाहिले नाही", "नर्स ड्यूटीवर झोपलेली"],
         "Tamil": ["செவிலியர் நோயாளியிடம் கடுமையாக நடந்துகொண்டார்", "செவிலியர் முதியவர் மீது கத்தினார்", "செவிலியர் பணம் கேட்கிறார்", "இரவில் செவிலியர் நோயாளியை கவனிக்கவில்லை"],
@@ -607,7 +886,7 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Hospital Staff": {
-        "English": ["ward boy not available", "sweeper has not cleaned since morning", "security guard misbehaving with visitors", "pharmacist not at counter", "lab technician absent without notice", "registration clerk demanding extra fees", "ambulance driver drinking on duty"],
+        "English": ["ward boy not available", "sweeper has not cleaned since morning", "security guard misbehaving with visitors", "pharmacist not at counter", "lab technician absent without notice", "registration clerk demanding extra fees", "ambulance driver drinking on duty", "admin staff ignores people"],
         "Hindi": ["वार्ड बॉय उपलब्ध नहीं है", "सफ़ाई कर्मचारी ने सुबह से सफ़ाई नहीं की", "सिक्योरिटी गार्ड आगंतुकों से बदसलूकी कर रहा", "फार्मासिस्ट काउंटर पर नहीं है", "लैब तकनीशियन बिना सूचना ग़ायब", "रजिस्ट्रेशन क्लर्क अतिरिक्त फ़ीस माँग रहा"],
         "Marathi": ["वॉर्ड बॉय उपलब्ध नाही", "सफाई कर्मचाऱ्याने सकाळपासून सफाई केली नाही", "सिक्युरिटी गार्ड अभ्यागतांशी गैरवर्तन करतो", "फार्मासिस्ट काउंटरवर नाही"],
         "Tamil": ["வார்ட் பாய் இல்லை", "காலை முதல் சுத்தம் செய்யப்படவில்லை", "பாதுகாவலர் வருபவர்களிடம் மோசமாக நடந்துகொள்கிறார்", "மருந்தாளுநர் கவுண்டரில் இல்லை"],
@@ -620,10 +899,12 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Cleanliness": {
-        "English": ["hospital premises are filthy", "toilets are extremely dirty", "blood stains on bed sheets not changed", "garbage scattered everywhere", "cockroaches and rats in ward", "dirty syringes lying around", "operation theatre not sanitized", "drinking water area is unclean"],
-        "Hindi": ["अस्पताल परिसर बहुत गंदा है", "शौचालय बेहद गंदे हैं", "बिस्तर की चादर पर खून के दाग बदले नहीं गए", "हर जगह कूड़ा फैला हुआ है", "वार्ड में कॉकरोच और चूहे हैं", "इस्तेमाल की हुई सीरिंज पड़ी हुई हैं", "ओटी साफ़ नहीं है"],
-        "Marathi": ["हॉस्पिटल परिसर अत्यंत घाण आहे", "शौचालये अत्यंत अस्वच्छ", "बेडशीटवर रक्ताचे डाग बदलले नाहीत", "सगळीकडे कचरा पसरलेला", "वॉर्डमध्ये झुरळे आणि उंदीर"],
-        "Tamil": ["மருத்துவமனை வளாகம் அழுக்காக உள்ளது", "கழிப்பறைகள் மிகவும் அசுத்தமாக உள்ளன", "படுக்கை விரிப்புகளில் ரத்தக் கறை மாற்றப்படவில்லை", "எல்லா இடத்திலும் குப்பை"],
+        "English": ["hospital premises are filthy", "toilets are extremely dirty", "blood stains on bed sheets not changed", "garbage scattered everywhere", "cockroaches and rats in ward", "dirty syringes lying around", "operation theatre not sanitized", "drinking water area is unclean", "floor is slippery and wet", "dustbins overflowing",
+            "spitting in corners", "paan stains on walls", "bad smell coming from toilets", "used bandages on the floor", "surgical waste not disposed properly", "dogs sleeping in corridors", "mosquitoes in patient ward", "no soap in washroom", "cleaner is asking for money to clean", "biohazard bags left open"],
+        "Hindi": ["अस्पताल परिसर बहुत गंदा है", "शौचालय बेहद गंदे हैं", "बिस्तर की चादर पर खून के दाग बदले नहीं गए", "हर जगह कूड़ा फैला हुआ है", "वार्ड में कॉकरोच और चूहे हैं", "इस्तेमाल की हुई सीरिंज पड़ी हुई हैं", "ओटी साफ़ नहीं है",
+            "कोने-कोने में पान की पीक है", "टॉयलेट से बहुत बदबू आ रही है", "इस्तेमाल की हुई पट्टी फर्श पर पड़ी है", "मच्छरों का आतंक है", "हाथ धोने के लिए साबुन नहीं है", "कचरे का डिब्बा भर कर बाहर गिर रहा है"],
+        "Marathi": ["हॉस्पिटल परिसर अत्यंत घाण आहे", "शौचालये अत्यंत अस्वच्छ", "बेडशीटवर रक्ताचे डाग बदलले नाहीत", "सगळीकडे कचरा पसरलेला", "वॉर्डमध्ये झुरळे आणि उंदीर", "कोपऱ्यात थुंकलेलं आहे", "कुत्रे फिरत आहेत"],
+        "Tamil": ["மருத்துவமனை வளாகம் அழுக்காக உள்ளது", "கழிப்பறைகள் மிகவும் அசுத்தமாக உள்ளன", "படுக்கை விரிப்புகளில் ரத்தக் கறை மாற்றப்படவில்லை", "எல்லா இடத்திலும் குப்பை", "கொசுக்கள் தொல்லை", "குப்பைத் தொட்டிகள் நிரம்பி வழிகின்றன"],
         "Telugu": ["ఆస్పత్రి ప్రాంగణం చాలా మురికిగా ఉంది", "టాయిలెట్లు అత్యంత మురికిగా ఉన్నాయి", "బెడ్ షీట్లపై రక్తపు మరకలు మారలేదు", "చెత్త అంతటా పడి ఉంది"],
         "Bengali": ["হাসপাতাল প্রাঙ্গণ অত্যন্ত নোংরা", "টয়লেট অত্যন্ত নোংরা", "বেডশিটে রক্তের দাগ বদলানো হয়নি", "সর্বত্র আবর্জনা ছড়িয়ে আছে"],
         "Gujarati": ["હોસ્પિટલ પરિસર ખૂબ ગંદું છે", "ટોઇલેટ ખૂબ ગંદા છે", "બેડશીટ પર લોહીના ડાઘ બદલ્યા નથી", "ચારે બાજુ કચરો ફેલાયેલો છે"],
@@ -633,10 +914,12 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Electricity": {
-        "English": ["power outage in the hospital", "electricity has been out since morning", "voltage fluctuation damaging equipment", "fans not working in patient wards", "AC not working in operation theatre", "lights not working in corridor", "emergency lights are non-functional", "exposed wires in patient ward"],
-        "Hindi": ["अस्पताल में बिजली कट गई है", "सुबह से बिजली नहीं आई", "वोल्टेज में उतार-चढ़ाव से उपकरण खराब हो रहे हैं", "वार्ड में पंखे चालू नहीं हैं", "ओटी में एसी काम नहीं कर रहा", "गलियारे में लाइटें बंद हैं", "इमरजेंसी लाइटें काम नहीं कर रहीं"],
-        "Marathi": ["हॉस्पिटलमध्ये वीज गेली", "सकाळपासून वीज नाही", "व्होल्टेज चढ-उतारामुळे उपकरणे खराब होत आहेत", "वॉर्डमध्ये पंखे चालू नाहीत"],
-        "Tamil": ["மருத்துவமனையில் மின்தடை", "காலை முதல் மின்சாரம் இல்லை", "மின்னழுத்த ஏற்ற இறக்கம் கருவிகளை சேதப்படுத்துகிறது", "வார்டில் மின்விசிறிகள் வேலை செய்யவில்லை"],
+        "English": ["power outage in the hospital", "electricity has been out since morning", "voltage fluctuation damaging equipment", "fans not working in patient wards", "AC not working in operation theatre", "lights not working in corridor", "emergency lights are non-functional", "exposed wires in patient ward",
+            "generator has no diesel", "ICU ventilator stopped due to power cut", "no power backup for dialysis", "fuses blown out and not repaired", "sparks coming from switchboard", "patients suffering in heat due to no AC", "lift trapped people during power cut"],
+        "Hindi": ["अस्पताल में बिजली कट गई है", "सुबह से बिजली नहीं आई", "वोल्टेज में उतार-चढ़ाव से उपकरण खराब हो रहे हैं", "वार्ड में पंखे चालू नहीं हैं", "ओटी में एसी काम नहीं कर रहा", "गलियारे में लाइटें बंद हैं", "इमरजेंसी लाइटें काम नहीं कर रहीं",
+            "जेनरेटर में डीज़ल नहीं है", "लाइट जाने से आईसीयू की मशीनें बंद हो गईं", "डायलिसिस के लिए पावर बैकअप नहीं", "स्विचबोर्ड से चिंगारी निकल रही है"],
+        "Marathi": ["हॉस्पिटलमध्ये वीज गेली", "सकाळपासून वीज नाही", "व्होल्टेज चढ-उतारामुळे उपकरणे खराब होत आहेत", "वॉर्डमध्ये पंखे चालू नाहीत", "जनरेटरला डिझेल नाही", "लाईट गेल्यामुळे आयसीयू बंद"],
+        "Tamil": ["மருத்துவமனையில் மின்தடை", "காலை முதல் மின்சாரம் இல்லை", "மின்னழுத்த ஏற்ற இறக்கம் கருவிகளை சேதப்படுத்துகிறது", "வார்டில் மின்விசிறிகள் வேலை செய்யவில்லை", "ஜெனரேட்டர் இயங்கவில்லை"],
         "Telugu": ["ఆస్పత్రిలో విద్యుత్ అంతరాయం", "ఉదయం నుండి కరెంట్ లేదు", "వోల్టేజ్ హెచ్చు తగ్గులు పరికరాలను పాడుచేస్తున్నాయి"],
         "Bengali": ["হাসপাতালে বিদ্যুৎ নেই", "সকাল থেকে কারেন্ট নেই", "ভোল্টেজ ওঠানামায় যন্ত্রপাতি নষ্ট হচ্ছে"],
         "Gujarati": ["હોસ્પિટલમાં વીજળી ગઈ છે", "સવારથી વીજળી નથી", "વોલ્ટેજ વધઘટથી ઉપકરણો ખરાબ થઈ રહ્યાં છે"],
@@ -646,10 +929,12 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Water Supply": {
-        "English": ["no water supply in the hospital", "water is dirty and contaminated", "water pump has broken down", "overhead tank is empty", "taps are not working in toilets", "no hot water for patients", "water purifier is broken", "water has foul smell"],
-        "Hindi": ["अस्पताल में पानी की सप्लाई नहीं है", "पानी गंदा और दूषित है", "पानी का पंप खराब है", "ओवरहेड टैंक खाली है", "शौचालय में नल काम नहीं कर रहे", "मरीज़ों को गरम पानी नहीं मिल रहा", "वाटर प्यूरीफ़ायर खराब है"],
-        "Marathi": ["हॉस्पिटलमध्ये पाण्याचा पुरवठा नाही", "पाणी घाण आणि दूषित आहे", "पाण्याचा पंप बंद पडला", "ओव्हरहेड टँक रिकामा", "शौचालयातील नळ चालू नाहीत"],
-        "Tamil": ["மருத்துவமனையில் தண்ணீர் வரவில்லை", "தண்ணீர் அசுத்தமாக உள்ளது", "தண்ணீர் பம்ப் பழுதடைந்துள்ளது", "மேல்நிலை தொட்டி காலியாக உள்ளது"],
+        "English": ["no water supply in the hospital", "water is dirty and contaminated", "water pump has broken down", "overhead tank is empty", "taps are not working in toilets", "no hot water for patients", "water purifier is broken", "water has foul smell",
+            "drinking water cooler is dead", "no water in operation theatre scrub area", "maternity ward has no water", "water pipes are leaking", "patients have to buy bottled water", "yellow water coming from taps"],
+        "Hindi": ["अस्पताल में पानी की सप्लाई नहीं है", "पानी गंदा और दूषित है", "पानी का पंप खराब है", "ओवरहेड टैंक खाली है", "शौचालय में नल काम नहीं कर रहे", "मरीज़ों को गरम पानी नहीं मिल रहा", "वाटर प्यूरीफ़ायर खराब है",
+            "पीने का पानी नहीं है", "ओटी में धोने के लिए पानी नहीं", "मरीज़ बाहर से पानी की बोतलें खरीद रहे हैं", "नलों से पीला पानी आ रहा है"],
+        "Marathi": ["हॉस्पिटलमध्ये पाण्याचा पुरवठा नाही", "पाणी घाण आणि दूषित आहे", "पाण्याचा पंप बंद पडला", "ओव्हरहेड टँक रिकामा", "शौचालयातील नळ चालू नाहीत", "पिण्याचे पाणी उपलब्ध नाही", "नळातून पिवळे पाणी येत आहे"],
+        "Tamil": ["மருத்துவமனையில் தண்ணீர் வரவில்லை", "தண்ணீர் அசுத்தமாக உள்ளது", "தண்ணீர் பம்ப் பழுதடைந்துள்ளது", "மேல்நிலை தொட்டி காலியாக உள்ளது", "குடிநீர் இல்லை"],
         "Telugu": ["ఆస్పత్రిలో నీటి సరఫరా లేదు", "నీరు మురికిగా కలుషితంగా ఉంది", "వాటర్ పంప్ పాడైంది", "ఓవర్ హెడ్ ట్యాంక్ ఖాళీగా ఉంది"],
         "Bengali": ["হাসপাতালে জলের সরবরাহ নেই", "জল নোংরা ও দূষিত", "জলের পাম্প খারাপ হয়ে গেছে", "ওভারহেড ট্যাংক খালি"],
         "Gujarati": ["હોસ્પિટલમાં પાણીનો પુરવઠો નથી", "પાણી ગંદું અને દૂષિત છે", "પાણીનો પંપ ખરાબ છે"],
@@ -659,10 +944,12 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
     },
 
     "Ambulance": {
-        "English": ["ambulance not available when needed", "108 ambulance service not responding", "ambulance arrived very late", "ambulance has no oxygen cylinder", "ambulance driver was absent", "ambulance in poor condition and not maintained", "no ambulance for emergency transfer"],
-        "Hindi": ["ज़रूरत पर एम्बुलेंस नहीं मिली", "108 एम्बुलेंस सेवा ने जवाब नहीं दिया", "एम्बुलेंस बहुत देर से आई", "एम्बुलेंस में ऑक्सीजन सिलिंडर नहीं था", "एम्बुलेंस ड्राइवर ग़ायब था", "एम्बुलेंस खराब हालत में है"],
-        "Marathi": ["गरजेला अँब्युलन्स मिळाली नाही", "108 अँब्युलन्स सेवेने प्रतिसाद दिला नाही", "अँब्युलन्स खूप उशीरा आली", "अँब्युलन्समध्ये ऑक्सिजन सिलिंडर नव्हता"],
-        "Tamil": ["தேவையான நேரத்தில் ஆம்புலன்ஸ் கிடைக்கவில்லை", "108 ஆம்புலன்ஸ் சேவை பதிலளிக்கவில்லை", "ஆம்புலன்ஸ் மிகவும் தாமதமாக வந்தது"],
+        "English": ["ambulance not available when needed", "108 ambulance service not responding", "ambulance arrived very late", "ambulance has no oxygen cylinder", "ambulance driver was absent", "ambulance in poor condition and not maintained", "no ambulance for emergency transfer",
+            "ambulance driver demanding extra cash", "no petrol in ambulance", "ambulance siren not working", "stretcher in ambulance is broken", "driver refused to go to remote village", "ambulance used for personal work"],
+        "Hindi": ["ज़रूरत पर एम्बुलेंस नहीं मिली", "108 एम्बुलेंस सेवा ने जवाब नहीं दिया", "एम्बुलेंस बहुत देर से आई", "एम्बुलेंस में ऑक्सीजन सिलिंडर नहीं था", "एम्बुलेंस ड्राइवर ग़ायब था", "एम्बुलेंस खराब हालत में है",
+            "ड्राइवर पैसे मांग रहा है", "एम्बुलेंस में पेट्रोल नहीं है", "एम्बुलेंस गांव जाने से मना कर रही है", "मरीज़ को ले जाने के लिए स्ट्रेचर टूटा है"],
+        "Marathi": ["गरजेला अँब्युलन्स मिळाली नाही", "108 अँब्युलन्स सेवेने प्रतिसाद दिला नाही", "अँब्युलन्स खूप उशीरा आली", "अँब्युलन्समध्ये ऑक्सिजन सिलिंडर नव्हता", "ड्रायव्हरने पैसे मागितले", "अँब्युलन्स गावात यायला तयार नाही"],
+        "Tamil": ["தேவையான நேரத்தில் ஆம்புலன்ஸ் கிடைக்கவில்லை", "108 ஆம்புலன்ஸ் சேவை பதிலளிக்கவில்லை", "ஆம்புலன்ஸ் மிகவும் தாமதமாக வந்தது", "ஓட்டுநர் பணம் கேட்கிறார்"],
         "Telugu": ["అవసరమైనప్పుడు అంబులెన్స్ అందుబాటులో లేదు", "108 అంబులెన్స్ సేవ స్పందించలేదు", "అంబులెన్స్ చాలా ఆలస్యంగా వచ్చింది"],
         "Bengali": ["প্রয়োজনের সময় অ্যাম্বুলেন্স পাওয়া যায়নি", "108 অ্যাম্বুলেন্স সেবা সাড়া দেয়নি", "অ্যাম্বুলেন্স অনেক দেরিতে এসেছে"],
         "Gujarati": ["જરૂર સમયે એમ્બ્યુલન્સ ન મળી", "108 એમ્બ્યુલન્સ સેવાનો કોઈ જવાબ નથી", "એમ્બ્યુલન્સ ખૂબ મોડી આવી"],
@@ -706,7 +993,7 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
         "Gujarati": ["એક્સ-રે મશીન ખરાબ છે", "અલ્ટ્રાસાઉન્ડ સુવિધા ઉપલબ્ધ નથી", "સીટી સ્કેન મશીન બંધ છે"],
         "Kannada": ["ಎಕ್ಸ್-ರೇ ಯಂತ್ರ ಹಾಳಾಗಿದೆ", "ಅಲ್ಟ್ರಾಸೌಂಡ್ ಸೌಲಭ್ಯ ಲಭ್ಯವಿಲ್ಲ", "ಸಿಟಿ ಸ್ಕ್ಯಾನ್ ಯಂತ್ರ ಕೆಲಸ ಮಾಡುತ್ತಿಲ್ಲ"],
         "Malayalam": ["എക്സ്-റേ മെഷീൻ കേടാണ്", "അൾട്രാസൗണ്ട് സൗകര്യം ലഭ്യമല്ല", "സിടി സ്കാൻ മെഷീൻ പ്രവർത്തിക്കുന്നില്ല"],
-        "Punjabi": ["ਐਕਸ-ਰੇ ਮਸ਼ੀਨ ਖਰਾਬ ਹੈ", "ਅਲਟਰਾਸਾਊਂਡ ਦੀ ਸਹੂલਤ ਨਹੀਂ ਹੈ", "ਸੀਟੀ ਸਕੈਨ ਮਸ਼ੀਨ ਬੰਦ ਹੈ"],
+        "Punjabi": ["ਐਕਸ-ਰੇ ਮਸ਼ੀਨ ਖਰਾਬ ਹੈ", "ਅਲਟਰਾਸਾਊਂਡ ਦੀ ਸਹੂਲਤ ਨਹੀਂ ਹੈ", "ਸੀਟੀ ਸਕੈਨ ਮਸ਼ੀਨ ਬੰਦ ਹੈ"],
     },
 
     "Pharmacy": {
@@ -923,7 +1210,7 @@ CATEGORY_PHRASES: Dict[str, Dict[str, List[str]]] = {
 # ════════════════════════════════════════════════════════════════════════════
 
 TIME_REFERENCES: Dict[str, List[str]] = {
-    "English": ["last week", "three days", "one month", "two weeks", "yesterday", "several months", "since morning", "past fortnight", "over a year", "many days"],
+    "English": ["last week", "three days", "one month", "two weeks", "yesterday", "several months", "since morning", "past fortnight", "over a year", "many days", "since yesterday", "for two days", "for three weeks", "for 5 hours", "all night", "continuously", "repeatedly", "again today"],
     "Hindi": ["पिछले हफ़्ते", "तीन दिन", "एक महीने", "दो हफ़्ते", "कल", "कई महीनों", "सुबह से", "पिछले पखवाड़े", "एक साल"],
     "Marathi": ["गेल्या आठवड्यापासून", "तीन दिवस", "एक महिना", "दोन आठवडे", "कालपासून", "अनेक महिने", "सकाळपासून"],
     "Tamil": ["கடந்த வாரம்", "மூன்று நாட்கள்", "ஒரு மாதம்", "இரண்டு வாரங்கள்", "நேற்று முதல்", "பல மாதங்கள்", "இன்று காலை முதல்"],
@@ -1127,6 +1414,12 @@ class GrievanceDatasetGenerator:
             if language == "English":
                 urgency = self._rng.choice(URGENCY_WORDING)
                 text = f"{urgency} {text}"
+                
+        # Inject emotions
+        if self._rng.random() < 0.15:
+            emotion = self._rng.choice(EMOTIONS)
+            if language == "English":
+                text = f"I am {emotion}. {text}"
                 
         # Clean up any weird double spaces
         text = text.replace("  ", " ").strip()

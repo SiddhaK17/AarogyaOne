@@ -260,3 +260,35 @@ class InferenceConfig:
     label_encoder_path: str = str(LABEL_ENCODER_PATH)
     max_seq_length: int = 128
     device: Optional[str] = None  # auto-detect
+
+
+
+
+# ---------------------------------------------------------------------------
+# Speech Recognition Configuration
+# ---------------------------------------------------------------------------
+
+WHISPER_MODEL_ID = "openai/whisper-large-v3"
+
+HF_CACHE_DIR = WEIGHTS_DIR / "huggingface_cache"
+
+TRANSCRIPTS_DIR = _STORE_ROOT / "transcripts"
+
+TRANSCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
+
+SUPPORTED_AUDIO_EXTENSIONS = (
+    ".wav",
+    ".mp3",
+    ".m4a",
+    ".flac",
+    ".ogg",
+    ".webm",
+)
+
+MAX_AUDIO_FILE_SIZE = 100 * 1024 * 1024  # 100 MB
+
+MAX_AUDIO_DURATION = 30 * 60  # 30 minutes
+
+TARGET_AUDIO_SAMPLE_RATE = 16000
+
+WHISPER_MODEL_NAME = "openai/whisper-large-v3"
