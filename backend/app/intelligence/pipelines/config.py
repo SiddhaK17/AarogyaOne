@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
-
+import torch
 
 # ---------------------------------------------------------------------------
 # Path resolution
@@ -292,3 +292,45 @@ MAX_AUDIO_DURATION = 30 * 60  # 30 minutes
 TARGET_AUDIO_SAMPLE_RATE = 16000
 
 WHISPER_MODEL_NAME = "openai/whisper-large-v3"
+
+
+
+
+# ==========================================================
+# COMPUTER VISION CONFIGURATION
+# ==========================================================
+
+# Hugging Face Models
+GROUNDING_DINO_MODEL_ID = "IDEA-Research/grounding-dino-base"
+FLORENCE_MODEL_ID = "microsoft/Florence-2-large"
+
+# Cache
+VISION_CACHE_DIR = WEIGHTS_DIR / "huggingface_cache"
+
+# Storage
+IMAGES_DIR = _STORE_ROOT / "images"
+VISION_RESULTS_DIR = _STORE_ROOT / "vision_results"
+
+IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+VISION_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Image Processing
+SUPPORTED_IMAGE_FORMATS = {
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".bmp",
+    ".tiff",
+    ".webp",
+}
+
+MAX_IMAGE_SIZE_MB = 25
+MAX_IMAGE_DIMENSION = 4096
+
+# Detection
+CONFIDENCE_THRESHOLD = 0.35
+
+# Runtime
+VISION_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+TEXT_CONFIDENCE_THRESHOLD = 0.30
