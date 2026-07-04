@@ -21,13 +21,13 @@ import type {
 
 // ---- District Info ----
 export const districtInfo: DistrictInfo = {
-  name: "Mumbai District",
-  code: "MH-27",
+  name: "Palghar District",
+  code: "MH-48",
   state: "Maharashtra",
-  population: "20.7 Million",
-  area: "603 km²",
-  dho: "Dr. Priya Sharma",
-  cmo: "Dr. Rajesh Kulkarni",
+  population: "3.0 Million",
+  area: "4,696 km²",
+  dho: "Dr. Rajesh Patil",
+  cmo: "Dr. Priya Sharma",
   lastUpdated: new Date().toISOString(),
 };
 

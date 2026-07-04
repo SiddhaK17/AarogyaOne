@@ -20,7 +20,7 @@ import {
 const MOCK_COMPLETED_TASKS = [
   {
     id: 'TSK-192',
-    hospital: 'PHC Kothrud',
+    hospital: 'PHC Agashi',
     issue: 'Low-pressure water feed to dental clinic',
     department: 'PWD (Public Works)',
     completionDate: '2026-06-28',
@@ -33,7 +33,7 @@ const MOCK_COMPLETED_TASKS = [
   },
   {
     id: 'TSK-189',
-    hospital: 'PHC Hadapsar',
+    hospital: 'Rural Hospital Dahanu',
     issue: 'Emergency backup generator battery failure',
     department: 'Electricity Board',
     completionDate: '2026-06-25',
@@ -46,7 +46,7 @@ const MOCK_COMPLETED_TASKS = [
   },
   {
     id: 'TSK-195',
-    hospital: 'District Hospital Pune',
+    hospital: 'District General Hospital Palghar',
     issue: 'ICU Monitor #2 display panel flickering',
     department: 'Biomedical Engineering',
     completionDate: '2026-06-29',
@@ -59,7 +59,7 @@ const MOCK_COMPLETED_TASKS = [
   },
   {
     id: 'TSK-174',
-    hospital: 'CHC Warje',
+    hospital: 'Sub-District Hospital Vasai',
     issue: 'Defective autoclave sterilizer gaskets',
     department: 'Biomedical Engineering',
     completionDate: '2026-06-20',

@@ -80,7 +80,7 @@ export default function Sidebar() {
         {!collapsed && (
           <div className="sidebar__district-badge">
             <span className="sidebar__district-dot" />
-            <span>Mumbai District</span>
+            <span>Palghar District</span>
           </div>
         )}
       </div>

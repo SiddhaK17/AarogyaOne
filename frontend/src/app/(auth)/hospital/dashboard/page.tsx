@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { useHospitalSession } from '../layout';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import {
@@ -75,22 +76,24 @@ const forecasts = [
 ];
 
 const recommendations = [
-  { action: 'Request additional insulin from District Medical Store.', priority: 'High' },
-  { action: 'Transfer surplus oxygen cylinders to PHC Hadapsar (4.2 km).', priority: 'Critical' },
+  { action: 'Request additional insulin from District Medical Store Palghar.', priority: 'High' },
+  { action: 'Transfer surplus oxygen cylinders to PHC Agashi (6.2 km away).', priority: 'Critical' },
   { action: 'Increase doctor allocation for the weekend OPD surge.', priority: 'Medium' },
-  { action: 'Investigate increasing citizen complaints about wait times.', priority: 'Low' },
+  { action: 'Investigate increasing citizen complaints about long wait times.', priority: 'Low' },
 ];
 
 const recentActivity = [
-  { time: '2 min ago', text: 'Paracetamol inventory updated by Pharmacist Sanjay.', icon: Package },
-  { time: '15 min ago', text: 'ICU Bed #12 status changed to Occupied.', icon: BedDouble },
-  { time: '1 hr ago', text: 'Resource transfer approved by District HQ.', icon: ArrowLeftRight },
-  { time: '2 hr ago', text: 'New citizen complaint received: Water supply issue.', icon: AlertTriangle },
+  { time: '2 min ago', text: 'Paracetamol inventory updated by Pharmacist Sanjay Patil.', icon: Package },
+  { time: '15 min ago', text: 'ICU Bed #8 status changed to Occupied.', icon: BedDouble },
+  { time: '1 hr ago', text: 'Resource transfer approved by Palghar District HQ.', icon: ArrowLeftRight },
+  { time: '2 hr ago', text: 'New citizen complaint received via AarogyaOne portal.', icon: AlertTriangle },
   { time: '3 hr ago', text: 'Dr. Mehta checked in for Morning shift.', icon: CheckCircle2 },
 ];
 
 /* ─── Component ─── */
 export default function HospitalDashboard() {
+  const { session } = useHospitalSession();
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -99,7 +102,11 @@ export default function HospitalDashboard() {
           Hospital <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan to-brand-blue">Dashboard</span>
         </h1>
         <p className="text-sm text-slate-500 font-medium mt-1">
-          PHC Kothrud, Pune · District: Pune · Last synced: 2 minutes ago
+          {session ? (
+            <>{session.hospital_name} · <span className="font-bold text-slate-700">{session.taluka} Taluka</span> · District: Palghar · Last synced: just now</>
+          ) : (
+            'Palghar District · Loading hospital data…'
+          )}
         </p>
       </div>
 

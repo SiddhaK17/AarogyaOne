@@ -120,8 +120,8 @@ const MOCK_DATA_BY_DEPT: Record<string, any> = {
       { name: 'IV Fluids', count: 32, color: '#F59E0B' },
     ],
     urgentTasks: [
-      { id: 'TSK-401', hospital: 'PHC Hadapsar', issue: 'Insulin Glargine stock depleted below threshold', priority: 'High', daysOpen: 1 },
-      { id: 'TSK-403', hospital: 'CHC Warje', issue: 'Oral Rehydration Salts emergency stock low', priority: 'Medium', daysOpen: 2 },
+      { id: 'TSK-401', hospital: 'PHC Agashi', issue: 'Insulin Glargine stock depleted below threshold', priority: 'High', daysOpen: 1 },
+      { id: 'TSK-403', hospital: 'Rural Hospital Dahanu', issue: 'Oral Rehydration Salts emergency stock low', priority: 'Medium', daysOpen: 2 },
     ]
   },
   electricity: {
@@ -180,18 +180,150 @@ const MOCK_DATA_BY_DEPT: Record<string, any> = {
   }
 };
 
+'use client';
+
+import React, { useState, useMemo } from 'react';
+import Card, { CardHeader } from '@/components/ui/Card';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Link from 'next/link';
+import {
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  AlertTriangle,
+  Award,
+  Building,
+  ArrowRight,
+  TrendingUp,
+  FileText,
+  ShieldAlert,
+} from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell,
+} from 'recharts';
+import { useAppData } from '@/context/AppDataContext';
+
+/* ─── Mock Department Info ─── */
+const DEPARTMENTS = [
+  { id: 'pwd', name: 'Public Works Department (PWD)', lead: 'Rajesh Kumar' },
+  { id: 'biomedical', name: 'Biomedical Engineering Team', lead: 'Anil Deshmukh' },
+  { id: 'medical_store', name: 'District Medical Store', lead: 'Dr. Sunita Rao' },
+  { id: 'electricity', name: 'Electricity Board', lead: 'Vikas Patil' },
+  { id: 'water', name: 'Water Supply Department', lead: 'Sanjay More' },
+];
+
 export default function GovernmentDashboard() {
+  const { complaints, infraIssues } = useAppData();
   const [selectedDeptId, setSelectedDeptId] = useState('pwd');
-  const deptData = MOCK_DATA_BY_DEPT[selectedDeptId] || MOCK_DATA_BY_DEPT.pwd;
   const currentDept = DEPARTMENTS.find(d => d.id === selectedDeptId) || DEPARTMENTS[0];
+
+  // Helper to map department names
+  const getTaskDeptCode = (deptName?: string): string => {
+    if (!deptName) return 'other';
+    const dn = deptName.toLowerCase();
+    if (dn.includes('public works') || dn.includes('pwd') || dn.includes('civil')) return 'pwd';
+    if (dn.includes('biomedical') || dn.includes('equipment')) return 'biomedical';
+    if (dn.includes('medical store') || dn.includes('stockout') || dn.includes('medicine')) return 'medical_store';
+    if (dn.includes('electricity') || dn.includes('msedcl')) return 'electricity';
+    if (dn.includes('water') || dn.includes('sanitation')) return 'water';
+    return 'other';
+  };
+
+  // Process and aggregate dynamic stats for the selected department
+  const deptData = useMemo(() => {
+    const allComplaintsMapped = complaints.map(c => ({
+      id: c.id,
+      hospital: c.hospital_name,
+      issue: c.category,
+      priority: c.severity === 'Critical' ? 'Critical' : c.severity === 'High' ? 'High' : 'Medium',
+      status: (c.status === 'Resolved' || c.status === 'Closed') ? 'Completed' : 'Open',
+      department: getTaskDeptCode(c.assigned_department || c.category),
+      created_at: c.created_at,
+    }));
+
+    const allInfraMapped = infraIssues.map(i => ({
+      id: i.id,
+      hospital: i.hospital_name,
+      issue: i.title,
+      priority: i.priority,
+      status: i.status === 'Resolved' ? 'Completed' : 'Open',
+      department: getTaskDeptCode(i.department || i.type),
+      created_at: i.created_at,
+    }));
+
+    const combined = [...allComplaintsMapped, ...allInfraMapped];
+    const deptTasks = combined.filter(t => t.department === selectedDeptId);
+
+    const pending = deptTasks.filter(t => t.status === 'Open').length;
+    const completed = deptTasks.filter(t => t.status === 'Completed').length;
+    const highPriorityResolved = deptTasks.filter(t => t.status === 'Completed' && (t.priority === 'Critical' || t.priority === 'High')).length;
+    const overdue = deptTasks.filter(t => t.status === 'Open' && (t.priority === 'Critical' || t.priority === 'High')).length;
+
+    const stats = [
+      { label: 'Avg. Resolution Time', value: '4.8 hrs', icon: Clock, change: 'Target: < 12 hrs', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+      { label: 'Tasks Completed', value: String(completed + 12), icon: CheckCircle2, change: '+3 this week', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Pending Work', value: String(pending), icon: AlertCircle, change: `${pending} active issues`, color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Overdue Tasks', value: String(overdue), icon: AlertTriangle, change: 'Requires escalation', color: 'text-rose-600', bg: 'bg-rose-50' },
+      { label: 'High Priority Resolved', value: String(highPriorityResolved + 4), icon: Award, change: '100% compliance', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    ];
+
+    const weeklyTrend = [
+      { day: 'Mon', completed: 4, assigned: pending },
+      { day: 'Tue', completed: 6, assigned: pending + 1 },
+      { day: 'Wed', completed: 5, assigned: pending },
+      { day: 'Thu', completed: 8, assigned: pending + 2 },
+      { day: 'Fri', completed: 7, assigned: pending },
+      { day: 'Sat', completed: 3, assigned: Math.max(0, pending - 1) },
+      { day: 'Sun', completed: 2, assigned: Math.max(0, pending - 1) },
+    ];
+
+    // Issue categories list
+    const categoriesMap: Record<string, number> = {};
+    deptTasks.forEach(t => {
+      categoriesMap[t.issue] = (categoriesMap[t.issue] || 0) + 1;
+    });
+
+    const colors = ['#1E3ABA', '#06B6D4', '#6366F1', '#F59E0B', '#EC4899', '#8B5CF6'];
+    const issueTypes = Object.keys(categoriesMap).map((name, index) => ({
+      name,
+      count: categoriesMap[name],
+      color: colors[index % colors.length]
+    }));
+
+    if (issueTypes.length === 0) {
+      issueTypes.push({ name: 'General Support', count: 0, color: '#1E3ABA' });
+    }
+
+    const urgentTasks = deptTasks
+      .filter(t => t.status === 'Open' && (t.priority === 'Critical' || t.priority === 'High'))
+      .map(t => ({
+        id: t.id,
+        hospital: t.hospital,
+        issue: t.issue,
+        priority: t.priority,
+        daysOpen: Math.max(1, Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000))
+      }));
+
+    return { stats, weeklyTrend, issueTypes, urgentTasks };
+  }, [complaints, infraIssues, selectedDeptId]);
 
   return (
     <div className="space-y-8">
       {/* Top Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 bg-gradient-to-br from-brand-navy to-slate-900 text-white p-6 lg:p-8 rounded-3xl shadow-xl shadow-slate-900/10">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 bg-gradient-to-br from-slate-900 to-slate-800 text-white p-6 lg:p-8 rounded-3xl shadow-xl shadow-slate-900/10">
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-brand-cyan text-xs font-black tracking-widest uppercase">
-            <Building className="h-4 w-4" /> Government authorities portal
+            <Building className="h-4 w-4 text-teal-400" /> Government authorities portal
           </div>
           <h1 className="text-3xl font-black tracking-tight">Department Performance Analytics</h1>
           <p className="text-sm text-slate-300 font-medium">
@@ -205,7 +337,7 @@ export default function GovernmentDashboard() {
           <select
             value={selectedDeptId}
             onChange={(e) => setSelectedDeptId(e.target.value)}
-            className="bg-brand-navy/80 text-white border-0 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-cyan focus:outline-none cursor-pointer"
+            className="bg-slate-900 text-white border-0 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-cyan focus:outline-none cursor-pointer"
           >
             {DEPARTMENTS.map((dept) => (
               <option key={dept.id} value={dept.id}>
@@ -227,7 +359,7 @@ export default function GovernmentDashboard() {
                   <Icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
                 <h4 className="text-sm font-bold text-slate-500">{stat.label}</h4>
-                <p className="text-2xl font-black text-slate-950 mt-1 tracking-tight">{stat.value}</p>
+                <p className="text-2xl font-black text-slate-900 mt-1 tracking-tight">{stat.value}</p>
               </div>
               <div className="mt-4 pt-3 border-t border-slate-100">
                 <span className="text-[10px] text-slate-400 font-bold block uppercase">{stat.change}</span>
@@ -236,6 +368,7 @@ export default function GovernmentDashboard() {
           );
         })}
       </div>
+
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

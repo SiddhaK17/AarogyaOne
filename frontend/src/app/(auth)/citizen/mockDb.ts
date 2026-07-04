@@ -1,3 +1,5 @@
+import { PALGHAR_HOSPITALS, type PalgharHospital } from "@/data/palgharHospitals";
+
 export interface Hospital {
   id: string;
   name: string;
@@ -52,222 +54,45 @@ export interface Complaint {
   updates: TimelineEvent[];
 }
 
-export const INITIAL_HOSPITALS: Hospital[] = [
-  {
-    id: "hosp-1",
-    name: "Mumbai District Civil Hospital",
-    type: "District Hospital",
-    district: "Mumbai",
-    taluka: "Mumbai",
-    pinCode: "400001",
-    address: "Dr. Annie Besant Rd, Worli, Mumbai, Maharashtra 400018",
-    contactNumber: "+91 22 2493 1234",
-    departments: ["Emergency", "Cardiology", "Pediatrics", "Radiology", "General Medicine"],
-    emergencyServices: ["24x7 ICU", "Ambulance", "Oxygen Plant", "Trauma Care"],
-    totalBeds: 250,
-    availableBeds: 45,
-    icuCapacity: 30,
-    availableIcuBeds: 4,
-    doctorAttendance: "18 / 22 present",
-    aiHealthScore: 88,
-    citizenSatisfaction: 84,
-    latitude: 150, // Coordinates for our beautiful interactive map
-    longitude: 180,
-    activeIssues: 2,
-    averageWaitingTime: "45 minutes",
-    statusColor: "Healthy"
-  },
-  {
-    id: "hosp-2",
-    name: "Pune Community Health Centre (CHC)",
-    type: "CHC",
-    district: "Pune",
-    taluka: "Haveli",
-    pinCode: "411001",
-    address: "Near Shivajinagar Railway Station, Pune, Maharashtra 411005",
-    contactNumber: "+91 20 2553 5678",
-    departments: ["General Medicine", "Gynaecology", "Pediatrics", "Dental"],
-    emergencyServices: ["24x7 OPD", "Ambulance", "Basic ICU"],
-    totalBeds: 80,
-    availableBeds: 12,
-    icuCapacity: 8,
-    availableIcuBeds: 0,
-    doctorAttendance: "5 / 8 present",
-    aiHealthScore: 68,
-    citizenSatisfaction: 62,
-    latitude: 350,
-    longitude: 250,
-    activeIssues: 5,
-    averageWaitingTime: "90 minutes",
-    statusColor: "Warning"
-  },
-  {
-    id: "hosp-3",
-    name: "Nashik Primary Health Centre (PHC)",
-    type: "PHC",
-    district: "Nashik",
-    taluka: "Nashik",
-    pinCode: "422001",
-    address: "Trimbak Road, Near Golf Club Ground, Nashik, Maharashtra 422002",
-    contactNumber: "+91 253 257 8901",
-    departments: ["General Medicine", "Immunization", "Family Welfare"],
-    emergencyServices: ["First Aid", "Ambulance Station"],
-    totalBeds: 25,
-    availableBeds: 2,
-    icuCapacity: 0,
-    availableIcuBeds: 0,
-    doctorAttendance: "1 / 3 present",
-    aiHealthScore: 42,
-    citizenSatisfaction: 39,
-    latitude: 220,
-    longitude: 420,
-    activeIssues: 8,
-    averageWaitingTime: "120 minutes",
-    statusColor: "High Risk"
-  },
-  {
-    id: "hosp-4",
-    name: "Baramati Sub-District Government Hospital",
-    type: "District Hospital",
-    district: "Pune",
-    taluka: "Baramati",
-    pinCode: "413102",
-    address: "Indapur Road, Baramati, District Pune, Maharashtra 413102",
-    contactNumber: "+91 2112 222 345",
-    departments: ["General Medicine", "Emergency", "Surgery", "Orthopedics", "Pathology"],
-    emergencyServices: ["24x7 ICU", "Ambulance", "Blood Bank"],
-    totalBeds: 150,
-    availableBeds: 3,
-    icuCapacity: 15,
-    availableIcuBeds: 1,
-    doctorAttendance: "6 / 12 present",
-    aiHealthScore: 35,
-    citizenSatisfaction: 45,
-    latitude: 450,
-    longitude: 320,
-    activeIssues: 12,
-    averageWaitingTime: "150 minutes",
-    statusColor: "Critical"
-  },
-  {
-    id: "hosp-5",
-    name: "Karad Rural Hospital (CHC)",
-    type: "CHC",
-    district: "Satara",
-    taluka: "Karad",
-    pinCode: "415110",
-    address: "Opposite Town Hall, Karad, District Satara, Maharashtra 415110",
-    contactNumber: "+91 2164 220 102",
-    departments: ["General Medicine", "Pediatrics", "Ophthalmology"],
-    emergencyServices: ["OPD", "Basic Laboratory", "Ambulance"],
-    totalBeds: 60,
-    availableBeds: 22,
-    icuCapacity: 4,
-    availableIcuBeds: 2,
-    doctorAttendance: "7 / 7 present",
-    aiHealthScore: 92,
-    citizenSatisfaction: 89,
-    latitude: 520,
-    longitude: 160,
-    activeIssues: 0,
-    averageWaitingTime: "20 minutes",
-    statusColor: "Healthy"
-  }
-];
+// Map Palghar hospitals to citizen portal expected format
+export const INITIAL_HOSPITALS: Hospital[] = PALGHAR_HOSPITALS.map((h) => {
+  const typeMap = (t: string): Hospital["type"] => {
+    if (t.includes("Primary")) return "PHC";
+    if (t.includes("Rural") || t.includes("Community")) return "CHC";
+    return "District Hospital";
+  };
 
-export const INITIAL_COMPLAINTS: Complaint[] = [
-  {
-    id: "GRI-883012",
-    hospitalId: "hosp-3",
-    hospitalName: "Nashik Primary Health Centre (PHC)",
-    category: "Doctor Unavailable",
-    description: "I visited the PHC at 11 AM today. No doctor was available at the OPD. The staff mentioned that the doctor has not checked in. There were 20 patients waiting in line.",
-    dateOfVisit: "2026-06-30",
-    isAnonymous: false,
-    contactInfo: "Rahul Sharma, +91 98765 43210",
-    status: "Investigation in Progress",
-    department: "District Health Office",
-    severity: "High",
-    priority: "High Priority",
-    confidence: 97,
-    sentiment: "Negative Experience",
-    createdAt: "2026-06-30T11:15:00Z",
-    updates: [
-      {
-        status: "Received",
-        description: "Grievance successfully submitted by citizen.",
-        timestamp: "2026-06-30T11:15:00Z",
-        updatedBy: "System"
-      },
-      {
-        status: "Under AI Analysis",
-        description: "AI Classifier labeled the complaint as 'Doctor Unavailable' (Confidence: 97%) and routed it to 'District Health Office'.",
-        timestamp: "2026-06-30T11:15:05Z",
-        updatedBy: "AI Orchestration Layer"
-      },
-      {
-        status: "Assigned to Department",
-        description: "Grievance assigned to the District Health Officer (DHO) for verification.",
-        timestamp: "2026-06-30T13:45:00Z",
-        updatedBy: "District Command Centre"
-      },
-      {
-        status: "Investigation in Progress",
-        description: "Officer visited the site and requested explanation from the medical officer in charge regarding absence.",
-        timestamp: "2026-07-01T09:30:00Z",
-        updatedBy: "District Health Officer"
-      }
-    ]
-  },
-  {
-    id: "GRI-472091",
-    hospitalId: "hosp-4",
-    hospitalName: "Baramati Sub-District Government Hospital",
-    category: "Medicine Not Available",
-    description: "The pharmacist said there is no paracetamol or basic antibiotics in stock. I have been asked to buy them from a private pharmacy outside. This is a government hospital and it should be free.",
-    dateOfVisit: "2026-06-29",
-    isAnonymous: true,
-    status: "Resolved",
-    department: "District Medical Store",
-    severity: "High",
-    priority: "High Priority",
-    confidence: 95,
-    sentiment: "Negative Experience",
-    createdAt: "2026-06-29T14:20:00Z",
-    updates: [
-      {
-        status: "Received",
-        description: "Grievance submitted anonymously.",
-        timestamp: "2026-06-29T14:20:00Z",
-        updatedBy: "System"
-      },
-      {
-        status: "Under AI Analysis",
-        description: "AI Classifier labeled as 'Medicine Shortage' and recommended routing to 'District Medical Store'.",
-        timestamp: "2026-06-29T14:20:03Z",
-        updatedBy: "AI Orchestration Layer"
-      },
-      {
-        status: "Assigned to Department",
-        description: "Transferred to District Medical Store inventory coordinator.",
-        timestamp: "2026-06-29T16:00:00Z",
-        updatedBy: "District Command Centre"
-      },
-      {
-        status: "Investigation in Progress",
-        description: "Restocking order initiated. Surplus inventory from Satara CHC was identified.",
-        timestamp: "2026-06-30T10:00:00Z",
-        updatedBy: "District Medical Store"
-      },
-      {
-        status: "Resolved",
-        description: "Surplus stock of 500 units of basic medicines delivered to hospital pharmacy. Availability updated in system.",
-        timestamp: "2026-07-01T12:00:00Z",
-        updatedBy: "District Medical Store"
-      }
-    ]
-  }
-];
+  const statusColorMap = (id: number): Hospital["statusColor"] => {
+    if (id % 5 === 0) return "Warning";
+    if (id % 9 === 0) return "Critical";
+    return "Healthy";
+  };
+
+  return {
+    id: String(h.id),
+    name: h.name,
+    type: typeMap(h.facility_type),
+    district: h.district,
+    taluka: h.taluka,
+    pinCode: h.pincode,
+    address: h.address,
+    contactNumber: h.phone,
+    departments: h.departments,
+    emergencyServices: h.services_24x7 ? ["24x7 ICU", "Ambulance", "Emergency Operations"] : ["General OPD"],
+    totalBeds: h.total_beds,
+    availableBeds: Math.floor(h.total_beds * 0.4),
+    icuCapacity: h.icu_capacity,
+    availableIcuBeds: Math.floor(h.icu_capacity * 0.3),
+    doctorAttendance: `${Math.max(1, Math.floor(h.total_beds / 12))} / ${Math.max(2, Math.floor(h.total_beds / 8))} present`,
+    aiHealthScore: h.services_24x7 ? 82 : 64,
+    citizenSatisfaction: 75 + (h.id % 20),
+    latitude: h.latitude,
+    longitude: h.longitude,
+    activeIssues: h.id % 4 === 0 ? 2 : 0,
+    averageWaitingTime: `${20 + (h.id % 4) * 15} minutes`,
+    statusColor: statusColorMap(h.id),
+  };
+});
 
 // Helper functions for localStorage
 const IS_SERVER = typeof window === "undefined";
@@ -282,123 +107,170 @@ export function getHospitals(): Hospital[] {
   return JSON.parse(stored);
 }
 
+// Synchronize citizen complaints read logic with the main shared context store!
 export function getComplaints(): Complaint[] {
-  if (IS_SERVER) return INITIAL_COMPLAINTS;
-  const stored = localStorage.getItem("arogya_complaints");
-  if (!stored) {
-    localStorage.setItem("arogya_complaints", JSON.stringify(INITIAL_COMPLAINTS));
-    return INITIAL_COMPLAINTS;
-  }
-  return JSON.parse(stored);
+  if (IS_SERVER) return [];
+  const stored = localStorage.getItem("aarogya_complaints");
+  if (!stored) return [];
+  
+  const rawList = JSON.parse(stored) as any[];
+  // Map AppDataContext Complaint to Citizen Complaint format
+  return rawList.map((c) => {
+    let displayStatus: Complaint["status"] = "Received";
+    if (c.status === "Submitted") displayStatus = "Received";
+    else if (c.status === "Under Review") displayStatus = "Under AI Analysis";
+    else if (c.status === "Assigned to Department") displayStatus = "Assigned to Department";
+    else if (c.status === "In Progress") displayStatus = "Investigation in Progress";
+    else if (c.status === "Resolved") displayStatus = "Resolved";
+    else if (c.status === "Closed") displayStatus = "Closed";
+
+    return {
+      id: c.id,
+      hospitalId: String(c.hospital_id),
+      hospitalName: c.hospital_name,
+      category: c.category,
+      description: c.description,
+      dateOfVisit: c.date_of_visit,
+      isAnonymous: c.is_anonymous,
+      contactInfo: c.contact_info,
+      status: displayStatus,
+      department: c.assigned_department || "District Health Office",
+      severity: c.severity,
+      priority: c.priority === "Immediate Attention" ? "Immediate Attention" : c.priority === "High Priority" ? "High Priority" : "Routine Investigation",
+      confidence: c.ai_confidence || 90,
+      sentiment: c.severity === "Low" ? "Neutral Feedback" : "Negative Experience",
+      createdAt: c.created_at,
+      updates: c.timeline.map((t: any) => ({
+        status: t.note.includes("classified") ? "Under AI Analysis" : displayStatus,
+        description: t.note,
+        timestamp: t.time,
+        updatedBy: t.actor,
+      })),
+    };
+  });
 }
 
 export function saveComplaint(complaint: Omit<Complaint, "id" | "status" | "createdAt" | "updates" | "confidence" | "severity" | "priority" | "department" | "sentiment">): Complaint {
-  const complaints = getComplaints();
-  
-  // AI analysis mock logic depending on text keyword
+  // Read existing complaints from the unified store
+  const storedStr = localStorage.getItem("aarogya_complaints") || "[]";
+  const complaintsList = JSON.parse(storedStr);
+
   const text = complaint.description.toLowerCase();
-  let category = complaint.category;
   let severity: "Low" | "Medium" | "High" | "Critical" = "Medium";
   let department = "District Health Office";
-  let priority: "Routine Investigation" | "High Priority" | "Immediate Attention" = "Routine Investigation";
-  let sentiment: "Positive Experience" | "Neutral Feedback" | "Negative Experience" = "Negative Experience";
-  
+  let confidence = Math.floor(88 + Math.random() * 11);
+
   if (text.includes("leak") || text.includes("water") || text.includes("broken") || text.includes("infrastructure") || text.includes("damage") || text.includes("mri") || text.includes("x-ray")) {
     department = "Public Works Department";
     severity = "High";
-    priority = "High Priority";
-  } else if (text.includes("medicine") || text.includes("medicine not available") || text.includes("drug") || text.includes("paracetamol") || text.includes("antibiotic")) {
+  } else if (text.includes("medicine") || text.includes("paracetamol") || text.includes("antibiotic")) {
     department = "District Medical Store";
-    severity = "High";
-    priority = "High Priority";
-  } else if (text.includes("icu") || text.includes("oxygen") || text.includes("critical") || text.includes("ventilator") || text.includes("dying") || text.includes("accident")) {
     severity = "Critical";
-    priority = "Immediate Attention";
+  } else if (text.includes("icu") || text.includes("oxygen") || text.includes("critical") || text.includes("ventilator")) {
+    severity = "Critical";
     department = "Emergency Logistics Team";
-  } else if (text.includes("clean") || text.includes("garbage") || text.includes("dirt") || text.includes("toilet") || text.includes("smell")) {
-    department = "Hospital Sanitation Committee";
-    severity = "Low";
-    priority = "Routine Investigation";
   }
 
-  if (text.includes("good") || text.includes("thank") || text.includes("helpful") || text.includes("nice")) {
-    sentiment = "Positive Experience";
-    severity = "Low";
-    priority = "Routine Investigation";
-  }
-
-  const newId = `GRI-${Math.floor(100000 + Math.random() * 900000)}`;
   const now = new Date().toISOString();
-  
-  const newComplaint: Complaint = {
-    ...complaint,
+  const newId = `CMP-${String(Date.now()).slice(-6)}`;
+
+  // Find full hospital name/details from ID
+  const selectedHosp = PALGHAR_HOSPITALS.find((h) => String(h.id) === complaint.hospitalId) || PALGHAR_HOSPITALS[0];
+
+  const newUnifiedComplaint = {
     id: newId,
-    status: "Received",
-    createdAt: now,
+    hospital_id: selectedHosp.id,
+    hospital_name: selectedHosp.name,
+    hospital_short_name: selectedHosp.short_name,
+    taluka: selectedHosp.taluka,
+    district: "Palghar",
+    hospital_address: selectedHosp.address,
+    hospital_phone: selectedHosp.phone,
+    category: complaint.category,
+    description: complaint.description,
     severity,
-    priority,
+    priority: severity === "Critical" ? "Immediate Attention" : severity === "High" ? "High Priority" : "Routine",
+    date_of_visit: complaint.dateOfVisit,
+    is_anonymous: complaint.isAnonymous,
+    reporter_name: complaint.isAnonymous ? undefined : "Citizen User",
+    contact_info: complaint.contactInfo,
+    status: "Submitted",
+    ai_classification: complaint.category,
+    ai_confidence: confidence,
+    assigned_department: department,
+    created_at: now,
+    updated_at: now,
+    timeline: [
+      {
+        time: new Date().toLocaleString("en-IN"),
+        actor: complaint.isAnonymous ? "Anonymous Citizen" : "Citizen User",
+        note: "Complaint submitted via AarogyaOne portal.",
+      },
+      {
+        time: new Date().toLocaleString("en-IN"),
+        actor: "AI System",
+        note: `Auto-classified to ${department} with ${confidence}% confidence.`,
+      },
+    ],
+  };
+
+  const updatedList = [newUnifiedComplaint, ...complaintsList];
+  localStorage.setItem("aarogya_complaints", JSON.stringify(updatedList));
+
+  // Map back to output format
+  return {
+    id: newId,
+    hospitalId: complaint.hospitalId,
+    hospitalName: selectedHosp.name,
+    category: complaint.category,
+    description: complaint.description,
+    dateOfVisit: complaint.dateOfVisit,
+    isAnonymous: complaint.isAnonymous,
+    status: "Received",
     department,
-    confidence: Math.floor(88 + Math.random() * 11),
-    sentiment,
+    severity,
+    priority: severity === "Critical" ? "Immediate Attention" : severity === "High" ? "High Priority" : "Routine Investigation",
+    confidence,
+    sentiment: severity === "Low" ? "Neutral Feedback" : "Negative Experience",
+    createdAt: now,
     updates: [
       {
         status: "Received",
         description: `Grievance registered in the system under ticket ID ${newId}.`,
         timestamp: now,
-        updatedBy: "System"
+        updatedBy: "System",
       },
-      {
-        status: "Under AI Analysis",
-        description: `AI Classifier (IndicBERT) auto-classified this issue under "${category}" and recommended routing to "${department}".`,
-        timestamp: new Date(Date.now() + 2000).toISOString(),
-        updatedBy: "AI Orchestration Layer"
-      }
-    ]
+    ],
   };
-
-  const updatedList = [newComplaint, ...complaints];
-  localStorage.setItem("arogya_complaints", JSON.stringify(updatedList));
-
-  // Also update hospital health score temporarily to simulate effect
-  const hospitals = getHospitals();
-  const index = hospitals.findIndex(h => h.id === complaint.hospitalId);
-  if (index !== -1) {
-    const updatedHosp = { ...hospitals[index] };
-    updatedHosp.activeIssues += 1;
-    updatedHosp.aiHealthScore = Math.max(20, updatedHosp.aiHealthScore - 4);
-    updatedHosp.citizenSatisfaction = Math.max(20, updatedHosp.citizenSatisfaction - 5);
-    if (updatedHosp.aiHealthScore < 40) {
-      updatedHosp.statusColor = "Critical";
-    } else if (updatedHosp.aiHealthScore < 60) {
-      updatedHosp.statusColor = "High Risk";
-    } else if (updatedHosp.aiHealthScore < 75) {
-      updatedHosp.statusColor = "Warning";
-    }
-    hospitals[index] = updatedHosp;
-    localStorage.setItem("arogya_hospitals", JSON.stringify(hospitals));
-  }
-
-  return newComplaint;
 }
 
 export function updateComplaintStatusInMock(id: string, nextStatus: Complaint["status"], desc: string): Complaint | null {
-  const complaints = getComplaints();
-  const index = complaints.findIndex(c => c.id === id);
+  const storedStr = localStorage.getItem("aarogya_complaints") || "[]";
+  const complaints = JSON.parse(storedStr);
+  const index = complaints.findIndex((c: any) => c.id === id);
   if (index === -1) return null;
 
+  // Map citizen nextStatus back to AppDataContext ComplaintStatus
+  let targetStatus = "Submitted";
+  if (nextStatus === "Investigation in Progress") targetStatus = "In Progress";
+  else if (nextStatus === "Resolved") targetStatus = "Resolved";
+  else if (nextStatus === "Closed") targetStatus = "Closed";
+  else if (nextStatus === "Assigned to Department") targetStatus = "Assigned to Department";
+  else if (nextStatus === "Under AI Analysis") targetStatus = "Under Review";
+
   const complaint = { ...complaints[index] };
-  complaint.status = nextStatus;
-  complaint.updates = [
-    ...complaint.updates,
+  complaint.status = targetStatus;
+  complaint.timeline = [
+    ...complaint.timeline,
     {
-      status: nextStatus,
-      description: desc,
-      timestamp: new Date().toISOString(),
-      updatedBy: complaint.department
-    }
+      time: new Date().toLocaleString("en-IN"),
+      actor: "Department Officer",
+      note: desc,
+    },
   ];
 
   complaints[index] = complaint;
-  localStorage.setItem("arogya_complaints", JSON.stringify(complaints));
-  return complaint;
+  localStorage.setItem("aarogya_complaints", JSON.stringify(complaints));
+
+  return getComplaints().find((c) => c.id === id) || null;
 }

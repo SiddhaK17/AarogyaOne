@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -22,161 +22,10 @@ import {
   Volume2,
   Upload,
 } from 'lucide-react';
-
-/* ─── Mock Assigned Tasks Database ─── */
-const INITIAL_TASKS = [
-  {
-    id: 'TSK-201',
-    department: 'pwd',
-    hospital: 'PHC Kothrud',
-    issue: 'Main water pipeline leakage in OPD ward',
-    description: 'Water is leaking rapidly from the ceiling in the OPD corridor. It is causing slippery floors and potential risk to patients. Need immediate plumbing repairs.',
-    priority: 'High',
-    severity: 'Level 3 (Disruptive)',
-    assignedDate: '2026-07-01',
-    dueDate: '2026-07-03',
-    status: 'Open',
-    affectedServices: 'Outpatient Department (OPD)',
-    aiClassification: {
-      severity: 'Level 3 (Disruptive)',
-      priority: 'High',
-      suggestedDept: 'Public Works Department (PWD)',
-      explanation: 'Active water leak inside hospital patient wards poses slip hazards and structural risks. Prioritized high to prevent service disruption.'
-    },
-    voiceNote: 'OPD_Corridor_Leak_Report.mp3',
-    evidencePhoto: 'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80&w=600',
-    history: [
-      { time: '2026-07-01 10:15 AM', user: 'Dr. Arjun Mehta (Superintendent)', note: 'Issue reported from Hospital Portal' },
-      { time: '2026-07-01 10:15 AM', user: 'AI Dispatcher', note: 'Auto-classified to PWD with High priority' }
-    ]
-  },
-  {
-    id: 'TSK-204',
-    department: 'pwd',
-    hospital: 'CHC Warje',
-    issue: 'Cracked ceiling plaster in emergency ward',
-    description: 'Plaster has started falling down in pieces from the main ceiling in the casualty/emergency room. Needs masonry repair before it hits anyone.',
-    priority: 'Medium',
-    severity: 'Level 2 (Moderate)',
-    assignedDate: '2026-06-28',
-    dueDate: '2026-07-02',
-    status: 'Work in Progress',
-    affectedServices: 'Emergency / Casualty Room',
-    aiClassification: {
-      severity: 'Level 2 (Moderate)',
-      priority: 'Medium',
-      suggestedDept: 'Public Works Department (PWD)',
-      explanation: 'Falling plaster in casualty presents physical hazard. Medium priority assigned as patient counts are low in that specific corner.'
-    },
-    voiceNote: null,
-    evidencePhoto: 'https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&q=80&w=600',
-    history: [
-      { time: '2026-06-28 02:40 PM', user: 'Nurse In-charge Priya Sen', note: 'Issue reported from Casualty Desk' },
-      { time: '2026-06-29 09:00 AM', user: 'Rajesh Kumar (PWD)', note: 'Task accepted and scheduled inspection' },
-      { time: '2026-06-30 11:30 AM', user: 'Rajesh Kumar (PWD)', note: 'Inspection completed. Scheduled repair masonry staff.' }
-    ]
-  },
-  {
-    id: 'TSK-302',
-    department: 'biomedical',
-    hospital: 'District Hospital Pune',
-    issue: 'ICU Ventilator showing calibration error',
-    description: 'Ventilator #4 in ICU is showing calibration error code E-102. It fails standard start-up tests. Needs biomedical engineer service.',
-    priority: 'Critical',
-    severity: 'Level 5 (Fatal Risk)',
-    assignedDate: '2026-07-01',
-    dueDate: '2026-07-02',
-    status: 'Open',
-    affectedServices: 'Intensive Care Unit (ICU)',
-    aiClassification: {
-      severity: 'Level 5 (Fatal Risk)',
-      priority: 'Critical',
-      suggestedDept: 'Biomedical Engineering Team',
-      explanation: 'Ventilator dysfunction directly compromises life support equipment. Priority flagged as CRITICAL for immediate engineer dispatch.'
-    },
-    voiceNote: 'ICU_Ventilator_Calibration.mp3',
-    evidencePhoto: 'https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&q=80&w=600',
-    history: [
-      { time: '2026-07-01 08:30 AM', user: 'Dr. Ramesh K. (ICU Head)', note: 'Ventilator #4 failed start-up calibration tests.' }
-    ]
-  },
-  {
-    id: 'TSK-305',
-    department: 'biomedical',
-    hospital: 'PHC Baner',
-    issue: 'Defibrillator battery backup failing',
-    description: 'The backup battery of the portable defibrillator in emergency room is failing to hold charge for more than 5 minutes. Needs replacement.',
-    priority: 'High',
-    severity: 'Level 4 (Severe)',
-    assignedDate: '2026-07-01',
-    dueDate: '2026-07-03',
-    status: 'Accepted',
-    affectedServices: 'Emergency Care',
-    aiClassification: {
-      severity: 'Level 4 (Severe)',
-      priority: 'High',
-      suggestedDept: 'Biomedical Engineering Team',
-      explanation: 'Defibrillator is crucial emergency resuscitation gear. Battery failure prevents mobile usage, justifying high priority.'
-    },
-    voiceNote: null,
-    evidencePhoto: 'https://images.unsplash.com/photo-1631557022136-eb7b9ac00b1e?auto=format&fit=crop&q=80&w=600',
-    history: [
-      { time: '2026-07-01 11:20 AM', user: 'Medical Officer Alok Ray', note: 'Battery alert triggered on device checks.' },
-      { time: '2026-07-01 02:00 PM', user: 'Anil Deshmukh (Biomedical)', note: 'Accepted. Dispatching replacement battery pack.' }
-    ]
-  },
-  {
-    id: 'TSK-401',
-    department: 'medical_store',
-    hospital: 'PHC Hadapsar',
-    issue: 'Insulin Glargine stock depleted below threshold',
-    description: 'Insulin Glargine current stock is 12 vials, while daily demand is 8 vials. Depletion predicted in 1.5 days. Urgent replenishment required.',
-    priority: 'High',
-    severity: 'Level 3 (Disruptive)',
-    assignedDate: '2026-07-01',
-    dueDate: '2026-07-02',
-    status: 'Open',
-    affectedServices: 'Pharmacy / Patient Dispensation',
-    aiClassification: {
-      severity: 'Level 3 (Disruptive)',
-      priority: 'High',
-      suggestedDept: 'District Medical Store',
-      explanation: 'Stock forecasting predicts absolute stockout of essential medication (Insulin) within 36 hours. Priority set to High for direct medical supply dispatch.'
-    },
-    voiceNote: null,
-    evidencePhoto: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&q=80&w=600',
-    history: [
-      { time: '2026-07-01 07:00 AM', user: 'AarogyaPulse AI Forecast', note: 'Inventory threshold alert triggered' }
-    ]
-  },
-  {
-    id: 'TSK-501',
-    department: 'electricity',
-    hospital: 'PHC Kothrud',
-    issue: 'Frequent voltage fluctuations causing IT issues',
-    description: 'Constant voltage swings are causing laboratory servers and computers to reboot. Potential risk of database corruption and equipment damage.',
-    priority: 'High',
-    severity: 'Level 3 (Disruptive)',
-    assignedDate: '2026-07-01',
-    dueDate: '2026-07-02',
-    status: 'Open',
-    affectedServices: 'IT infrastructure / Diagnostics Lab',
-    aiClassification: {
-      severity: 'Level 3 (Disruptive)',
-      priority: 'High',
-      suggestedDept: 'Electricity Board',
-      explanation: 'Electrical instability endangers sensitive diagnostics servers and medical hardware. High priority assigned to inspect grid sub-station.'
-    },
-    voiceNote: null,
-    evidencePhoto: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&q=80&w=600',
-    history: [
-      { time: '2026-07-01 09:00 AM', user: 'IT Assistant Rohan Sawant', note: 'Reported reboots in billing and lab nodes.' }
-    ]
-  }
-];
+import { useAppData, type ComplaintStatus, type InfrastructureIssue } from '@/context/AppDataContext';
 
 export default function GovernmentTasks() {
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const { complaints, infraIssues, updateComplaintStatus, updateIssueStatus } = useAppData();
   const [selectedDept, setSelectedDept] = useState('pwd');
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterStatus, setFilterStatus] = useState('All');
@@ -189,55 +38,145 @@ export default function GovernmentTasks() {
   const [progressNote, setProgressNote] = useState('');
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [proofAttached, setProofAttached] = useState(false);
-  
+
+  // Department mapping helper
+  const getTaskDeptCode = (deptName?: string): string => {
+    if (!deptName) return 'other';
+    const dn = deptName.toLowerCase();
+    if (dn.includes('public works') || dn.includes('pwd') || dn.includes('civil')) return 'pwd';
+    if (dn.includes('biomedical') || dn.includes('equipment')) return 'biomedical';
+    if (dn.includes('medical store') || dn.includes('stockout') || dn.includes('medicine')) return 'medical_store';
+    if (dn.includes('electricity') || dn.includes('msedcl')) return 'electricity';
+    if (dn.includes('water') || dn.includes('sanitation')) return 'water';
+    return 'other';
+  };
+
+  // Convert complaints + issues into unified task models
+  const tasks = useMemo(() => {
+    const unified: any[] = [];
+
+    // Add citizen complaints
+    complaints.forEach((c) => {
+      // Map statuses
+      let displayStatus = 'Open';
+      if (c.status === 'In Progress') displayStatus = 'Work in Progress';
+      else if (c.status === 'Resolved' || c.status === 'Closed') displayStatus = 'Completed';
+      else if (c.status === 'Assigned to Department') displayStatus = 'Accepted';
+
+      unified.push({
+        id: c.id,
+        isComplaint: true,
+        department: getTaskDeptCode(c.assigned_department || c.category),
+        hospital: c.hospital_name,
+        issue: c.category,
+        description: c.description,
+        priority: c.severity === 'Critical' ? 'Critical' : c.severity === 'High' ? 'High' : 'Medium',
+        severity: `Level ${c.severity === 'Critical' ? '5 (Fatal)' : c.severity === 'High' ? '3 (High)' : '2 (Moderate)'}`,
+        assignedDate: new Date(c.created_at).toLocaleDateString('en-IN'),
+        dueDate: new Date(new Date(c.created_at).getTime() + 86400000 * 3).toLocaleDateString('en-IN'),
+        status: displayStatus,
+        affectedServices: c.category,
+        aiClassification: {
+          severity: c.severity,
+          priority: c.severity === 'Critical' ? 'Critical' : 'High',
+          suggestedDept: c.assigned_department || 'General Administration',
+          explanation: `Auto-analyzed with ${c.confidence ?? 89}% AI confidence rating.`,
+        },
+        voiceNote: null,
+        evidencePhoto: c.photo_url || null,
+        history: c.timeline.map((t) => ({
+          time: t.time,
+          user: t.actor,
+          note: t.note,
+        })),
+      });
+    });
+
+    // Add hospital infrastructure issues
+    infraIssues.forEach((i) => {
+      let displayStatus = 'Open';
+      if (i.status === 'In Progress') displayStatus = 'Work in Progress';
+      else if (i.status === 'Resolved') displayStatus = 'Completed';
+
+      unified.push({
+        id: i.id,
+        isComplaint: false,
+        department: getTaskDeptCode(i.department || i.type),
+        hospital: i.hospital_name,
+        issue: i.title,
+        description: i.description,
+        priority: i.priority,
+        severity: `Level ${i.priority === 'Critical' ? '4 (Severe)' : '2 (Moderate)'}`,
+        assignedDate: new Date(i.created_at).toLocaleDateString('en-IN'),
+        dueDate: new Date(new Date(i.created_at).getTime() + 86400000 * 2).toLocaleDateString('en-IN'),
+        status: displayStatus,
+        affectedServices: i.type,
+        aiClassification: {
+          severity: i.ai_severity || i.priority,
+          priority: i.priority,
+          suggestedDept: i.ai_category || i.department,
+          explanation: `Reported directly by ${i.reporter} from hospital portal.`,
+        },
+        voiceNote: null,
+        evidencePhoto: null,
+        history: [
+          { time: new Date(i.created_at).toLocaleString('en-IN'), user: i.reporter, note: 'Issue reported from Hospital Portal' },
+        ],
+      });
+    });
+
+    return unified;
+  }, [complaints, infraIssues]);
+
   // Sync selected task updates when state changes
   const updateTaskStatus = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeTask) return;
 
-    const timestamp = new Date().toLocaleString();
-    const updatedHistoryItem = {
-      time: timestamp,
-      user: 'Rajesh Kumar (PWD Operations)',
-      note: progressNote || `Status updated to ${newStatus}`
-    };
+    // Transition back to source models
+    const isComp = activeTask.isComplaint;
+    if (isComp) {
+      // Map displayStatus back to ComplaintStatus
+      let targetStatus: ComplaintStatus = 'Submitted';
+      if (newStatus === 'Work in Progress') targetStatus = 'In Progress';
+      else if (newStatus === 'Completed') targetStatus = 'Resolved';
+      else if (newStatus === 'Accepted') targetStatus = 'Assigned to Department';
+      else if (newStatus === 'Open') targetStatus = 'Submitted';
 
-    const updatedTasks = tasks.map(t => {
-      if (t.id === activeTask.id) {
-        return {
-          ...t,
-          status: newStatus,
-          history: [...t.history, updatedHistoryItem]
-        };
-      }
-      return t;
-    });
+      updateComplaintStatus(
+        activeTask.id,
+        targetStatus,
+        'Government Authority Office',
+        progressNote || `Status updated to ${newStatus}`
+      );
+    } else {
+      // Map to InfrastructureIssue status
+      let targetStatus: 'Open' | 'In Progress' | 'Resolved' = 'Open';
+      if (newStatus === 'Work in Progress') targetStatus = 'In Progress';
+      else if (newStatus === 'Completed') targetStatus = 'Resolved';
 
-    setTasks(updatedTasks);
-    
-    // Update currently viewable task in modal
-    setActiveTask({
-      ...activeTask,
-      status: newStatus,
-      history: [...activeTask.history, updatedHistoryItem]
-    });
+      updateIssueStatus(activeTask.id, targetStatus);
+    }
 
     setProgressNote('');
     alert(`Task ${activeTask.id} status successfully transitioned to: ${newStatus}`);
+    setActiveTask(null);
   };
 
   // Filtered Tasks
-  const filteredTasks = tasks.filter(t => {
-    const matchesDept = t.department === selectedDept;
-    const matchesPriority = filterPriority === 'All' || t.priority === filterPriority;
-    const matchesStatus = filterStatus === 'All' || t.status === filterStatus;
-    const matchesSearch = searchQuery === '' || 
-      t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.hospital.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.issue.toLowerCase().includes(searchQuery.toLowerCase());
-      
-    return matchesDept && matchesPriority && matchesStatus && matchesSearch;
-  });
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      const matchesDept = t.department === selectedDept;
+      const matchesPriority = filterPriority === 'All' || t.priority === filterPriority;
+      const matchesStatus = filterStatus === 'All' || t.status === filterStatus;
+      const matchesSearch = searchQuery === '' || 
+        t.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.hospital.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        t.issue.toLowerCase().includes(searchQuery.toLowerCase());
+        
+      return matchesDept && matchesPriority && matchesStatus && matchesSearch;
+    });
+  }, [tasks, selectedDept, filterPriority, filterStatus, searchQuery]);
 
   // Pre-fill form when task details modal opens
   useEffect(() => {
