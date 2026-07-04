@@ -50,10 +50,18 @@ soundfile==0.12.1         # Reads and writes audio files securely
 
 sentencepiece==0.2.0      # Tokeniser required for IndicBERT and Whisper
 safetensors==0.4.3        # Fast and secure model weight loading
+
+# NOTE:
+# Florence-2 is loaded using a compatibility patch to bypass the
+# flash_attn dependency on Windows.
 huggingface-hub==0.36.2   # Downloads and manages Hugging Face models
 datasets==5.0.0           # Dataset utilities for AI pipelines
 matplotlib==3.9.0         # Training metrics and evaluation visualisations
 scikit-learn==1.5.0       # Evaluation metrics, train/validation split
+
+Pillow==10.3.0            # Image loading, validation and annotation
+opencv-contrib-python==4.10.0.84  # Computer vision utilities
+supervision==0.29.1       # Visualization utilities for detections
 
 # --- Report Generation ---
 jinja2==3.1.4             # Injects your database data into HTML templates
