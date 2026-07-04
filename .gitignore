@@ -73,6 +73,9 @@ backend/app/intelligence/store/checkpoints/
 runs/
 checkpoint-*/
 
+# Hugging Face download locks
+*.lock
+
 # Python build artifacts
 *.egg-info/
 dist/
