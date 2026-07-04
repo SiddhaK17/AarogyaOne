@@ -5,6 +5,7 @@ interface CardProps {
   className?: string;
   padding?: 'none' | 'sm' | 'md' | 'lg';
   hover?: boolean;
+  onClick?: () => void;
 }
 
 export default function Card({
@@ -12,6 +13,7 @@ export default function Card({
   className = '',
   padding = 'md',
   hover = false,
+  onClick,
 }: CardProps) {
   const paddings: Record<string, string> = {
     none: '',
@@ -22,6 +24,7 @@ export default function Card({
 
   return (
     <div
+      onClick={onClick}
       className={`bg-white rounded-2xl border border-slate-200/80 shadow-sm ${
         hover ? 'hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300' : ''
       } ${paddings[padding]} ${className}`}

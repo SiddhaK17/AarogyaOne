@@ -20,16 +20,16 @@ import {
 import { useState } from "react";
 
 const navItems = [
-  { to: "/dhic", icon: LayoutDashboard, label: "District Dashboard" },
-  { to: "/dhic/map", icon: Map, label: "Live District Map" },
-  { to: "/dhic/hospitals", icon: Building2, label: "Hospital Intelligence" },
-  { to: "/dhic/resources", icon: GitBranch, label: "Resource Management" },
-  { to: "/dhic/alerts", icon: Bell, label: "AI Alert Centre" },
-  { to: "/dhic/feedback", icon: MessageSquare, label: "Citizen Feedback" },
-  { to: "/dhic/infrastructure", icon: Server, label: "Infrastructure" },
-  { to: "/dhic/reports", icon: FileBarChart, label: "Executive Reports" },
-  { to: "/dhic/assistant", icon: Bot, label: "AI Decision Assistant" },
-  { to: "/dhic/settings", icon: Settings, label: "Settings" },
+  { to: "/dhic/app", icon: LayoutDashboard, label: "District Dashboard" },
+  { to: "/dhic/app/map", icon: Map, label: "Live District Map" },
+  { to: "/dhic/app/hospitals", icon: Building2, label: "Hospital Intelligence" },
+  { to: "/dhic/app/resources", icon: GitBranch, label: "Resource Management" },
+  { to: "/dhic/app/alerts", icon: Bell, label: "AI Alert Centre" },
+  { to: "/dhic/app/feedback", icon: MessageSquare, label: "Citizen Feedback" },
+  { to: "/dhic/app/infrastructure", icon: Server, label: "Infrastructure" },
+  { to: "/dhic/app/reports", icon: FileBarChart, label: "Executive Reports" },
+  { to: "/dhic/app/assistant", icon: Bot, label: "AI Decision Assistant" },
+  { to: "/dhic/app/settings", icon: Settings, label: "Settings" },
 ];
 
 export default function Sidebar() {
@@ -37,7 +37,7 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   const isActive = (to: string) => {
-    if (to === "/dhic") return pathname === "/dhic";
+    if (to === "/dhic/app") return pathname === "/dhic/app" || pathname === "/dhic";
     return pathname.startsWith(to);
   };
 

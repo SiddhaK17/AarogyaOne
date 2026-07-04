@@ -80,7 +80,7 @@ export default function GovernmentTasks() {
           severity: c.severity,
           priority: c.severity === 'Critical' ? 'Critical' : 'High',
           suggestedDept: c.assigned_department || 'General Administration',
-          explanation: `Auto-analyzed with ${c.confidence ?? 89}% AI confidence rating.`,
+          explanation: `Auto-analyzed with ${c.ai_confidence ?? 89}% AI confidence rating.`,
         },
         voiceNote: null,
         evidencePhoto: c.photo_url || null,

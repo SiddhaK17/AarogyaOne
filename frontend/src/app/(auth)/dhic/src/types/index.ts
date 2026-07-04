@@ -165,6 +165,18 @@ export interface InfrastructureIssue {
   reportedAt: string;
   status: string;
   estimatedResolution: string;
+  hospital_id?: number;
+  hospital_name?: string;
+  taluka?: string;
+  district?: string;
+  title?: string;
+  priority?: string;
+  reporter?: string;
+  ai_category?: string;
+  ai_severity?: string;
+  ai_urgency?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 // ---- Executive Reports ----

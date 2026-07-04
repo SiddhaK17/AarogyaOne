@@ -37,13 +37,15 @@ export default function InfrastructureMonitoring() {
 
   const filtered = infrastructureIssues.filter((issue) => {
     if (statusFilter === "All") return true;
-    return issue.status === statusFilter.toLowerCase().replace(" ", "-");
+    const normalizedIssueStatus = (issue.status || "").toLowerCase().replace(" ", "-");
+    const normalizedFilterStatus = statusFilter.toLowerCase().replace(" ", "-");
+    return normalizedIssueStatus === normalizedFilterStatus;
   });
 
   const counts = {
-    open: infrastructureIssues.filter((i) => i.status === "open").length,
-    "in-progress": infrastructureIssues.filter((i) => i.status === "in-progress").length,
-    critical: infrastructureIssues.filter((i) => i.severity === "critical").length,
+    open: infrastructureIssues.filter((i) => (i.status || "").toLowerCase() === "open").length,
+    "in-progress": infrastructureIssues.filter((i) => (i.status || "").toLowerCase().replace(" ", "-") === "in-progress").length,
+    critical: infrastructureIssues.filter((i) => (i.severity || "").toLowerCase() === "critical").length,
   };
 
   return (
@@ -105,34 +107,40 @@ export default function InfrastructureMonitoring() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(380px, 1fr))", gap: 16 }}>
           {filtered.map((issue) => {
             const TypeIcon = typeIcons[issue.type as keyof typeof typeIcons] || Server;
+            const severity = (issue.severity || issue.priority || "medium").toLowerCase();
+            const hospitalName = issue.hospital || issue.hospital_name;
+            const status = (issue.status || "").toLowerCase().replace(" ", "-");
+            const reportedAt = issue.reportedAt || (issue.created_at ? new Date(issue.created_at).toLocaleTimeString('en-IN') : 'Just now');
+            const estimatedResolution = issue.estimatedResolution || issue.ai_urgency || 'Pending';
+
             return (
               <div
                 key={issue.id}
                 className="card"
-                style={{ borderLeft: `4px solid ${getSeverityColor(issue.severity)}` }}
+                style={{ borderLeft: `4px solid ${getSeverityColor(severity)}` }}
               >
                 <div className="card__body">
                   <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 14 }}>
                     <div style={{
                       width: 40, height: 40, borderRadius: 8,
-                      background: `${getSeverityColor(issue.severity)}15`,
+                      background: `${getSeverityColor(severity)}15`,
                       display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
                     }}>
-                      <TypeIcon size={20} style={{ color: getSeverityColor(issue.severity) }} />
+                      <TypeIcon size={20} style={{ color: getSeverityColor(severity) }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>{issue.type}</div>
-                      <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{issue.hospital}</div>
+                      <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>{hospitalName}</div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4 }}>
                       <span className="badge badge--active" style={{
-                        background: `${getSeverityColor(issue.severity)}15`,
-                        color: getSeverityColor(issue.severity),
+                        background: `${getSeverityColor(severity)}15`,
+                        color: getSeverityColor(severity),
                       }}>
-                        {issue.severity.toUpperCase()}
+                        {severity.toUpperCase()}
                       </span>
-                      <span className={`badge badge--${issue.status === "open" ? "critical" : "approved"}`}>
-                        {issue.status === "in-progress" ? "In Progress" : issue.status.charAt(0).toUpperCase() + issue.status.slice(1)}
+                      <span className={`badge badge--${status === "open" ? "critical" : "approved"}`}>
+                        {status === "in-progress" ? "In Progress" : status.charAt(0).toUpperCase() + status.slice(1)}
                       </span>
                     </div>
                   </div>
@@ -144,16 +152,16 @@ export default function InfrastructureMonitoring() {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", borderTop: "1px solid var(--border-light)", paddingTop: 12 }}>
                     <div style={{ display: "flex", gap: 16, fontSize: 11.5, color: "#94a3b8" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        <Clock size={12} /> Reported: {issue.reportedAt}
+                        <Clock size={12} /> Reported: {reportedAt}
                       </span>
-                      <span>Est. resolution: {issue.estimatedResolution}</span>
+                      <span>Est. resolution: {estimatedResolution}</span>
                     </div>
-                    {issue.status === "open" && (
+                    {status === "open" && (
                       <button className="btn btn--sm btn--primary">
                         <Wrench size={12} /> Dispatch
                       </button>
                     )}
-                    {issue.status === "in-progress" && (
+                    {status === "in-progress" && (
                       <button className="btn btn--sm btn--success">
                         <CheckCircle size={12} /> Resolve
                       </button>

@@ -231,7 +231,7 @@ export function saveComplaint(complaint: Omit<Complaint, "id" | "status" | "crea
     severity,
     priority: severity === "Critical" ? "Immediate Attention" : severity === "High" ? "High Priority" : "Routine Investigation",
     confidence,
-    sentiment: severity === "Low" ? "Neutral Feedback" : "Negative Experience",
+    sentiment: (severity as string) === "Low" ? "Neutral Feedback" : "Negative Experience",
     createdAt: now,
     updates: [
       {
