@@ -1,189 +1,235 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { useHospitalSession } from '../layout';
+import { PALGHAR_HOSPITALS, type PalgharHospital } from '@/data/palgharHospitals';
 import {
   Building2,
   MapPin,
   Phone,
   Mail,
+  Shield,
+  Activity,
+  Award,
   Clock,
-  Edit3,
-  CheckCircle2,
-  Globe,
-  BedDouble,
-  Stethoscope,
-  FlaskConical,
-  Ambulance,
-  ShieldCheck,
+  Save,
+  Check,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 
-/* ─── Mock Hospital Profile ─── */
-const profile = {
-  name: 'Primary Health Centre (PHC) Kothrud',
-  registrationNo: 'MH-PUNE-PHC-00347',
-  type: 'Primary Health Centre (PHC)',
-  district: 'Pune',
-  taluka: 'Haveli',
-  address: 'Plot No. 42, Kothrud Main Road, Near Paud Phata, Kothrud, Pune - 411038',
-  coordinates: { lat: 18.5074, lng: 73.8077 },
-  phone: '+91-20-2543-8800',
-  email: 'phc.kothrud@nhm.gov.in',
-  operatingHours: '24/7 Emergency | OPD: 8:00 AM - 5:00 PM',
-  status: 'Active',
-  activatedOn: '15 March 2024',
-  approvedBy: 'Dr. Sunil Wagh, District Health Officer, Pune',
-};
+export default function HospitalProfilePage() {
+  const { session } = useHospitalSession();
+  
+  // Find real hospital metadata from session
+  const hospitalMaster = PALGHAR_HOSPITALS.find((h) => h.id === session?.hospital_id) || PALGHAR_HOSPITALS[0];
 
-const facilities = [
-  { label: 'Total Beds', value: '147', icon: BedDouble, bg: 'bg-blue-50', color: 'text-blue-600' },
-  { label: 'ICU Capacity', value: '20', icon: BedDouble, bg: 'bg-rose-50', color: 'text-rose-600' },
-  { label: 'Departments', value: '12', icon: Building2, bg: 'bg-indigo-50', color: 'text-indigo-600' },
-  { label: 'Doctors', value: '18', icon: Stethoscope, bg: 'bg-teal-50', color: 'text-teal-600' },
-  { label: 'Lab Facilities', value: 'Full', icon: FlaskConical, bg: 'bg-violet-50', color: 'text-violet-600' },
-  { label: 'Ambulances', value: '4', icon: Ambulance, bg: 'bg-orange-50', color: 'text-orange-600' },
-];
+  const [phone, setPhone] = useState(hospitalMaster.phone);
+  const [email, setEmail] = useState(hospitalMaster.email);
+  const [hasLab, setHasLab] = useState(hospitalMaster.has_laboratory);
+  const [hasAmbulance, setHasAmbulance] = useState(hospitalMaster.has_ambulance);
+  const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-const departments = [
-  'General Medicine', 'Pediatrics', 'Obstetrics & Gynecology', 'Orthopedics',
-  'ENT', 'Ophthalmology', 'Dermatology', 'Dental', 'Radiology',
-  'Pathology', 'Emergency Medicine', 'Pharmacy',
-];
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    // Simulate API update
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    setSaving(false);
+    setSuccess(true);
+    setTimeout(() => setSuccess(false), 3000);
+  };
 
-export default function ProfilePage() {
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-slate-900 tracking-tight">Hospital Profile</h1>
-          <p className="text-sm text-slate-500 font-medium mt-1">Manage your facility information and registration details</p>
-        </div>
-        <Button variant="outline" size="sm"><Edit3 className="h-4 w-4" /> Edit Profile</Button>
+    <div className="space-y-8 max-w-4xl mx-auto">
+      {/* Page Header */}
+      <div>
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+          Hospital <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">Profile</span>
+        </h1>
+        <p className="text-sm text-slate-500 font-medium mt-1">
+          Manage facility information, public contacts, and operational statuses
+        </p>
       </div>
 
-      {/* ─── Profile Card ─── */}
-      <Card padding="lg" className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-teal-50/40 via-transparent to-blue-50/40" />
-        <div className="relative z-10">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Left */}
-            <div className="flex-1">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="bg-gradient-to-br from-teal-500 to-blue-600 p-3 rounded-2xl shadow-lg shadow-teal-500/20">
-                  <Building2 className="h-6 w-6 text-white" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Left Side: Hospital Stats Summary Card */}
+        <div className="md:col-span-1 space-y-6">
+          <Card padding="lg" className="text-center relative overflow-hidden flex flex-col items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-indigo-500/5 -z-10" />
+            <div className="w-16 h-16 rounded-3xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4">
+              <Building2 className="h-8 w-8 text-blue-600" />
+            </div>
+            <h3 className="font-black text-slate-900 text-lg leading-tight">{hospitalMaster.name}</h3>
+            <p className="text-xs text-slate-500 font-semibold mt-1 uppercase tracking-wider">{hospitalMaster.facility_type}</p>
+            
+            <div className="mt-6 w-full space-y-3 pt-6 border-t border-slate-100 text-left text-xs">
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-medium">Registration No</span>
+                <span className="font-mono font-bold text-slate-800">{hospitalMaster.registration_no}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-medium">Taluka Jurisdiction</span>
+                <span className="font-bold text-slate-800">{hospitalMaster.taluka}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-medium">Bed Capacity</span>
+                <span className="font-bold text-slate-800">{hospitalMaster.total_beds} Beds</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400 font-medium">ICU Beds</span>
+                <span className="font-bold text-slate-800">{hospitalMaster.icu_capacity} Beds</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card padding="md">
+            <CardHeader title="System Authority" subtitle="Assigned staff access logs" />
+            <div className="space-y-4 mt-2">
+              <div className="flex items-start gap-3">
+                <div className="p-1.5 rounded-lg bg-emerald-50 border border-emerald-100">
+                  <Award className="h-4 w-4 text-emerald-600" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-black text-slate-900">{profile.name}</h2>
-                  <p className="text-xs text-slate-500 font-medium">{profile.registrationNo}</p>
+                  <p className="text-xs font-bold text-slate-800">{session?.user_name || 'Dr. Arjun Mehta'}</p>
+                  <p className="text-[10px] text-slate-400 font-semibold">{session?.user_designation || 'Medical Superintendent'}</p>
                 </div>
               </div>
+              <p className="text-[10px] text-slate-400 leading-normal">
+                Authorized under Palghar Zilla Parishad Health Command network. Changes will sync to citizen search registry.
+              </p>
+            </div>
+          </Card>
+        </div>
 
-              <div className="flex items-center gap-2 mb-6">
-                <Badge variant="healthy" dot size="md">{profile.status}</Badge>
-                <Badge variant="info" size="md">{profile.type}</Badge>
-              </div>
-
+        {/* Right Side: Manage Profile Form */}
+        <div className="md:col-span-2">
+          <Card padding="lg">
+            <CardHeader title="Facility Details & Settings" subtitle="Verify and edit contact details and utility setups" />
+            
+            <form onSubmit={handleSave} className="space-y-6 mt-6">
+              {/* Read Only Meta */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-slate-50"><MapPin className="h-4 w-4 text-slate-500" /></div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Address</p>
-                    <p className="text-xs text-slate-700 font-medium mt-0.5">{profile.address}</p>
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Hospital Name</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={hospitalMaster.name}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-sm font-bold cursor-not-allowed"
+                  />
                 </div>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-slate-50"><Globe className="h-4 w-4 text-slate-500" /></div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">GPS Coordinates</p>
-                    <p className="text-xs text-slate-700 font-medium mt-0.5">{profile.coordinates.lat}°N, {profile.coordinates.lng}°E</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-slate-50"><Phone className="h-4 w-4 text-slate-500" /></div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Phone</p>
-                    <p className="text-xs text-slate-700 font-medium mt-0.5">{profile.phone}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-slate-50"><Mail className="h-4 w-4 text-slate-500" /></div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email</p>
-                    <p className="text-xs text-slate-700 font-medium mt-0.5">{profile.email}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-slate-50"><Clock className="h-4 w-4 text-slate-500" /></div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Operating Hours</p>
-                    <p className="text-xs text-slate-700 font-medium mt-0.5">{profile.operatingHours}</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-slate-50"><ShieldCheck className="h-4 w-4 text-slate-500" /></div>
-                  <div>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">District & Taluka</p>
-                    <p className="text-xs text-slate-700 font-medium mt-0.5">{profile.district}, {profile.taluka}</p>
-                  </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">ABHA Registration ID</label>
+                  <input
+                    type="text"
+                    disabled
+                    value={hospitalMaster.registration_no}
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 text-sm font-mono cursor-not-allowed"
+                  />
                 </div>
               </div>
-            </div>
 
-            {/* Right – Verification Card */}
-            <div className="md:w-[280px] flex-shrink-0 bg-white/80 rounded-xl border border-emerald-100 p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">Verified & Active</span>
-              </div>
-              <div className="space-y-3 text-[10px]">
-                <div>
-                  <span className="text-slate-400 font-medium">Activated On</span>
-                  <p className="font-bold text-slate-800 mt-0.5">{profile.activatedOn}</p>
-                </div>
-                <div>
-                  <span className="text-slate-400 font-medium">Approved By</span>
-                  <p className="font-bold text-slate-800 mt-0.5">{profile.approvedBy}</p>
-                </div>
-                <div className="pt-2 border-t border-slate-100">
-                  <span className="text-slate-400 font-medium">Registration</span>
-                  <p className="font-bold text-slate-800 mt-0.5">{profile.registrationNo}</p>
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Physical Location</label>
+                <div className="flex gap-2 items-start px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-slate-500">
+                  <MapPin className="h-5 w-5 text-slate-400 shrink-0 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-slate-700">{hospitalMaster.address}</p>
+                    <p className="text-xs text-slate-400 mt-1">Coordinates: {hospitalMaster.latitude}°N, {hospitalMaster.longitude}°E</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+
+              {/* Editable Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Public Phone *</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      required
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium text-slate-900"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Public Email *</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-3.5 h-4 w-4 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium text-slate-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Toggle operational settings */}
+              <div className="space-y-4 pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Facility Features</h4>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-200/60">
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">Laboratory Services</p>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Enable on-site lab reports status</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHasLab(!hasLab)}
+                      className={`relative w-10 h-6 rounded-full transition-colors ${hasLab ? "bg-blue-600" : "bg-slate-300"}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${hasLab ? "translate-x-5" : "translate-x-1"}`} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-200/60">
+                    <div>
+                      <p className="text-xs font-bold text-slate-800">24×7 Ambulance Service</p>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Show ambulance as ready on citizen search</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHasAmbulance(!hasAmbulance)}
+                      className={`relative w-10 h-6 rounded-full transition-colors ${hasAmbulance ? "bg-blue-600" : "bg-slate-300"}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${hasAmbulance ? "translate-x-5" : "translate-x-1"}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+                {success && (
+                  <span className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold mr-auto">
+                    <CheckCircle className="h-4 w-4" /> Profile saved successfully!
+                  </span>
+                )}
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  variant="primary"
+                  className="flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save Changes"}
+                </Button>
+              </div>
+            </form>
+          </Card>
         </div>
-      </Card>
-
-      {/* ─── Facility Summary ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {facilities.map((fac) => {
-          const Icon = fac.icon;
-          return (
-            <Card key={fac.label} padding="md" className="text-center">
-              <div className={`p-2.5 rounded-xl ${fac.bg} w-fit mx-auto mb-2`}>
-                <Icon className={`h-5 w-5 ${fac.color}`} />
-              </div>
-              <p className="text-xl font-black text-slate-900">{fac.value}</p>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">{fac.label}</p>
-            </Card>
-          );
-        })}
       </div>
-
-      {/* ─── Departments ─── */}
-      <Card padding="md">
-        <CardHeader title="Departments" subtitle={`${departments.length} departments registered at this facility`} />
-        <div className="flex flex-wrap gap-2">
-          {departments.map((dept) => (
-            <Badge key={dept} variant="neutral" size="md">
-              {dept}
-            </Badge>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 }

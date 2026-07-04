@@ -1,41 +1,125 @@
 'use client';
 
-import React, { Suspense, useState } from 'react';
+import React, { Suspense, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Shield, Building2, Map, Wrench, Users, ArrowLeft, Loader2 } from 'lucide-react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { 
+  Shield, Building2, Map, Wrench, Users, ArrowLeft, 
+  Loader2, MapPin, CheckCircle2, ChevronDown 
+} from 'lucide-react';
+import {
+  PALGHAR_HOSPITALS,
+  PALGHAR_TALUKAS,
+  getHospitalsByTaluka,
+  type PalgharHospital,
+} from '@/data/palgharHospitals';
+import { useAppData } from '@/context/AppDataContext';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  signOut
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { authApi } from '@/lib/api';
+
+const HOSPITAL_DESIGNATIONS = [
+  'Medical Superintendent',
+  'Hospital Administrator',
+  'Medical Officer',
+  'Pharmacist / Inventory Manager',
+  'Nurse Supervisor',
+];
+
+const GOVERNMENT_DEPARTMENTS = [
+  'Public Works Department (PWD)',
+  'Biomedical Engineering Team',
+  'Electricity Board (MSEDCL)',
+  'Water Supply & Sanitation',
+  'District Medical Store',
+];
+
+const ROLE_MAP: Record<string, string> = {
+  'Medical Superintendent': 'medical_superintendent',
+  'Hospital Administrator': 'hospital_administrator',
+  'Medical Officer': 'medical_officer',
+  'Pharmacist / Inventory Manager': 'pharmacist',
+  'Nurse Supervisor': 'nurse_supervisor',
+  'District Health Officer': 'district_health_officer',
+  'Chief Medical Officer': 'chief_medical_officer',
+  'Surveillance Officer': 'surveillance_officer',
+};
+
+function getPortalByRole(role: string): string {
+  const hospitalRoles = ['medical_superintendent', 'hospital_administrator', 'pharmacist', 'nurse_supervisor', 'medical_officer', 'inventory_manager'];
+  const dhicRoles = ['district_health_officer', 'chief_medical_officer', 'surveillance_officer'];
+  const governmentRoles = ['engineer', 'supplier'];
+  
+  if (hospitalRoles.includes(role)) return 'hospital';
+  if (dhicRoles.includes(role)) return 'dhic';
+  if (governmentRoles.includes(role)) return 'government';
+  return 'citizen';
+}
+
+function getFriendlyErrorMessage(error: any): string {
+  const code = error?.code || '';
+  switch (code) {
+    case 'auth/invalid-email':
+      return 'Please enter a valid email address.';
+    case 'auth/invalid-credential':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+      return 'Incorrect email or password. Please check your credentials and try again.';
+    case 'auth/email-already-in-use':
+      return 'An account already exists with this email address.';
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters.';
+    case 'auth/too-many-requests':
+      return 'Too many failed attempts. Please wait a moment before trying again.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact support.';
+    default:
+      return error?.message || 'Authentication failed. Please try again.';
+  }
+}
 
 function LoginContent() {
   const searchParams = useSearchParams();
   const role = searchParams.get('role') || '';
+  const router = useRouter();
+  const { setActiveHospital } = useAppData();
 
+  // ── Authentication view toggle ──────────────────────────────────────────────
   const [isSignUp, setIsSignUp] = useState(false);
-  const [name, setName] = useState('');
+
+  // ── Shared fields ────────────────────────────────────────────────────────────
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [otp, setOtp] = useState('');
-  const [useOtp, setUseOtp] = useState(false);
+  const [name, setName] = useState('');
+
+  // ── Hospital-specific state ─────────────────────────────────────────────────
+  const [selectedTaluka, setSelectedTaluka] = useState<string>('');
+  const [selectedHospitalId, setSelectedHospitalId] = useState<number | null>(null);
+  const [designation, setDesignation] = useState(HOSPITAL_DESIGNATIONS[0]);
+
+  // ── DHIC specific state ──────────────────────────────────────────────────────
+  const [dhicDesignation, setDhicDesignation] = useState('District Health Officer');
+
+  // ── Government state ─────────────────────────────────────────────────────────
+  const [govDepartment, setGovDepartment] = useState(GOVERNMENT_DEPARTMENTS[0]);
+
+  // ── Loading & Errors ────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Citizen-specific fields
-  const [linkAadhaar, setLinkAadhaar] = useState(false);
-  const [aadhaar, setAadhaar] = useState('');
-
-  // Hospital-specific fields
-  const [frid, setFrid] = useState('');
-  const [designation, setDesignation] = useState('Medical Superintendent');
-
-  // DHIC-specific fields
-  const [officerId, setOfficerId] = useState('');
-  const [district, setDistrict] = useState('Mumbai District');
-
-  // Government-specific fields
-  const [employeeCode, setEmployeeCode] = useState('');
-  const [department, setDepartment] = useState('Public Works Department (PWD)');
+  // ── Computed ────────────────────────────────────────────────────────────────
+  const hospitalsInTaluka = useMemo(
+    () => (selectedTaluka ? getHospitalsByTaluka(selectedTaluka) : []),
+    [selectedTaluka]
+  );
+  const selectedHospital: PalgharHospital | null = useMemo(
+    () => (selectedHospitalId ? (PALGHAR_HOSPITALS.find((h) => h.id === selectedHospitalId) ?? null) : null),
+    [selectedHospitalId]
+  );
 
   const portals = [
     {
@@ -43,587 +127,395 @@ function LoginContent() {
       name: 'Citizen Gateway',
       icon: <Users className="h-6 w-6 text-teal-600" />,
       bg: 'bg-teal-50',
-      border: 'hover:border-teal-400',
-      description: 'Report issues and track resolution',
-      btnText: 'Login as Citizen',
+      description: 'Report healthcare issues, track complaints and locate hospitals in Palghar',
     },
     {
       id: 'hospital',
       name: 'Hospital Portal',
       icon: <Building2 className="h-6 w-6 text-blue-600" />,
       bg: 'bg-blue-50',
-      border: 'hover:border-blue-400',
-      description: 'Authorized medical staff and administrators',
-      btnText: 'Login to Hospital',
+      description: 'For medical staff of government hospitals in Palghar district',
     },
     {
       id: 'dhic',
       name: 'District Command Centre',
       icon: <Map className="h-6 w-6 text-indigo-600" />,
       bg: 'bg-indigo-50',
-      border: 'hover:border-indigo-400',
-      description: 'District Health Officers and DHOs',
-      btnText: 'Login to District Command',
+      description: 'District Health Intelligence Centre — DHO, CMO, Surveillance Officers',
     },
     {
       id: 'government',
       name: 'Govt. Authorities Portal',
       icon: <Wrench className="h-6 w-6 text-orange-600" />,
       bg: 'bg-orange-50',
-      border: 'hover:border-orange-400',
-      description: 'PWD, departments and repair resolvers',
-      btnText: 'Login as Authority',
+      description: 'PWD, Biomedical, MSEDCL — resolve infrastructure and supply issues',
     },
   ];
 
-  const router = useRouter();
   const selectedPortal = portals.find((p) => p.id === role);
 
-  const handleLoginSubmit = async (e: React.FormEvent) => {
+  const writeSessionCookies = (token: string, profile: any) => {
+    document.cookie = `aarogya_token=${token}; path=/; max-age=86400; SameSite=Lax;`;
+    const resolvedPortalRole = getPortalByRole(profile.role);
+    document.cookie = `portal_role=${resolvedPortalRole}; path=/; max-age=86400; SameSite=Lax;`;
+    document.cookie = `user_name=${encodeURIComponent(profile.full_name)}; path=/; max-age=86400; SameSite=Lax;`;
+    
+    // Scoped context cookie setting
+    if (resolvedPortalRole === 'hospital' && profile.hospital_id) {
+      const h = PALGHAR_HOSPITALS.find(hospital => hospital.id === profile.hospital_id);
+      if (h) {
+        document.cookie = `hospital_id=${h.id}; path=/; max-age=86400; SameSite=Lax;`;
+        document.cookie = `hospital_name=${encodeURIComponent(h.name)}; path=/; max-age=86400; SameSite=Lax;`;
+        document.cookie = `hospital_taluka=${h.taluka}; path=/; max-age=86400; SameSite=Lax;`;
+        document.cookie = `user_role=${encodeURIComponent(profile.role)}; path=/; max-age=86400; SameSite=Lax;`;
+        
+        setActiveHospital({
+          hospital_id: h.id,
+          hospital_name: h.name,
+          hospital_short_name: h.short_name,
+          taluka: h.taluka,
+          district: h.district,
+          facility_type: h.facility_type,
+          registration_no: h.registration_no,
+          user_name: profile.full_name,
+          user_designation: profile.role,
+        });
+      }
+    } else if (resolvedPortalRole === 'dhic') {
+      document.cookie = `dhic_district=${encodeURIComponent(profile.district || 'Palghar')}; path=/; max-age=86400; SameSite=Lax;`;
+      document.cookie = `user_role=${encodeURIComponent(profile.role)}; path=/; max-age=86400; SameSite=Lax;`;
+    } else if (resolvedPortalRole === 'government') {
+      document.cookie = `gov_department=${encodeURIComponent(profile.department || 'Public Works Department (PWD)')}; path=/; max-age=86400; SameSite=Lax;`;
+      document.cookie = `user_role=${encodeURIComponent(profile.role + ' Officer')}; path=/; max-age=86400; SameSite=Lax;`;
+    } else {
+      document.cookie = `user_role=Citizen User; path=/; max-age=86400; SameSite=Lax;`;
+    }
+  };
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
-
-    // Check if Firebase configuration environment variables are set
-    const isFirebaseConfigured = 
-      process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-      process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'PLACEHOLDER_API_KEY';
-
-    if (!isFirebaseConfigured) {
-      console.warn("Firebase credentials not configured in .env.local. Falling back to local authentication simulation.");
-      
-      // Simulate login token session
-      document.cookie = "aarogya_token=mock-value; path=/; max-age=86400;";
-      document.cookie = `portal_role=${role}; path=/; max-age=86400;`;
-      
-      let displayName = name || 'User';
-      let displayRole = 'Representative';
-
-      if (role === 'hospital') {
-        if (!isSignUp) {
-          displayName = designation === 'Medical Superintendent' 
-            ? 'Dr. Arjun Mehta' 
-            : designation === 'On-Duty Doctor' 
-            ? 'Dr. Sarah Khan' 
-            : 'Nurse Representative';
-        }
-        displayRole = designation;
-        document.cookie = `hospital_designation=${displayRole}; path=/; max-age=86400;`;
-      } else if (role === 'dhic') {
-        if (!isSignUp) displayName = 'Dr. Priya Sharma';
-        displayRole = 'District Health Officer';
-        document.cookie = `dhic_district=${district}; path=/; max-age=86400;`;
-      } else if (role === 'government') {
-        if (!isSignUp) {
-          displayName = department === 'Public Works Department (PWD)' 
-            ? 'Rajesh Kumar' 
-            : 'Operations Coordinator';
-        }
-        displayRole = `${department} Staff`;
-      } else if (role === 'citizen') {
-        if (!isSignUp) displayName = 'Rahul Sharma';
-        displayRole = 'Citizen User';
-      }
-
-      document.cookie = `user_name=${displayName}; path=/; max-age=86400;`;
-      document.cookie = `user_role=${displayRole}; path=/; max-age=86400;`;
-
-      // Redirect
-      if (role === 'hospital') {
-        router.push('/hospital/dashboard');
-      } else if (role === 'dhic') {
-        router.push('/dhic');
-      } else if (role === 'government') {
-        router.push('/government/dashboard');
-      } else if (role === 'citizen') {
-        router.push('/citizen/search');
-      }
-      return;
-    }
-
-    // Real Firebase Authentication execution flow
     setLoading(true);
+
     try {
       if (isSignUp) {
-        // 1. Sign Up in Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // 2. Prepare metadata maps based on role
-        let hospitalMetadata = null;
-        let dhicMetadata = null;
-        let governmentMetadata = null;
-        let citizenMetadata = null;
-
-        if (role === 'hospital') {
-          hospitalMetadata = { frid, designation };
-        } else if (role === 'dhic') {
-          dhicMetadata = { officerId, district };
-        } else if (role === 'government') {
-          governmentMetadata = { employeeCode, department };
-        } else if (role === 'citizen') {
-          citizenMetadata = { 
-            phone: email,
-            aadhaar: linkAadhaar ? aadhaar : '' 
-          };
+        // Validation before attempting Sign Up
+        if (role === 'hospital' && !selectedHospitalId) {
+          throw new Error('Please select a hospital to register.');
         }
 
-        // 3. Write profile to Firestore
-        await setDoc(doc(db, 'users', user.uid), {
-          uid: user.uid,
-          name: name,
-          email: user.email,
-          role: role,
-          createdAt: new Date().toISOString(),
-          hospitalMetadata,
-          dhicMetadata,
-          governmentMetadata,
-          citizenMetadata
-        });
+        // 1. Firebase auth user creation
+        const credential = await createUserWithEmailAndPassword(auth, email, password);
+        const token = await credential.user.getIdToken();
 
-        // 4. Set Session Cookies
-        document.cookie = "aarogya_token=mock-value; path=/; max-age=86400;";
-        document.cookie = `portal_role=${role}; path=/; max-age=86400;`;
+        // Determine correct backend role mapping
+        let dbRole = 'citizen';
+        let requestHospitalId: number | undefined;
+        let requestDistrict: string | undefined;
+        let requestDepartment: string | undefined;
 
-        let displayRole = role;
         if (role === 'hospital') {
-          displayRole = designation;
-          document.cookie = `hospital_designation=${displayRole}; path=/; max-age=86400;`;
+          dbRole = ROLE_MAP[designation] || 'medical_officer';
+          requestHospitalId = selectedHospitalId || undefined;
         } else if (role === 'dhic') {
-          displayRole = 'District Health Officer';
-          document.cookie = `dhic_district=${district}; path=/; max-age=86400;`;
+          dbRole = ROLE_MAP[dhicDesignation] || 'district_health_officer';
+          requestDistrict = 'Palghar';
         } else if (role === 'government') {
-          displayRole = `${department} Staff`;
-        } else if (role === 'citizen') {
-          displayRole = 'Citizen User';
+          dbRole = 'engineer';
+          requestDepartment = govDepartment;
         }
 
-        document.cookie = `user_name=${name}; path=/; max-age=86400;`;
-        document.cookie = `user_role=${displayRole}; path=/; max-age=86400;`;
+        // 2. Register user in backend database
+        try {
+          // Injects token automatically in header via lib/api configuration
+          const profile = await authApi.register({
+            full_name: name,
+            role: dbRole,
+            hospital_id: requestHospitalId,
+            district: requestDistrict,
+            department: requestDepartment,
+          });
 
+          // Write appropriate routing cookies
+          writeSessionCookies(token, profile);
+        } catch (dbErr: any) {
+          // Cleanup Firebase account if backend registration fails (ensures consistency)
+          if (auth.currentUser) {
+            await auth.currentUser.delete();
+          }
+          throw new Error(`Profile registration failed: ${dbErr?.message || 'Database error'}`);
+        }
       } else {
-        // 1. Sign In using email and password
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
+        // 1. Firebase sign in
+        const credential = await signInWithEmailAndPassword(auth, email, password);
+        const token = await credential.user.getIdToken();
 
-        // 2. Query Firestore Database for this User Uid Profile
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (!userDocSnap.exists()) {
-          throw new Error("No database user profile found. Please contact administrator.");
-        }
-
-        const userData = userDocSnap.data();
-
-        // 3. Verify Role matches the portal route
-        if (userData.role !== role) {
-          throw new Error(`Access Denied: Your account does not have authorization for the ${selectedPortal?.name}.`);
-        }
-
-        // 4. Set Session Cookies
-        document.cookie = "aarogya_token=mock-value; path=/; max-age=86400;";
-        document.cookie = `portal_role=${role}; path=/; max-age=86400;`;
-        
-        const displayName = userData.name || user.email || 'User';
-        let displayRole = userData.role;
-
-        if (role === 'hospital') {
-          displayRole = userData.hospitalMetadata?.designation || designation;
-          document.cookie = `hospital_designation=${displayRole}; path=/; max-age=86400;`;
-        } else if (role === 'dhic') {
-          displayRole = 'District Health Officer';
-          const dist = userData.dhicMetadata?.district || district;
-          document.cookie = `dhic_district=${dist}; path=/; max-age=86400;`;
-        } else if (role === 'government') {
-          displayRole = `${userData.governmentMetadata?.department || department} Staff`;
-        } else if (role === 'citizen') {
-          displayRole = 'Citizen User';
-        }
-
-        document.cookie = `user_name=${displayName}; path=/; max-age=86400;`;
-        document.cookie = `user_role=${displayRole}; path=/; max-age=86400;`;
+        // 2. Fetch profile from backend database
+        const profile = await authApi.getMe();
+        writeSessionCookies(token, profile);
       }
 
-      // 5. Successful redirect
-      if (role === 'hospital') {
-        router.push('/hospital/dashboard');
-      } else if (role === 'dhic') {
-        router.push('/dhic');
-      } else if (role === 'government') {
-        router.push('/government/dashboard');
-      } else if (role === 'citizen') {
-        router.push('/citizen/search');
-      }
+      // 3. Routing redirect based on targeted portal
+      if (role === 'hospital') router.push('/hospital/dashboard');
+      else if (role === 'dhic') router.push('/dhic');
+      else if (role === 'government') router.push('/government/dashboard');
+      else router.push('/citizen');
+
     } catch (err: any) {
-      console.error("Firebase Auth Error: ", err);
-      let errMsg = err.message || "Unable to login. Please try again later.";
-      if (err.code === "auth/invalid-credential" || err.code === "auth/user-not-found" || err.code === "auth/wrong-password") {
-        errMsg = "Invalid email or password. Please verify your credentials.";
-      } else if (err.code === "auth/invalid-email") {
-        errMsg = "Please enter a valid email address.";
-      } else if (err.code === "auth/email-already-in-use") {
-        errMsg = "This email is already registered. Please sign in instead.";
-      } else if (err.code === "auth/weak-password") {
-        errMsg = "Password is too weak. Please enter at least 6 characters.";
-      }
-      setErrorMsg(errMsg);
+      console.error(err);
+      setErrorMsg(getFriendlyErrorMessage(err));
+      // Sign out to clear any partial firebase session
+      await signOut(auth).catch(() => {});
     } finally {
       setLoading(false);
     }
   };
 
-  if (selectedPortal) {
+  if (!selectedPortal) {
     return (
-      <div className="w-full max-w-md p-8 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
-        <Link
-          href="/login"
-          onClick={(e) => {
-            e.preventDefault();
-            router.push('/login');
-          }}
-          className="inline-flex items-center gap-2 mb-8 text-sm text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Change Portal</span>
-        </Link>
-
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-slate-50 mb-4">
-            {selectedPortal.icon}
+      <div className="w-full max-w-2xl px-4 py-8">
+        <div className="text-center mb-12">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-teal-50 border border-teal-200 text-teal-700 text-xs font-bold uppercase tracking-wider mb-6">
+            <MapPin className="h-3 w-3" /> Palghar District, Maharashtra
           </div>
-          <h2 className="text-2xl font-black text-slate-900 mb-2">{selectedPortal.name}</h2>
-          <p className="text-sm text-slate-500">{selectedPortal.description}</p>
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-3">
+            Select Your Portal
+          </h2>
+          <p className="text-slate-500 font-medium">
+            AarogyaOne — Unified Healthcare Intelligence for Palghar District
+          </p>
         </div>
 
-        {/* Dynamic Mode Selector (Sign In / Sign Up) */}
-        <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl mb-6">
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(false);
-              setErrorMsg('');
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${!isSignUp ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
-          >
-            Sign In
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(true);
-              setErrorMsg('');
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${isSignUp ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}
-          >
-            Sign Up
-          </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {portals.map((portal) => (
+            <Link
+              key={portal.id}
+              href={`/login?role=${portal.id}`}
+              className="bg-white border-2 border-slate-100 hover:border-slate-300 rounded-[2rem] p-6 hover:shadow-xl transition-all duration-300 flex flex-col items-start text-left group"
+            >
+              <div className={`p-3 rounded-2xl ${portal.bg} mb-4 group-hover:scale-105 transition-transform duration-300`}>
+                {portal.icon}
+              </div>
+              <h3 className="font-bold text-lg text-slate-900 mb-1">{portal.name}</h3>
+              <p className="text-xs text-slate-500 leading-relaxed font-medium mb-6">{portal.description}</p>
+              <span className="text-xs font-bold text-slate-900 mt-auto flex items-center gap-1 group-hover:underline">
+                Enter Portal →
+              </span>
+            </Link>
+          ))}
         </div>
-
-        {/* Display descriptive login/signup errors */}
-        {errorMsg && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100 text-xs font-semibold text-rose-600">
-            {errorMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleLoginSubmit} className="space-y-5">
-          {isSignUp && (
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Full Name</label>
-              <input
-                type="text"
-                placeholder="Enter your full name"
-                required
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-              />
-            </div>
-          )}
-
-          {role === 'citizen' && (
-            <>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Email Address</label>
-                <input
-                  type="email"
-                  placeholder="Enter email address"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  {isSignUp ? "Create Password" : "Password"}
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div className="flex flex-col gap-3 p-4 bg-slate-50 border border-slate-200/50 rounded-2xl">
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={linkAadhaar}
-                    onChange={(e) => setLinkAadhaar(e.target.checked)}
-                    className="rounded text-slate-900 focus:ring-0"
-                  />
-                  Link Aadhaar for Grievance Verification
-                </label>
-                
-                {linkAadhaar && (
-                  <div className="transition-all duration-300">
-                    <input
-                      type="text"
-                      placeholder="12-digit Aadhaar Number"
-                      maxLength={12}
-                      required
-                      value={aadhaar}
-                      onChange={(e) => setAadhaar(e.target.value.replace(/\D/g, ""))}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-white placeholder:text-slate-400"
-                    />
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-
-          {role === 'hospital' && (
-            <>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">ABHA Facility Registry ID (FRID)</label>
-                <input
-                  type="text"
-                  placeholder="FRID-MUM-902"
-                  required
-                  value={frid}
-                  onChange={(e) => setFrid(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Professional Email</label>
-                <input
-                  type="email"
-                  placeholder="dr.mehta@civilhospital.gov.in"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Staff Designation</label>
-                <select
-                  value={designation}
-                  onChange={(e) => setDesignation(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 text-slate-700 font-semibold"
-                >
-                  <option value="Medical Superintendent">Medical Superintendent</option>
-                  <option value="Inventory Manager">Inventory Manager</option>
-                  <option value="On-Duty Doctor">On-Duty Doctor</option>
-                  <option value="Head Nurse">Head Nurse</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  {isSignUp ? "Create Password" : "Password"}
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-            </>
-          )}
-
-          {role === 'dhic' && (
-            <>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Government Officer ID (NIC Code)</label>
-                <input
-                  type="text"
-                  placeholder="GOV-OFF-9018"
-                  required
-                  value={officerId}
-                  onChange={(e) => setOfficerId(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Official Government Email</label>
-                <input
-                  type="email"
-                  placeholder="dho.mumbai@gov.in"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">District Jurisdiction</label>
-                <select
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 text-slate-700 font-semibold"
-                >
-                  <option value="Mumbai District">Mumbai District</option>
-                  <option value="Pune District">Pune District</option>
-                  <option value="Satara District">Satara District</option>
-                  <option value="Nagpur District">Nagpur District</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  {isSignUp ? "Create Password" : "Password"}
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-            </>
-          )}
-
-          {role === 'government' && (
-            <>
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Officer Employee Code</label>
-                <input
-                  type="text"
-                  placeholder="EMP-PWD-3392"
-                  required
-                  value={employeeCode}
-                  onChange={(e) => setEmployeeCode(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Official Email Address</label>
-                <input
-                  type="email"
-                  placeholder="rajesh.kumar@pwd.gov.in"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Department Division</label>
-                <select
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 text-slate-700 font-semibold"
-                >
-                  <option value="Public Works Department (PWD)">Public Works Department (PWD)</option>
-                  <option value="Biomedical Engineering Team">Biomedical Engineering Team</option>
-                  <option value="Electricity Board">Electricity Board</option>
-                  <option value="Water Supply Department">Water Supply Department</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                  {isSignUp ? "Create Password" : "Password"}
-                </label>
-                <input
-                  type="password"
-                  placeholder="••••••••"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm bg-slate-50 placeholder:text-slate-400"
-                />
-              </div>
-            </>
-          )}
-
-          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input type="checkbox" className="rounded text-slate-900 focus:ring-0" />
-              Remember me
-            </label>
-            <a href="#" className="hover:text-slate-900">Forgot Password?</a>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10 text-sm mt-2 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Processing...
-              </>
-            ) : (
-              isSignUp ? "Sign Up & Register" : "Sign In"
-            )}
-          </button>
-        </form>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-2xl px-4 py-8">
-      <div className="text-center mb-12">
-        <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-3">
-          Select Your Portal
-        </h2>
-        <p className="text-slate-500 font-medium">
-          Choose the portal you wish to access to log in.
-        </p>
+    <div className="w-full max-w-lg p-8 bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50">
+      <Link
+        href="/login"
+        className="inline-flex items-center gap-2 mb-6 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        <span>Change Portal</span>
+      </Link>
+
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center justify-center p-4 rounded-2xl bg-slate-50 mb-3">
+          {selectedPortal.icon}
+        </div>
+        <h2 className="text-2xl font-black text-slate-900 mb-1">{selectedPortal.name}</h2>
+        <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">{isSignUp ? 'Registration Account Setup' : 'Secure Officer Login'}</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {portals.map((portal) => (
-          <Link
-            key={portal.id}
-            href={`/login?role=${portal.id}`}
-            className={`bg-white border-2 border-slate-100 hover:border-slate-200 rounded-[2rem] p-6 hover:shadow-xl transition-all duration-300 flex flex-col items-start text-left group`}
-          >
-            <div className={`p-3 rounded-2xl ${portal.bg} mb-4 group-hover:scale-105 transition-transform duration-300`}>
-              {portal.icon}
-            </div>
-            <h3 className="font-bold text-lg text-slate-900 mb-1 group-hover:text-slate-800">
-              {portal.name}
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed font-medium mb-6">
-              {portal.description}
-            </p>
-            <span className="text-xs font-bold text-slate-900 group-hover:underline mt-auto flex items-center gap-1">
-              Select Portal →
-            </span>
-          </Link>
-        ))}
+      {/* Tabs */}
+      <div className="flex bg-slate-100 p-1.5 rounded-2xl mb-6">
+        <button
+          type="button"
+          onClick={() => { setIsSignUp(false); setErrorMsg(''); }}
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${!isSignUp ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          Sign In
+        </button>
+        <button
+          type="button"
+          onClick={() => { setIsSignUp(true); setErrorMsg(''); }}
+          className={`flex-1 py-2.5 text-xs font-bold rounded-xl transition-all ${isSignUp ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          Sign Up / Register
+        </button>
       </div>
+
+      {errorMsg && (
+        <div className="mb-5 p-4 rounded-xl bg-rose-50 border border-rose-100 text-xs font-semibold text-rose-600">
+          {errorMsg}
+        </div>
+      )}
+
+      <form onSubmit={handleAuthSubmit} className="space-y-4">
+        {isSignUp && (
+          <div>
+            <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">Full Name</label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. Ramesh Patil"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm bg-slate-50 placeholder:text-slate-400 font-semibold"
+            />
+          </div>
+        )}
+
+        <div>
+          <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">Email Address</label>
+          <input
+            type="email"
+            required
+            placeholder="officer@aarogyaone.gov.in"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm bg-slate-50 placeholder:text-slate-400 font-semibold"
+          />
+        </div>
+
+        <div>
+          <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">Password</label>
+          <input
+            type="password"
+            required
+            placeholder="••••••••"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm bg-slate-50 placeholder:text-slate-400 font-semibold"
+          />
+        </div>
+
+        {/* Signup dynamic fields */}
+        {isSignUp && role === 'hospital' && (
+          <div className="space-y-4 pt-2 border-t border-slate-100">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">Select Taluka</label>
+              <div className="relative">
+                <select
+                  value={selectedTaluka}
+                  onChange={(e) => {
+                    setSelectedTaluka(e.target.value);
+                    setSelectedHospitalId(null);
+                  }}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-slate-50 text-slate-700 font-semibold appearance-none"
+                >
+                  <option value="">— Select Taluka —</option>
+                  {PALGHAR_TALUKAS.map((t) => (
+                    <option key={t} value={t}>{t} Taluka</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">Select Your Hospital</label>
+              <div className="relative">
+                <select
+                  value={selectedHospitalId ?? ''}
+                  onChange={(e) => setSelectedHospitalId(Number(e.target.value) || null)}
+                  disabled={!selectedTaluka}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-slate-50 text-slate-700 font-semibold appearance-none disabled:opacity-50"
+                >
+                  <option value="">{selectedTaluka ? `— Select Hospital in ${selectedTaluka} —` : '— Select a Taluka first —'}</option>
+                  {hospitalsInTaluka.map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            {selectedHospital && (
+              <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100 space-y-1.5">
+                <p className="text-sm font-black text-slate-900">{selectedHospital.name}</p>
+                <p className="text-xs text-slate-500">{selectedHospital.address}</p>
+                <div className="flex gap-4 pt-1 text-[10px] text-blue-700 font-bold">
+                  <span>Reg: {selectedHospital.registration_no}</span>
+                  <span>{selectedHospital.total_beds} Beds</span>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">Your Designation</label>
+              <div className="relative">
+                <select
+                  value={designation}
+                  onChange={(e) => setDesignation(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-slate-50 text-slate-700 font-semibold appearance-none"
+                >
+                  {HOSPITAL_DESIGNATIONS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isSignUp && role === 'dhic' && (
+          <div className="space-y-4 pt-2 border-t border-slate-100">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">Designation</label>
+              <div className="relative">
+                <select
+                  value={dhicDesignation}
+                  onChange={(e) => setDhicDesignation(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-slate-50 text-slate-700 font-semibold appearance-none"
+                >
+                  <option value="District Health Officer">District Health Officer</option>
+                  <option value="Chief Medical Officer">Chief Medical Officer</option>
+                  <option value="Surveillance Officer">Surveillance Officer</option>
+                </select>
+                <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="bg-indigo-50 rounded-2xl p-4 border border-indigo-100">
+              <div className="flex items-center gap-2 mb-1">
+                <MapPin className="h-4 w-4 text-indigo-600" />
+                <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">District Jurisdiction</span>
+              </div>
+              <p className="text-sm font-black text-slate-900">Palghar District</p>
+              <p className="text-xs text-slate-500">Maharashtra · 8 Talukas · {PALGHAR_HOSPITALS.length} Facilities</p>
+            </div>
+          </div>
+        )}
+
+        {isSignUp && role === 'government' && (
+          <div className="space-y-4 pt-2 border-t border-slate-100">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-700 uppercase tracking-wider mb-2">Department Division</label>
+              <div className="relative">
+                <select
+                  value={govDepartment}
+                  onChange={(e) => setGovDepartment(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900 text-sm bg-slate-50 text-slate-700 font-semibold appearance-none"
+                >
+                  {GOVERNMENT_DEPARTMENTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                </select>
+                <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors shadow-lg shadow-slate-900/10 text-sm mt-3 flex items-center justify-center gap-2 disabled:opacity-60"
+        >
+          {loading ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Processing...</>
+          ) : (
+            isSignUp ? 'Register & Enter Portal' : `Enter Portal →`
+          )}
+        </button>
+      </form>
     </div>
   );
 }
@@ -634,6 +526,7 @@ export default function LoginPage() {
       <div className="absolute top-8 left-8 flex items-center gap-2 font-black text-lg text-slate-900 tracking-tight">
         <Shield className="h-6 w-6 text-teal-600" />
         AarogyaOne
+        <span className="text-xs font-semibold text-slate-400 ml-1 border border-slate-200 rounded-full px-2 py-0.5">Palghar Pilot</span>
       </div>
       <Suspense fallback={<div className="text-slate-500">Loading...</div>}>
         <LoginContent />

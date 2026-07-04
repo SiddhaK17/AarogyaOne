@@ -9,21 +9,22 @@ python-multipart==0.0.9   # Required by FastAPI to handle file uploads (images/a
 
 # --- Environment & Configuration ---
 python-dotenv==1.0.1      # Loads your secret API keys and database URLs from the .env file
+pydantic-settings==2.3.0  # Pydantic-based settings loader for environment variables
 
-# --- Database & Caching ---
+# --- Database ---
 sqlalchemy==2.0.31        # The ORM that lets you write Python instead of raw SQL queries
-psycopg2-binary==2.9.9    # The adapter that allows Python to talk to PostgreSQL
-redis==5.0.7              # Connects to your Redis cache for speed and Celery queues
+psycopg2-binary==2.9.9    # The adapter that allows Python to talk to PostgreSQL (Supabase)
 
-# --- Background Workers ---
-celery==5.4.0             # Manages the background task queue for heavy AI inference
+# --- Supabase (Database + Storage + Realtime) ---
+supabase==2.6.0           # Official Supabase Python client (Storage management, Realtime triggers)
+
+# --- Firebase Admin SDK ---
+firebase-admin==6.5.0     # Verifies Firebase ID Tokens on every protected API request
 
 # --- Security & Authentication ---
 pydantic[email]==2.7.4    # Data validation and email format checking
-python-jose[cryptography]==3.3.0 # Generates and decodes secure JWT login tokens
-passlib[bcrypt]==1.7.4    # Hashes passwords so they are never stored as plain text
 
-# --- Data Science & Optimization ---
+# --- Data Science & Optimisation ---
 pandas==2.2.2             # Handles complex data manipulation and tabular data
 numpy==1.26.4             # Core mathematical operations
 joblib==1.4.2             # Saves and loads your trained tabular ML models (.pkl files)
@@ -42,21 +43,21 @@ torchvision==0.18.1       # PyTorch extension for image processing
 
 # --- NLP, Speech & Vision (Hugging Face) ---
 transformers==4.41.2      # Hugging Face Transformers (IndicBERT & Whisper)
-accelerate==0.31.0        # Optimizes heavy models to run faster on your GPU
-bitsandbytes==0.43.1      # Compresses models (quantization) to save VRAM if needed
+accelerate==0.31.0        # Optimises heavy models to run faster on your GPU
+bitsandbytes==0.43.1      # Compresses models (quantisation) to save VRAM if needed
 librosa==0.10.2           # Extracts features from uploaded audio files
 soundfile==0.12.1         # Reads and writes audio files securely
 
-sentencepiece==0.2.0      # Tokenizer required for IndicBERT and Whisper
-safetensors==0.4.3         # Fast and secure model weight loading
+sentencepiece==0.2.0      # Tokeniser required for IndicBERT and Whisper
+safetensors==0.4.3        # Fast and secure model weight loading
 
 # NOTE:
 # Florence-2 is loaded using a compatibility patch to bypass the
 # flash_attn dependency on Windows.
-huggingface-hub==0.36.2    # Downloads and manages Hugging Face models
-datasets==5.0.0            # Dataset utilities for AI pipelines
-matplotlib==3.9.0          # Training metrics and evaluation visualizations
-scikit-learn==1.5.0        # Evaluation metrics, train/validation split
+huggingface-hub==0.36.2   # Downloads and manages Hugging Face models
+datasets==5.0.0           # Dataset utilities for AI pipelines
+matplotlib==3.9.0         # Training metrics and evaluation visualisations
+scikit-learn==1.5.0       # Evaluation metrics, train/validation split
 
 Pillow==10.3.0            # Image loading, validation and annotation
 opencv-contrib-python==4.10.0.84  # Computer vision utilities
@@ -64,4 +65,4 @@ supervision==0.29.1       # Visualization utilities for detections
 
 # --- Report Generation ---
 jinja2==3.1.4             # Injects your database data into HTML templates
-pdfkit==1.0.0             # Converts the HTML templates into downloadable PDFs
+weasyprint==62.3          # Converts HTML templates into downloadable PDFs (no external binary needed)

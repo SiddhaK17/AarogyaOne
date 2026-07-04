@@ -10,6 +10,9 @@
 .env.*.local
 *.pem
 secrets/
+*firebase-adminsdk.json
+*.db
+*.db.bak
 
 # ------------------------------------------
 # 2. Python & Backend (FastAPI / Celery)
@@ -135,3 +138,4 @@ Thumbs.db
 .vscode/
 .idea/
 *.swp
+*.tsbuildinfo

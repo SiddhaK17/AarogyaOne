@@ -80,7 +80,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <Header title="District Dashboard" subtitle="Real-time overview of Mumbai District healthcare operations" />
+      <Header title="District Dashboard" subtitle="Real-time overview of Palghar District healthcare operations" />
       <div className="page">
         {/* Summary Cards */}
         <div className="summary-cards">

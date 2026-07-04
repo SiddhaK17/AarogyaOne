@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { X, CheckCheck, Loader2 } from 'lucide-react';
 import {
   Users,
   Stethoscope,
@@ -41,7 +42,18 @@ const staffSummary = [
   { label: 'Support Staff', present: 12, total: 15, icon: Wrench, color: 'text-slate-600', bg: 'bg-slate-100' },
 ];
 
-const staffList = [
+interface StaffRecord {
+  id: string;
+  name: string;
+  department: string;
+  designation: string;
+  shift: string;
+  status: string;
+  checkIn: string;
+  checkOut: string;
+}
+
+const initialStaffList: StaffRecord[] = [
   { id: 'EMP001', name: 'Dr. Arjun Mehta', department: 'General Medicine', designation: 'Medical Superintendent', shift: 'Morning', status: 'Present', checkIn: '08:15 AM', checkOut: '—' },
   { id: 'EMP002', name: 'Dr. Priya Sharma', department: 'ICU', designation: 'Senior Doctor', shift: 'Morning', status: 'Present', checkIn: '08:00 AM', checkOut: '—' },
   { id: 'EMP003', name: 'Dr. Rajesh Kulkarni', department: 'Emergency', designation: 'Medical Officer', shift: 'Night', status: 'On Leave', checkIn: '—', checkOut: '—' },
@@ -51,6 +63,96 @@ const staffList = [
   { id: 'EMP007', name: 'Ravi Kumar', department: 'Radiology', designation: 'Lab Technician', shift: 'Morning', status: 'Present', checkIn: '08:05 AM', checkOut: '—' },
   { id: 'EMP008', name: 'Suresh Gade', department: 'Transport', designation: 'Ambulance Driver', shift: 'Morning', status: 'Present', checkIn: '07:30 AM', checkOut: '—' },
 ];
+
+/* ─── Attendance Modal ─── */
+function AttendanceModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r: StaffRecord) => void }) {
+  const [name, setName] = useState('');
+  const [designation, setDesignation] = useState('Medical Officer');
+  const [department, setDepartment] = useState('General Medicine');
+  const [shift, setShift] = useState('Morning');
+  const [status, setStatus] = useState('Present');
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name) return;
+    setSubmitting(true);
+    await new Promise((r) => setTimeout(r, 700));
+    const now = new Date();
+    const checkIn = status === 'Present' ? now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—';
+    onSubmit({
+      id: `EMP${String(Math.floor(Math.random() * 900) + 100)}`,
+      name, designation, department, shift, status, checkIn, checkOut: '—',
+    });
+    setSuccess(true);
+    setTimeout(() => onClose(), 1100);
+  };
+
+  if (success) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div className="bg-white rounded-3xl p-10 shadow-2xl flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center"><CheckCheck className="h-8 w-8 text-emerald-600" /></div>
+          <h3 className="text-xl font-black text-slate-900">Attendance Logged!</h3>
+          <p className="text-sm text-slate-500">Record saved to the attendance database.</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-slate-100">
+          <div>
+            <h2 className="text-lg font-black text-slate-900">Mark Attendance</h2>
+            <p className="text-xs text-slate-500 font-medium">Log today's attendance for a staff member</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-xl"><X className="h-5 w-5 text-slate-500" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">Employee Name *</label>
+            <input required value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Dr. Priya Sharma" className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">Designation</label>
+              <select value={designation} onChange={(e) => setDesignation(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white">
+                {['Medical Superintendent','Senior Doctor','Medical Officer','Junior Doctor','Nurse Supervisor','Staff Nurse','Chief Pharmacist','Lab Technician','Ambulance Driver','Support Staff'].map(d => <option key={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">Department</label>
+              <select value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white">
+                {['General Medicine','ICU','Emergency','General Ward','Pharmacy','Pediatrics','Radiology','Maternity','OPD','Facilities','Transport'].map(d => <option key={d}>{d}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">Shift</label>
+              <select value={shift} onChange={(e) => setShift(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white">
+                {['Morning','Evening','Night'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-slate-900 bg-white">
+                {['Present','Absent','On Leave'].map(s => <option key={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-3 pt-1">
+            <button type="button" onClick={onClose} className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-sm font-bold text-slate-600 hover:bg-slate-50">Cancel</button>
+            <button type="submit" disabled={submitting} className="flex-1 px-4 py-3 rounded-xl bg-slate-900 text-white text-sm font-bold hover:bg-violet-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-2">
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Saving…</> : 'Save Attendance'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 const shiftDistribution = [
   { shift: 'Morning', doctors: 8, nurses: 14, others: 12 },
@@ -68,6 +170,8 @@ const aiStaffPrediction = {
 export default function StaffPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [staffList, setStaffList] = useState(initialStaffList);
+  const [showModal, setShowModal] = useState(false);
 
   const filtered = staffList.filter((s) => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.department.toLowerCase().includes(searchTerm.toLowerCase());
@@ -75,18 +179,27 @@ export default function StaffPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const totalPresent = staffSummary.reduce((a, b) => a + b.present, 0);
-  const totalStaff = staffSummary.reduce((a, b) => a + b.total, 0);
+  const totalPresent = staffList.filter(s => s.status === 'Present').length;
+  const totalStaff = staffList.length;
 
   return (
     <div className="space-y-8">
+      {showModal && (
+        <AttendanceModal
+          onClose={() => setShowModal(false)}
+          onSubmit={(record) => {
+            setStaffList((prev) => [record, ...prev]);
+            setShowModal(false);
+          }}
+        />
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Staff & Attendance</h1>
           <p className="text-sm text-slate-500 font-medium mt-1">Daily workforce availability and shift management</p>
         </div>
-        <Button variant="primary" size="sm"><Plus className="h-4 w-4" /> Mark Attendance</Button>
+        <Button variant="primary" size="sm" onClick={() => setShowModal(true)}><Plus className="h-4 w-4" /> Mark Attendance</Button>
       </div>
 
       {/* ─── Overall Stats ─── */}
