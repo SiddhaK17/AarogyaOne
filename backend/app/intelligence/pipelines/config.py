@@ -19,6 +19,11 @@ import torch
 # ---------------------------------------------------------------------------
 
 _INTELLIGENCE_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parents[4]
+
+AI_MODELS_DIR = PROJECT_ROOT / "ai_models"
+TRAINED_MODELS_DIR = AI_MODELS_DIR / "trained_models"
+
 _STORE_ROOT = _INTELLIGENCE_ROOT / "store"
 
 WEIGHTS_DIR = _STORE_ROOT / "weights"
@@ -334,3 +339,27 @@ CONFIDENCE_THRESHOLD = 0.35
 VISION_DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 TEXT_CONFIDENCE_THRESHOLD = 0.30
+
+
+# ==========================================================
+# AI ORCHESTRATION & RESOURCE MANAGEMENT
+# ==========================================================
+
+@dataclass
+class AIOrchestratorConfig:
+    """Central settings for the unified AI subsystem."""
+    # Lifecycle
+    auto_warmup_on_startup: bool = True
+    fail_fast_on_corruption: bool = True
+    
+    # Device preferences
+    prefer_gpu: bool = True
+    allow_cpu_fallback: bool = True
+    
+    # Inference limits (milliseconds)
+    max_inference_time_ms: int = 5000
+    
+    # Threads
+    max_concurrent_inferences: int = 10
+
+ORCHESTRATOR_CONFIG = AIOrchestratorConfig()

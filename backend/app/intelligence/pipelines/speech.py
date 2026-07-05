@@ -30,6 +30,8 @@ import torch
 import torchaudio
 import numpy as np
 
+from app.intelligence.core.base_engine import BaseAIEngine
+
 # ── Logging ─────────────────────────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
@@ -413,3 +415,66 @@ class SpeechRecognizer:
         result = self.process_audio(path)
         saved_path = self.save_transcript(result)
         return saved_path
+
+
+class SpeechEngine(BaseAIEngine):
+    """
+    Standardized wrapper for the SpeechRecognizer.
+    """
+    def __init__(self):
+        self._recognizer = SpeechRecognizer()
+        self._is_loaded = False
+        self._last_warmup = None
+
+    def load(self) -> None:
+        if not self._is_loaded:
+            self._recognizer.load_model()
+            self._is_loaded = True
+
+    def reload(self) -> None:
+        self.shutdown()
+        self.load()
+
+    def shutdown(self) -> None:
+        if self._is_loaded:
+            self._recognizer.model = None
+            self._recognizer.processor = None
+            self._recognizer.pipe = None
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            self._is_loaded = False
+
+    def warmup(self) -> None:
+        if not self._is_loaded:
+            raise RuntimeError("Cannot warmup SpeechEngine before loading.")
+        # Minimal warmup: Just a tiny dummy array to prime CUDA
+        try:
+            dummy_audio = np.zeros(16000, dtype=np.float32)
+            self._recognizer.pipe(dummy_audio, generate_kwargs={"language": "english"})
+            self._last_warmup = time.time()
+        except Exception as e:
+            raise RuntimeError(f"Speech warmup failed: {e}")
+
+    def is_loaded(self) -> bool:
+        return self._is_loaded
+
+    def health(self) -> Dict[str, Any]:
+        return {
+            "is_loaded": self._is_loaded,
+            "device": self._recognizer.device,
+            "model_version": "whisper-large-v3",
+            "dataset_version": "N/A",
+            "training_quality_r2": 0.0,
+            "last_warmup_timestamp": self._last_warmup
+        }
+
+    def metadata(self) -> Dict[str, Any]:
+        return {
+            "model_id": self._recognizer.model_id,
+            "device": self._recognizer.device
+        }
+
+    def transcribe(self, audio_path: str) -> TranscriptResult:
+        if not self._is_loaded:
+            self.load()
+        return self._recognizer.process_audio(Path(audio_path))

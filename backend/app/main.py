@@ -93,7 +93,31 @@ async def startup_event():
         logger.warning("⚠️  Supabase credentials not configured. Storage features will be unavailable.")
 
     logger.info("✅ Database tables initialised.")
+    
+    # Initialize the AI Subsystem
+    try:
+        from app.intelligence.core.startup import initialize_ai_subsystem
+        initialize_ai_subsystem()
+        logger.info("✅ AI Subsystem loaded and warmed up.")
+    except Exception as exc:
+        logger.error(f"❌ AI Subsystem initialization failed: {exc}", exc_info=True)
+        # If fail_fast is enabled, it will have raised an error and crashed the app.
+        # Otherwise, we just log it and move on.
+
     logger.info(f"📖 API docs available at: /api/docs")
+
+# ---------------------------------------------------------------------------
+# Shutdown event
+# ---------------------------------------------------------------------------
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("🛑 Shutting down AarogyaOne...")
+    try:
+        from app.intelligence.core.startup import shutdown_ai_subsystem
+        shutdown_ai_subsystem()
+    except Exception as exc:
+        logger.error(f"❌ Error during AI subsystem shutdown: {exc}", exc_info=True)
 
 # ---------------------------------------------------------------------------
 # Register routers

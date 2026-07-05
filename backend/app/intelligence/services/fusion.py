@@ -25,6 +25,9 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, UTC
 from enum import Enum
 from typing import Any, Dict, List, Optional
+import time
+
+from app.intelligence.core.base_engine import BaseAIEngine
 
 # ── Logging ─────────────────────────────────────────────────────────────────
 logger = logging.getLogger("aarogya.fusion_service")
@@ -540,3 +543,122 @@ class EvidenceFusionService:
     def reset(self) -> None:
         """Resets the internal service state for processing a new grievance."""
         self.__init__()
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  SECTION 7 — FUSION ENGINE WRAPPER
+# ════════════════════════════════════════════════════════════════════════════
+
+class FusionEngine(BaseAIEngine):
+    """
+    Standardized wrapper for the EvidenceFusionService.
+    Conforms to the BaseAIEngine contract for registry compatibility.
+    """
+    def __init__(self):
+        super().__init__()
+        self._service = EvidenceFusionService()
+        self._is_loaded = False
+        self._last_warmup = None
+
+    def load(self) -> None:
+        if not self._is_loaded:
+            # EvidenceFusionService has no models to load, it is stateless AI logic orchestration
+            self._is_loaded = True
+            logger.info("fusion_engine_loaded", extra={"event_message": "FusionEngine loaded successfully."})
+
+    def reload(self) -> None:
+        self.shutdown()
+        self.load()
+
+    def shutdown(self) -> None:
+        if self._is_loaded:
+            self._service.reset()
+            self._service = EvidenceFusionService()
+            self._is_loaded = False
+            logger.info("fusion_engine_shutdown", extra={"event_message": "FusionEngine shutdown successfully."})
+
+    def warmup(self) -> None:
+        if not self._is_loaded:
+            raise RuntimeError("Cannot warmup FusionEngine before loading.")
+        
+        # Lightweight synthetic merge to verify functionality
+        try:
+            temp_service = EvidenceFusionService()
+            citizen = CitizenMetadata("TEST_C", "TEST_C_ID", None, None)
+            hospital = HospitalMetadata("TEST_H", "TEST_NAME", "TEST_DIST", "TEST_STATE")
+            location = LocationMetadata(10.0, 20.0, "TEST_ADDR")
+            temp_service.merge_metadata(citizen, hospital, location)
+            temp_service.merge()
+            self._last_warmup = time.time()
+            logger.info("fusion_engine_warmup", extra={"event_message": "FusionEngine warmup successful."})
+        except Exception as e:
+            raise RuntimeError(f"FusionEngine warmup failed: {e}")
+
+    def is_loaded(self) -> bool:
+        return self._is_loaded
+
+    def health(self) -> Dict[str, Any]:
+        return {
+            "is_loaded": self._is_loaded,
+            "device": "CPU",
+            "model_version": "N/A",
+            "dataset_version": "N/A",
+            "training_quality_r2": 0.0,
+            "last_warmup_timestamp": self._last_warmup
+        }
+
+    def metadata(self) -> Dict[str, Any]:
+        return {
+            "type": "orchestration_fusion",
+            "weights": {
+                "nlp": WEIGHT_NLP,
+                "vision": WEIGHT_VISION,
+                "speech": WEIGHT_SPEECH
+            }
+        }
+
+    # ── Delegated Methods ───────────────────────────────────────────────────
+
+    def merge_speech(self, speech: Any) -> None:
+        self._service.merge_speech(speech)
+
+    def merge_vision(self, vision: Any) -> None:
+        self._service.merge_vision(vision)
+
+    def merge_nlp(self, nlp: Any) -> None:
+        self._service.merge_nlp(nlp)
+
+    def merge_metadata(self, citizen: Any, hospital: Any, location: Any) -> None:
+        self._service.merge_metadata(citizen, hospital, location)
+
+    def merge(self) -> UnifiedEvidence:
+        if not self._is_loaded:
+            self.load()
+        return self._service.merge()
+        
+    def export_json(self) -> str:
+        return self._service.export_json()
+
+    def export_summary(self) -> str:
+        return self._service.export_summary()
+
+    def export_dict(self) -> Dict[str, Any]:
+        return self._service.export_dict()
+
+    def calculate_overall_confidence(self) -> float:
+        return self._service.calculate_overall_confidence()
+
+    def calculate_overall_risk(self) -> RiskLevel:
+        return self._service.calculate_overall_risk()
+
+    def calculate_quality_score(self) -> int:
+        return self._service.calculate_quality_score()
+
+    def calculate_processing_time(self) -> float:
+        return self._service.calculate_processing_time()
+
+    def generate_evidence_summary(self) -> str:
+        return self._service.generate_evidence_summary()
+
+    def reset(self) -> None:
+        self._service.reset()

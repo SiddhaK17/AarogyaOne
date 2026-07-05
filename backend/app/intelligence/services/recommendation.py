@@ -19,19 +19,11 @@ from datetime import datetime, UTC
 from enum import Enum
 from typing import Any, Dict, List, Optional, Set
 
-# Attempt to safely import dependencies from priority.py
-try:
-    from backend.app.intelligence.services.priority import (
-        PriorityDecision, 
-        PriorityLevel, 
-        EscalationLevel
-    )
-except ImportError:
-    # Fallback to local import if executed dynamically
-    import sys
-    from pathlib import Path
-    sys.path.append(str(Path(__file__).resolve().parent))
-    from priority import PriorityDecision, PriorityLevel, EscalationLevel
+from app.intelligence.services.priority import (
+    PriorityDecision, 
+    PriorityLevel, 
+    EscalationLevel
+)
 
 # ── LOGGING ─────────────────────────────────────────────────────────────────
 logger = logging.getLogger("aarogya.recommendation_engine")

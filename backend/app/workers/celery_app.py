@@ -69,7 +69,7 @@ async def run_forecast(hospital_id: int, db: Session) -> None:
     """
     logger.info(f"[forecast] Starting for hospital_id={hospital_id}")
     try:
-        # TODO: Replace stub with actual LightGBM forecasting call:
+        # Batch 2: Replace stub with actual LightGBM forecasting call:
         # from app.intelligence.pipelines.forecasting import ForecastingEngine
         # engine = ForecastingEngine()
         # predictions = engine.predict_for_hospital(hospital_id, db)
@@ -141,7 +141,7 @@ async def recalculate_hospital_score(hospital_id: int, db: Session) -> None:
     combination of: medicine availability, bed occupancy, staff attendance,
     open issues, and recent citizen complaints.
 
-    TODO: Replace weighted rule-based stub with XGBoost model inference.
+    Batch 2: Replace weighted rule-based stub with XGBoost model inference.
     """
     logger.info(f"[scoring] Starting for hospital_id={hospital_id}")
     try:
@@ -258,7 +258,7 @@ async def run_issue_routing(issue_id: int, db: Session) -> None:
         if not issue:
             return
 
-        # TODO: Replace stub with NLP + workflow pipeline:
+        # Batch 2: Replace stub with NLP + workflow pipeline:
         # from app.intelligence.pipelines.nlp import GrievanceClassifier
         # from app.intelligence.pipelines.workflow import WorkflowEngine
         # classifier = GrievanceClassifier().load()
@@ -342,7 +342,7 @@ async def run_complaint_classification(complaint_id: int, db: Session) -> None:
         if not complaint:
             return
 
-        # TODO: Replace stub with actual classifier:
+        # Batch 2: Replace stub with actual classifier:
         # from app.intelligence.pipelines.nlp import GrievanceClassifier
         # result = GrievanceClassifier().load().predict(complaint.description)
 

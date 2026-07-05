@@ -1,0 +1,17 @@
+# ai_models/configs/lightgbm_config.yaml
+
+model_version: "1.0.0"
+dataset: "inventory_dataset_v1.csv"
+objective: "regression"
+metric: ["mae", "rmse"]
+num_leaves: 127
+learning_rate: 0.05
+feature_fraction: 0.85
+bagging_fraction: 0.85
+bagging_freq: 5
+min_child_samples: 20
+n_estimators: 800
+random_state: 42
+verbose: -1
+n_jobs: -1
+early_stopping_rounds: 50

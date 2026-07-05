@@ -139,3 +139,40 @@ Thumbs.db
 .idea/
 *.swp
 *.tsbuildinfo
+
+
+# ==========================================
+# 6. Testing & Runtime
+# ==========================================
+
+.pyre/
+.mypy_cache/
+.ruff_cache/
+
+# SQLite
+*.sqlite3
+
+# Runtime PID files
+*.pid
+
+# Python virtual env markers
+.python-version
+
+# Environment backups
+.env.backup
+.env.bak
+
+# Compressed archives
+*.zip
+*.tar
+*.gz
+*.rar
+
+# Temporary coverage reports
+coverage.xml
+
+# Local uploads
+uploads/
+
+# OS generated
+Desktop.ini

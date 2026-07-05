@@ -18,25 +18,16 @@ from datetime import datetime, UTC
 from enum import Enum
 from typing import Any, Dict, List, Set
 
-# Attempt to safely import dependencies
-try:
-    from backend.app.intelligence.services.priority import (
-        PriorityDecision, 
-        PriorityLevel, 
-        EscalationLevel
-    )
-    from backend.app.intelligence.services.recommendation import (
-        RecommendationBundle, 
-        RecommendationAudience, 
-        RecommendationType
-    )
-except ImportError:
-    # Fallback to local import if executed dynamically
-    import sys
-    from pathlib import Path
-    sys.path.append(str(Path(__file__).resolve().parent))
-    from priority import PriorityDecision, PriorityLevel, EscalationLevel
-    from recommendation import RecommendationBundle, RecommendationAudience, RecommendationType
+from app.intelligence.services.priority import (
+    PriorityDecision, 
+    PriorityLevel, 
+    EscalationLevel
+)
+from app.intelligence.services.recommendation import (
+    RecommendationBundle, 
+    RecommendationAudience, 
+    RecommendationType
+)
 
 # ── LOGGING ─────────────────────────────────────────────────────────────────
 logger = logging.getLogger("aarogya.dispatcher_engine")

@@ -28,6 +28,7 @@ Endpoints:
 
 from __future__ import annotations
 
+import logging
 from datetime import date, datetime
 from typing import List, Optional
 
@@ -41,8 +42,11 @@ from app.core.security import (
     require_hospital_role,
     require_role,
 )
-from app.database.connection import get_db
+from app.database.connection import get_db, SessionLocal
 from app.database import models
+from app.core.dependencies import get_hospital_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/hospitals", tags=["Hospital Portal"])
 
@@ -288,25 +292,129 @@ class DashboardSummaryResponse(BaseModel):
 # Helper: background task stubs (called after data mutations)
 # ===========================================================================
 
-async def _trigger_forecast(hospital_id: int, db: Session):
-    """
-    Background task: Re-run demand forecasting after an inventory change.
-    Calls the LightGBM forecasting pipeline and updates predicted_stockout_days.
-    """
-    # TODO: import and call forecasting pipeline
-    pass
+async def _run_hospital_ai_inventory(hospital_id: int, item_id: int, current_quantity: int):
+    """Background task: Re-run demand forecasting after an inventory change."""
+    db = SessionLocal()
+    try:
+        service = get_hospital_service(db)
+        await service.update_and_forecast_inventory(str(hospital_id), str(item_id), current_quantity)
+        db.commit()
+    except Exception as e:
+        logger.exception(
+            "Background task failed",
+            extra={
+                "operation": "_run_hospital_ai_inventory",
+                "hospital_id": hospital_id,
+                "exception": str(e)
+            }
+        )
+        try:
+            db.rollback()
+        except Exception as rollback_e:
+            logger.exception(
+                "Background task rollback failed",
+                extra={
+                    "operation": "_run_hospital_ai_inventory_rollback",
+                    "hospital_id": hospital_id,
+                    "rollback_exception": str(rollback_e)
+                }
+            )
+    finally:
+        db.close()
 
+async def _run_hospital_ai_beds(hospital_id: int, category: str, occupied_count: int):
+    """Background task: Forecast bed capacity."""
+    db = SessionLocal()
+    try:
+        service = get_hospital_service(db)
+        await service.update_and_forecast_beds(str(hospital_id), category, occupied_count)
+        db.commit()
+    except Exception as e:
+        logger.exception(
+            "Background task failed",
+            extra={
+                "operation": "_run_hospital_ai_beds",
+                "hospital_id": hospital_id,
+                "exception": str(e)
+            }
+        )
+        try:
+            db.rollback()
+        except Exception as rollback_e:
+            logger.exception(
+                "Background task rollback failed",
+                extra={
+                    "operation": "_run_hospital_ai_beds_rollback",
+                    "hospital_id": hospital_id,
+                    "rollback_exception": str(rollback_e)
+                }
+            )
+    finally:
+        db.close()
 
-async def _trigger_scoring(hospital_id: int, db: Session):
+async def _run_hospital_ai_scoring(hospital_id: int):
     """Background task: Recalculate the hospital's AI health score."""
-    # TODO: import and call scoring pipeline
-    pass
+    db = SessionLocal()
+    try:
+        service = get_hospital_service(db)
+        await service.calculate_hospital_scoring(str(hospital_id))
+        db.commit()
+    except Exception as e:
+        logger.exception(
+            "Background task failed",
+            extra={
+                "operation": "_run_hospital_ai_scoring",
+                "hospital_id": hospital_id,
+                "exception": str(e)
+            }
+        )
+        try:
+            db.rollback()
+        except Exception as rollback_e:
+            logger.exception(
+                "Background task rollback failed",
+                extra={
+                    "operation": "_run_hospital_ai_scoring_rollback",
+                    "hospital_id": hospital_id,
+                    "rollback_exception": str(rollback_e)
+                }
+            )
+    finally:
+        db.close()
 
-
-async def _trigger_issue_routing(issue_id: int, db: Session):
-    """Background task: Run NLP classification on a new infrastructure issue."""
-    # TODO: import and call NLP + workflow pipeline
-    pass
+async def _run_hospital_ai_issue(hospital_id: int, category: str, priority: str, dept: str):
+    """Background task: Orchestrate critical incident workflow for high-priority issues."""
+    if priority not in ["High", "Critical"]:
+        return
+        
+    db = SessionLocal()
+    try:
+        service = get_hospital_service(db)
+        priority_score = 95 if priority == "Critical" else 80
+        await service.process_critical_incident(str(hospital_id), category, priority_score, dept)
+        db.commit()
+    except Exception as e:
+        logger.exception(
+            "Background task failed",
+            extra={
+                "operation": "_run_hospital_ai_issue",
+                "hospital_id": hospital_id,
+                "exception": str(e)
+            }
+        )
+        try:
+            db.rollback()
+        except Exception as rollback_e:
+            logger.exception(
+                "Background task rollback failed",
+                extra={
+                    "operation": "_run_hospital_ai_issue_rollback",
+                    "hospital_id": hospital_id,
+                    "rollback_exception": str(rollback_e)
+                }
+            )
+    finally:
+        db.close()
 
 
 # ===========================================================================
@@ -469,7 +577,7 @@ async def add_inventory_item(
     db.commit()
     db.refresh(inv)
 
-    background_tasks.add_task(_trigger_forecast, hospital.id, db)
+    background_tasks.add_task(_run_hospital_ai_inventory, hospital.id, body.item_id, body.current_quantity)
     return {**{c: getattr(inv, c) for c in inv.__table__.columns.keys()},
             "item_name": item.name, "category": item.category, "unit": item.unit}
 
@@ -496,8 +604,8 @@ async def update_inventory_item(
     db.commit()
     db.refresh(inv)
 
-    background_tasks.add_task(_trigger_forecast, hospital.id, db)
-    background_tasks.add_task(_trigger_scoring, hospital.id, db)
+    background_tasks.add_task(_run_hospital_ai_inventory, hospital.id, item_id, inv.current_quantity)
+    background_tasks.add_task(_run_hospital_ai_scoring, hospital.id)
     return {**{c: getattr(inv, c) for c in inv.__table__.columns.keys()},
             "item_name": inv.item.name, "category": inv.item.category, "unit": inv.item.unit}
 
@@ -543,7 +651,8 @@ async def update_bed(
     db.commit()
     db.refresh(bed)
 
-    background_tasks.add_task(_trigger_scoring, hospital.id, db)
+    background_tasks.add_task(_run_hospital_ai_beds, hospital.id, bed.category, bed.occupied_count)
+    background_tasks.add_task(_run_hospital_ai_scoring, hospital.id)
     available = bed.total_capacity - bed.occupied_count - bed.reserved_count
     pct = round((bed.occupied_count / bed.total_capacity * 100) if bed.total_capacity else 0, 1)
     return {**{c: getattr(bed, c) for c in bed.__table__.columns.keys()},
@@ -621,7 +730,7 @@ async def submit_statistics(
     db.add(record)
     db.commit()
     db.refresh(record)
-    background_tasks.add_task(_trigger_scoring, hospital.id, db)
+    background_tasks.add_task(_run_hospital_ai_scoring, hospital.id)
     return record
 
 
@@ -658,8 +767,9 @@ async def report_issue(
     db.add(issue)
     db.commit()
     db.refresh(issue)
+    
     # Trigger AI: classify the issue and auto-route to government department
-    background_tasks.add_task(_trigger_issue_routing, issue.id, db)
+    background_tasks.add_task(_run_hospital_ai_issue, hospital.id, issue.issue_type, issue.priority, issue.department)
     return issue
 
 

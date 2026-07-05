@@ -1,0 +1,19 @@
+# ai_models/configs/xgboost_config.yaml
+
+model_version: "1.0.0"
+dataset: "scoring_dataset_v1.csv"
+objective: "reg:squarederror"
+eval_metric: ["mae", "rmse"]
+n_estimators: 600
+learning_rate: 0.05
+max_depth: 7
+subsample: 0.85
+colsample_bytree: 0.85
+min_child_weight: 5
+gamma: 0.1
+reg_alpha: 0.1
+reg_lambda: 1.0
+random_state: 42
+n_jobs: -1
+verbosity: 0
+early_stopping_rounds: 50

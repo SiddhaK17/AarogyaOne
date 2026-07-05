@@ -16,7 +16,9 @@ Endpoints:
 
 from __future__ import annotations
 
+import logging
 import os
+import time
 import uuid
 from datetime import date, datetime
 from math import asin, cos, radians, sin, sqrt
@@ -32,6 +34,10 @@ from app.database.connection import get_db
 from app.database import models
 from app.database.supabase_client import upload_file_bytes, get_signed_url, BUCKETS
 from app.core.config import settings
+from app.services.complaint_service import ComplaintService
+from app.core.dependencies import get_complaint_service
+
+logger = logging.getLogger("aarogya.api.citizens")
 
 router = APIRouter(prefix="/api/citizens", tags=["Citizen Portal"])
 
@@ -122,14 +128,45 @@ def _generate_reference_number() -> str:
     return f"ARP-{uuid.uuid4().hex[:8].upper()}"
 
 
-async def _run_complaint_ai(complaint_id: int, db: Session):
+async def _run_complaint_ai(
+    complaint_id: int,
+    user_id: Optional[str]
+):
     """
-    Background task: Run the Complaint Intelligence Engine on a new complaint.
-    Classifies the complaint, assigns severity, routes to department,
-    and creates a GovernmentTask row if severity >= High.
+    Background task: Orchestrates the AI intelligence pipeline via ComplaintService.
+    Safely creates a new database session instead of reusing the request session.
     """
-    # TODO: import GrievanceClassifier from intelligence.pipelines.nlp and run inference
-    pass
+    from app.database.connection import SessionLocal
+
+    correlation_id = f"COMP-BG-{uuid.uuid4()}"
+    log_ctx = {
+        "operation": "_run_complaint_ai",
+        "complaint_id": complaint_id,
+        "user_id": user_id or "anonymous",
+        "correlation_id": correlation_id
+    }
+
+    logger.info("Background Task started", extra=log_ctx)
+    start_time = time.perf_counter()
+
+    db = SessionLocal()
+    try:
+        complaint_service = get_complaint_service(db)
+        await complaint_service.process_complaint_intelligence(str(complaint_id))
+    except Exception as e:
+        log_ctx["exception"] = str(e)
+        logger.exception("AI processing failed", extra=log_ctx)
+        try:
+            await complaint_service.mark_ai_failed(str(complaint_id), str(e))
+        except Exception as failover_e:
+            log_ctx["failover_exception"] = str(failover_e)
+            logger.exception("Failed to mark complaint as AI_FAILED during fallback", extra=log_ctx)
+    finally:
+        db.close()
+
+    duration = round(time.perf_counter() - start_time, 3)
+    log_ctx["execution_duration"] = duration
+    logger.info("Background Task finished", extra=log_ctx)
 
 
 # ===========================================================================
@@ -142,6 +179,7 @@ async def submit_complaint(
     background_tasks: BackgroundTasks,
     current_user: Optional[AuthenticatedUser] = Depends(get_optional_user),
     db: Session = Depends(get_db),
+    complaint_service: ComplaintService = Depends(get_complaint_service),
 ):
     """
     Submit a citizen complaint. Authentication is optional — anonymous
@@ -183,8 +221,12 @@ async def submit_complaint(
     db.commit()
     db.refresh(complaint)
 
-    # Trigger async AI classification
-    background_tasks.add_task(_run_complaint_ai, complaint.id, db)
+    # Trigger async AI orchestration
+    background_tasks.add_task(
+        _run_complaint_ai, 
+        complaint.id, 
+        current_user.uid if current_user else None
+    )
 
     return {
         "id": complaint.id,

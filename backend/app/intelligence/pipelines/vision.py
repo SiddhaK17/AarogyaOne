@@ -26,41 +26,36 @@ import uuid
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import torch
 from PIL import Image, ImageDraw, ImageFont, UnidentifiedImageError
 
 # ── Logging ─────────────────────────────────────────────────────────────────
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+logger = logging.getLogger(__name__)
+
+from app.intelligence.pipelines.config import (
+    GROUNDING_DINO_MODEL_ID,
+    FLORENCE_MODEL_ID,
+    VISION_CACHE_DIR,
+    VISION_RESULTS_DIR,
+    IMAGES_DIR,
+    SUPPORTED_IMAGE_FORMATS,
+    CONFIDENCE_THRESHOLD,
+    TEXT_CONFIDENCE_THRESHOLD,
+    MAX_IMAGE_SIZE_MB,
+    MAX_IMAGE_DIMENSION,
+    VISION_DEVICE
 )
-logger = logging.getLogger("aarogya.vision_pipeline")
 
-# ── Path configuration ─────────────────────────────────────────────────────
-_FILE_DIR = Path(__file__).resolve().parent
-if str(_FILE_DIR) not in sys.path:
-    sys.path.insert(0, str(_FILE_DIR))
+from app.intelligence.pipelines.exceptions import (
+    ModelLoadError,
+    InferenceError,
+    WarmupFailureError,
+    DeviceInitializationError
+)
 
-try:
-    from config import (
-        GROUNDING_DINO_MODEL_ID,
-        FLORENCE_MODEL_ID,
-        VISION_CACHE_DIR,
-        VISION_RESULTS_DIR,
-        IMAGES_DIR,
-        SUPPORTED_IMAGE_FORMATS,
-        CONFIDENCE_THRESHOLD,
-        TEXT_CONFIDENCE_THRESHOLD,
-        MAX_IMAGE_SIZE_MB,
-        MAX_IMAGE_DIMENSION,
-        VISION_DEVICE
-    )
-except ImportError as e:
-    logger.error("Failed to import configuration: %s", str(e))
-    raise RuntimeError("Configuration missing. Check config.py.") from e
+from app.intelligence.core.base_engine import BaseAIEngine
 
 # ── Lazy imports (heavy) ───────────────────────────────────────────────────
 from transformers import (
@@ -70,8 +65,6 @@ from transformers import (
 )
 
 from transformers.dynamic_module_utils import get_imports
-
-
 
 def fixed_get_imports(filename: str | os.PathLike) -> list[str]:
     """
@@ -132,7 +125,7 @@ class VisionResult:
 #  SECTION 2 — VISION ENGINE
 # ════════════════════════════════════════════════════════════════════════════
 
-class VisionEngine:
+class FlorenceVisionPipeline:
     """
     Computer Vision evidence extraction engine.
     Uses Grounding DINO for object detection and Florence-2 for captioning/OCR.
@@ -196,7 +189,9 @@ class VisionEngine:
                 GROUNDING_DINO_MODEL_ID, cache_dir=str(self.cache_dir)
             )
             self.dino_model = AutoModelForZeroShotObjectDetection.from_pretrained(
-                GROUNDING_DINO_MODEL_ID, cache_dir=str(self.cache_dir)
+                GROUNDING_DINO_MODEL_ID, 
+                cache_dir=str(self.cache_dir),
+                torch_dtype=self.torch_dtype
             ).to(self.device)
             self.dino_model.eval()
             
@@ -225,7 +220,7 @@ class VisionEngine:
             logger.info("All vision models loaded successfully.")
         except Exception as e:
             logger.error("Failed to load vision models: %s", str(e))
-            raise RuntimeError("Vision model loading failed.") from e
+            raise ModelLoadError("Vision model loading failed.") from e
 
     def _validate_image(self, image_path: Path) -> Tuple[Image.Image, ImageMetadata]:
         """
@@ -446,11 +441,11 @@ class VisionEngine:
 
     def _run_florence_task(self, image: Image.Image, task_prompt: str) -> str:
         """Executes a specific Florence-2 task on the image."""
-        if self.florence_processor is None or self.florence_model is None:
-            raise RuntimeError("Florence models not loaded.")
+        if self.florence_model is None or self.florence_processor is None:
+            raise InferenceError("Florence models not loaded.")
             
         inputs = self.florence_processor(text=task_prompt, images=image, return_tensors="pt")
-        inputs = {k: v.to(self.device, self.torch_dtype if torch.is_floating_point(v) else None) for k, v in inputs.items()}
+        inputs = {k: v.to(device=self.device, dtype=self.torch_dtype if torch.is_floating_point(v) else v.dtype) for k, v in inputs.items()}
         
         with torch.inference_mode():
             generated_ids = self.florence_model.generate(
@@ -488,7 +483,7 @@ class VisionEngine:
         
         image_path = Path(image_path)
         if self.dino_model is None or self.florence_model is None:
-            raise RuntimeError("Models are not initialized. Call load_models() first.")
+            raise InferenceError("Models are not initialized. Call load_models() first.")
 
         start_time = time.time()
         image, metadata = self._validate_image(image_path)
@@ -498,7 +493,8 @@ class VisionEngine:
         
         try:
             # 1. Grounding DINO: Detect critical operational and healthcare objects
-            dino_inputs = self.dino_processor(images=image, text=self.detection_prompt, return_tensors="pt").to(self.device)
+            dino_inputs = self.dino_processor(images=image, text=self.detection_prompt, return_tensors="pt")
+            dino_inputs = {k: v.to(device=self.device, dtype=self.torch_dtype if torch.is_floating_point(v) else v.dtype) for k, v in dino_inputs.items()}
             
             with torch.inference_mode():
                 dino_outputs = self.dino_model(**dino_inputs)
@@ -609,8 +605,8 @@ class VisionEngine:
             )
             
         except Exception as e:
-            logger.error("Vision inference failed for %s: %s", image_path.name, str(e))
-            raise RuntimeError("Vision inference failure.") from e
+            logger.error("Vision Inference Error on %s: %s", image_path.name, str(e))
+            raise InferenceError("Vision inference failure.") from e
 
     def save_result(self, result: VisionResult) -> Path:
         """Saves the structured JSON output to disk."""
@@ -642,5 +638,94 @@ class VisionEngine:
         """
         path = Path(file_path).resolve()
         result = self.process_image(path, annotate=annotate)
-        saved_path = self.save_result(result)
-        return saved_path
+        output_path = self.save_result(result)
+        return output_path
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  SECTION 5 — VISION ENGINE WRAPPER
+# ════════════════════════════════════════════════════════════════════════════
+
+class VisionEngine(BaseAIEngine):
+    """
+    Standardized wrapper for the FlorenceVisionPipeline.
+    """
+    def __init__(self):
+        super().__init__()
+        self._pipeline = FlorenceVisionPipeline()
+        self._is_loaded = False
+        self._last_warmup = None
+
+    def load(self) -> None:
+        if not self._is_loaded:
+            self._pipeline.load_models()
+            self._is_loaded = True
+
+    def reload(self) -> None:
+        self.shutdown()
+        self.load()
+
+    def shutdown(self) -> None:
+        import gc
+        if self._is_loaded:
+            self._pipeline.florence_model = None
+            self._pipeline.florence_processor = None
+            self._pipeline.dino_model = None
+            self._pipeline.dino_processor = None
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            self._is_loaded = False
+
+    def warmup(self) -> None:
+        if not self._is_loaded:
+            raise WarmupFailureError("Cannot warmup VisionEngine before loading.")
+        try:
+            dummy_image = Image.new('RGB', (224, 224), color='red')
+            task = "<OD>"
+            
+            with torch.inference_mode():
+                inputs = self._pipeline.florence_processor(text=task, images=dummy_image, return_tensors="pt")
+                inputs = {k: v.to(device=self._pipeline.device, dtype=self._pipeline.torch_dtype if torch.is_floating_point(v) else v.dtype) for k, v in inputs.items()}
+                generated_ids = self._pipeline.florence_model.generate(
+                    input_ids=inputs["input_ids"],
+                    pixel_values=inputs["pixel_values"],
+                    max_new_tokens=10,
+                    num_beams=3
+                )
+                
+            self._last_warmup = time.time()
+        except Exception as e:
+            raise WarmupFailureError(f"Vision warmup failed: {e}")
+
+    def is_loaded(self) -> bool:
+        return self._is_loaded
+
+    def health(self) -> Dict[str, Any]:
+        return {
+            "is_loaded": self._is_loaded,
+            "device": self._pipeline.device,
+            "model_version": "florence-2-base, grounding-dino-base",
+            "model_id": FLORENCE_MODEL_ID,
+            "dtype": str(self._pipeline.torch_dtype),
+            "cache_directory": str(self._pipeline.cache_dir),
+            "dataset_version": "N/A",
+            "training_quality_r2": 0.0,
+            "last_warmup_timestamp": self._last_warmup
+        }
+
+    def metadata(self) -> Dict[str, Any]:
+        return {
+            "device": self._pipeline.device,
+            "florence_model_id": FLORENCE_MODEL_ID,
+            "grounding_dino_model_id": GROUNDING_DINO_MODEL_ID,
+            "torch_dtype": str(self._pipeline.torch_dtype),
+            "confidence_threshold": CONFIDENCE_THRESHOLD,
+            "text_confidence_threshold": TEXT_CONFIDENCE_THRESHOLD,
+            "max_image_dimension": MAX_IMAGE_DIMENSION
+        }
+
+    def analyze(self, image_path: Union[str, Path]) -> VisionResult:
+        if not self._is_loaded:
+            self.load()
+        return self._pipeline.process_image(Path(image_path))

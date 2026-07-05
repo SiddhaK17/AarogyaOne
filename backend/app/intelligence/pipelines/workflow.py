@@ -20,25 +20,13 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-# Attempt to safely import all required engines
-try:
-    from backend.app.intelligence.pipelines.speech import SpeechEngine
-    from backend.app.intelligence.pipelines.vision import VisionEngine
-    from backend.app.intelligence.pipelines.nlp import NLPEngine
-    from backend.app.intelligence.services.fusion import FusionEngine, UnifiedEvidence
-    from backend.app.intelligence.services.priority import PriorityEngine, PriorityDecision
-    from backend.app.intelligence.services.recommendation import RecommendationEngine, RecommendationBundle
-    from backend.app.intelligence.services.dispatcher import DispatcherEngine, DispatchPlan
-except ImportError:
-    import sys
-    sys.path.append(str(Path(__file__).resolve().parent.parent))
-    from pipelines.speech import SpeechEngine
-    from pipelines.vision import VisionEngine
-    from pipelines.nlp import NLPEngine
-    from services.fusion import FusionEngine, UnifiedEvidence
-    from services.priority import PriorityEngine, PriorityDecision
-    from services.recommendation import RecommendationEngine, RecommendationBundle
-    from services.dispatcher import DispatcherEngine, DispatchPlan
+from app.intelligence.pipelines.speech import SpeechEngine
+from app.intelligence.pipelines.vision import VisionEngine
+from app.intelligence.pipelines.nlp import NLPEngine
+from app.intelligence.services.fusion import FusionEngine, UnifiedEvidence
+from app.intelligence.services.priority import PriorityEngine, PriorityDecision
+from app.intelligence.services.recommendation import RecommendationEngine, RecommendationBundle
+from app.intelligence.services.dispatcher import DispatcherEngine, DispatchPlan
 
 # ── LOGGING ─────────────────────────────────────────────────────────────────
 logger = logging.getLogger("aarogya.workflow_engine")

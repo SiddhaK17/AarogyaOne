@@ -29,6 +29,8 @@ pandas==2.2.2             # Handles complex data manipulation and tabular data
 numpy==1.26.4             # Core mathematical operations
 joblib==1.4.2             # Saves and loads your trained tabular ML models (.pkl files)
 ortools==9.10.4067        # Google's optimization engine for the resource redistribution
+pyyaml==6.0.2            # Loads YAML configuration files for AI model training
+tqdm==4.66.5             # Progress bars for dataset generation and training
 
 # --- Tabular Machine Learning ---
 lightgbm==4.3.0           # Tree-based model for predicting inventory demand
@@ -66,3 +68,6 @@ supervision==0.29.1       # Visualization utilities for detections
 # --- Report Generation ---
 jinja2==3.1.4             # Injects your database data into HTML templates
 weasyprint==62.3          # Converts HTML templates into downloadable PDFs (no external binary needed)
+
+
+httpx==0.27.2

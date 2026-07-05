@@ -19,15 +19,7 @@ from datetime import datetime, UTC
 from enum import Enum
 from typing import Any, Dict, Optional
 
-# Attempt to safely import dependencies from fusion.py
-try:
-    from backend.app.intelligence.services.fusion import UnifiedEvidence
-except ImportError:
-    # Fallback to local import if executed dynamically
-    import sys
-    from pathlib import Path
-    sys.path.append(str(Path(__file__).resolve().parent))
-    from fusion import UnifiedEvidence
+from app.intelligence.services.fusion import UnifiedEvidence
 
 # ── LOGGING ─────────────────────────────────────────────────────────────────
 logger = logging.getLogger("aarogya.priority_engine")

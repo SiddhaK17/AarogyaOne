@@ -24,8 +24,9 @@ import sys
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+from app.intelligence.core.base_engine import BaseAIEngine
 import numpy as np
 import torch
 from torch.utils.data import Dataset as TorchDataset
@@ -729,7 +730,75 @@ class GrievanceClassifier:
 
 
 # ════════════════════════════════════════════════════════════════════════════
-#  SECTION 6 — ENTRY POINT
+#  SECTION 6 — NLP ENGINE WRAPPER
+# ════════════════════════════════════════════════════════════════════════════
+
+class NLPEngine(BaseAIEngine):
+    """
+    Standardized wrapper for the GrievanceClassifier.
+    """
+    def __init__(self):
+        super().__init__()
+        self._classifier = GrievanceClassifier()
+        self._is_loaded = False
+        self._last_warmup = None
+
+    def load(self) -> None:
+        if not self._is_loaded:
+            self._classifier.load()
+            self._is_loaded = True
+
+    def reload(self) -> None:
+        self.shutdown()
+        self.load()
+
+    def shutdown(self) -> None:
+        if self._is_loaded:
+            self._classifier.model = None
+            self._classifier.tokenizer = None
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            self._is_loaded = False
+
+    def warmup(self) -> None:
+        if not self._is_loaded:
+            raise RuntimeError("Cannot warmup NLPEngine before loading.")
+        try:
+            # Minimal warmup: classify a short dummy string
+            self._classifier.predict("Warmup check")
+            self._last_warmup = time.time()
+        except Exception as e:
+            raise RuntimeError(f"NLP warmup failed: {e}")
+
+    def is_loaded(self) -> bool:
+        return self._is_loaded
+
+    def health(self) -> Dict[str, Any]:
+        return {
+            "is_loaded": self._is_loaded,
+            "device": self._classifier.device,
+            "model_version": "indic-bert-base",
+            "dataset_version": "N/A",
+            "training_quality_r2": 0.0,
+            "last_warmup_timestamp": self._last_warmup
+        }
+
+    def metadata(self) -> Dict[str, Any]:
+        return {
+            "model_path": str(self._classifier.config.model_path),
+            "device": str(self._classifier.device)
+        }
+
+    def predict(self, texts: Union[str, List[str]]) -> List[Dict[str, Any]]:
+        if not self._is_loaded:
+            self.load()
+        if isinstance(texts, str):
+            return [self._classifier.predict(texts)]
+        return self._classifier.predict_batch(texts)
+
+
+# ════════════════════════════════════════════════════════════════════════════
+#  SECTION 7 — ENTRY POINT
 # ════════════════════════════════════════════════════════════════════════════
 
 def main() -> None:
