@@ -14,11 +14,6 @@ export default function GovernmentLayout({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return <PageLoader message="Authenticating Government session..." />;
-  }
-
   const router = useRouter();
 
   useEffect(() => {
@@ -26,6 +21,10 @@ export default function GovernmentLayout({
       router.replace('/login?role=government');
     }
   }, [user, loading, router]);
+
+  if (loading) {
+    return <PageLoader message="Authenticating Government session..." />;
+  }
 
   if (!user && !loading) {
     return null;

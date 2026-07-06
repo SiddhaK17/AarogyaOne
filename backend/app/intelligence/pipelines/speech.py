@@ -27,7 +27,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import torch
-import torchaudio
+try:
+    import torchaudio
+except (ImportError, RuntimeError) as e:
+    import logging
+    logging.getLogger("aarogya.speech_pipeline").warning(
+        "torchaudio could not be imported (FFmpeg/driver issue). Speech pipeline will fallback to soundfile/librosa. Error: %s", e
+    )
+    torchaudio = None
 import numpy as np
 
 from app.intelligence.core.base_engine import BaseAIEngine
@@ -42,10 +49,11 @@ logger = logging.getLogger("aarogya.speech_pipeline")
 
 # ── Path configuration ─────────────────────────────────────────────────────
 _FILE_DIR = Path(__file__).resolve().parent
-sys.path.insert(0, str(_FILE_DIR))
+if str(_FILE_DIR) not in sys.path:
+    sys.path.insert(0, str(_FILE_DIR))
 
 try:
-    from config import (
+    from app.intelligence.pipelines.config import (
         WHISPER_MODEL_ID,
         HF_CACHE_DIR,
         TRANSCRIPTS_DIR,
@@ -250,8 +258,17 @@ class SpeechRecognizer:
             )
 
         try:
-            info = torchaudio.info(str(audio_path))
-            duration = info.num_frames / info.sample_rate if info.sample_rate > 0 else 0.0
+            if torchaudio is not None:
+                info = torchaudio.info(str(audio_path))
+                duration = info.num_frames / info.sample_rate if info.sample_rate > 0 else 0.0
+                sample_rate = info.sample_rate
+                channels = info.num_channels
+            else:
+                import soundfile as sf
+                info = sf.info(str(audio_path))
+                duration = info.duration
+                sample_rate = info.samplerate
+                channels = info.channels
             
             if duration < 0.1:
                 logger.error("Audio duration too short: %.2fs", duration)
@@ -266,8 +283,8 @@ class SpeechRecognizer:
                 file_extension=ext,
                 file_size_bytes=file_size,
                 duration_seconds=round(duration, 2),
-                sample_rate=info.sample_rate,
-                channels=info.num_channels,
+                sample_rate=sample_rate,
+                channels=channels,
             )
         except Exception as e:
             logger.error("Failed to validate or extract metadata from %s: %s", audio_path, str(e))
@@ -276,32 +293,38 @@ class SpeechRecognizer:
     def _preprocess_audio(self, audio_path: Path, metadata: AudioMetadata) -> np.ndarray:
         """
         Professional audio preprocessing:
-        1. Loads audio via torchaudio
+        1. Loads audio via torchaudio or librosa fallback
         2. Converts to Mono
         3. Resamples to 16kHz
         4. Normalizes audio
         """
         logger.info("Audio Preprocessing Started.")
         try:
-            waveform, sample_rate = torchaudio.load(str(audio_path))
-            
-            # Convert to Mono
-            if waveform.shape[0] > 1:
-                waveform = torch.mean(waveform, dim=0, keepdim=True)
-            
-            # Resample to 16kHz
-            if sample_rate != TARGET_SAMPLE_RATE:
-                resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=TARGET_SAMPLE_RATE)
-                waveform = resampler(waveform)
+            if torchaudio is not None:
+                waveform, sample_rate = torchaudio.load(str(audio_path))
                 
-            # Normalize Audio
-            max_val = torch.abs(waveform).max()
-            if max_val > 0:
-                waveform = waveform / max_val
+                # Convert to Mono
+                if waveform.shape[0] > 1:
+                    waveform = torch.mean(waveform, dim=0, keepdim=True)
                 
-            logger.info("Audio Preprocessing Completed.")
-            return waveform.squeeze().numpy()
-            
+                # Resample to 16kHz
+                if sample_rate != TARGET_SAMPLE_RATE:
+                    resampler = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=TARGET_SAMPLE_RATE)
+                    waveform = resampler(waveform)
+                    
+                # Normalize Audio
+                max_val = torch.abs(waveform).max()
+                if max_val > 0:
+                    waveform = waveform / max_val
+                    
+                logger.info("Audio Preprocessing Completed.")
+                return waveform.squeeze().numpy()
+            else:
+                import librosa
+                waveform, sr = librosa.load(str(audio_path), sr=TARGET_SAMPLE_RATE)
+                logger.info("Audio Preprocessing Completed via librosa fallback.")
+                return waveform
+                
         except Exception as e:
             logger.error("Audio Preprocessing failed for %s: %s", audio_path, str(e))
             raise RuntimeError("Audio preprocessing failed.") from e

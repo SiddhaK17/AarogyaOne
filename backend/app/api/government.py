@@ -47,6 +47,37 @@ def _get_department(user: AuthenticatedUser) -> str:
     return user.department
 
 
+def _match_department(task_col, user_dept: str):
+    from sqlalchemy import or_
+    dept = user_dept.lower()
+    conditions = [task_col.ilike(f"%{user_dept}%")]
+    
+    if any(k in dept for k in ["pwd", "works", "eng", "mainten"]):
+        conditions.extend([
+            task_col.ilike("%pwd%"),
+            task_col.ilike("%works%"),
+            task_col.ilike("%eng%"),
+            task_col.ilike("%mainten%"),
+            task_col.ilike("%technical%"),
+        ])
+    if any(k in dept for k in ["med", "health", "store", "suppl", "pharma"]):
+        conditions.extend([
+            task_col.ilike("%med%"),
+            task_col.ilike("%health%"),
+            task_col.ilike("%store%"),
+            task_col.ilike("%suppl%"),
+            task_col.ilike("%pharma%"),
+        ])
+    if any(k in dept for k in ["admin", "hosp", "staff", "dist"]):
+        conditions.extend([
+            task_col.ilike("%admin%"),
+            task_col.ilike("%hosp%"),
+            task_col.ilike("%staff%"),
+            task_col.ilike("%dist%"),
+        ])
+    return or_(*conditions)
+
+
 # ===========================================================================
 # Pydantic Schemas
 # ===========================================================================
@@ -143,7 +174,7 @@ async def get_assigned_tasks(
     department = _get_department(user)
 
     q = db.query(models.GovernmentTask).filter(
-        models.GovernmentTask.assigned_department.ilike(f"%{department}%"),
+        _match_department(models.GovernmentTask.assigned_department, department),
         models.GovernmentTask.status != "Completed",
     )
     if priority:
@@ -179,7 +210,7 @@ async def get_task_detail(
     department = _get_department(user)
     task = db.query(models.GovernmentTask).filter(
         models.GovernmentTask.id == task_id,
-        models.GovernmentTask.assigned_department.ilike(f"%{department}%"),
+        _match_department(models.GovernmentTask.assigned_department, department),
     ).first()
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
@@ -219,7 +250,7 @@ async def update_task_status(
     department = _get_department(user)
     task = db.query(models.GovernmentTask).filter(
         models.GovernmentTask.id == task_id,
-        models.GovernmentTask.assigned_department.ilike(f"%{department}%"),
+        _match_department(models.GovernmentTask.assigned_department, department),
     ).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found.")
@@ -267,7 +298,7 @@ async def upload_completion_evidence(
     department = _get_department(user)
     task = db.query(models.GovernmentTask).filter(
         models.GovernmentTask.id == task_id,
-        models.GovernmentTask.assigned_department.ilike(f"%{department}%"),
+        _match_department(models.GovernmentTask.assigned_department, department),
     ).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found.")
@@ -306,7 +337,7 @@ async def get_completed_tasks(
     """Returns completed tasks for audit and record purposes."""
     department = _get_department(user)
     tasks = db.query(models.GovernmentTask).filter(
-        models.GovernmentTask.assigned_department.ilike(f"%{department}%"),
+        _match_department(models.GovernmentTask.assigned_department, department),
         models.GovernmentTask.status == "Completed",
     ).order_by(desc(models.GovernmentTask.completed_at)).limit(limit).all()
 
@@ -338,7 +369,7 @@ async def get_department_analytics(
     """Returns performance metrics for the user's government department."""
     department = _get_department(user)
     tasks = db.query(models.GovernmentTask).filter(
-        models.GovernmentTask.assigned_department.ilike(f"%{department}%"),
+        _match_department(models.GovernmentTask.assigned_department, department),
     ).all()
 
     now = datetime.utcnow()

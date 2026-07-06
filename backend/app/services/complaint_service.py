@@ -14,11 +14,15 @@ from typing import Any, Dict, Optional, Protocol
 from datetime import datetime, UTC
 from dataclasses import asdict
 
-from app.database import models
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+import app.intelligence.pipelines.nlp  # noqa: F401
+
 from app.intelligence.pipelines.workflow import (
     WorkflowResult, 
     WorkflowStatus
 )
+from app.database import models
 from app.intelligence.services.dispatcher import DispatchTarget, DispatchPlan
 
 logger = logging.getLogger("aarogya.services.complaint")
@@ -139,7 +143,9 @@ class ComplaintService:
             text_input = getattr(complaint, "description", None)
             audio_path = getattr(complaint, "audio_evidence_path", None)
             image_path = getattr(complaint, "image_evidence_path", None)
-            metadata = getattr(complaint, "metadata", {})
+            metadata = getattr(complaint, "ai_metadata", {}) or {}
+            if not isinstance(metadata, dict):
+                metadata = {}
 
             logger.info("Dispatching complaint to WorkflowEngine", extra=log_ctx)
             engine = self._workflow_engine_factory(

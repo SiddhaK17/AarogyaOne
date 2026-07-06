@@ -20,9 +20,12 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+from app.intelligence.pipelines.nlp import NLPEngine
 from app.intelligence.pipelines.speech import SpeechEngine, TranscriptResult
 from app.intelligence.pipelines.vision import VisionEngine, VisionResult
-from app.intelligence.pipelines.nlp import NLPEngine
 from app.intelligence.services.fusion import FusionEngine, UnifiedEvidence, SpeechEvidence, VisionEvidence, NLPEvidence
 from app.intelligence.services.priority import PriorityEngine, PriorityDecision
 from app.intelligence.services.recommendation import RecommendationEngine, RecommendationBundle

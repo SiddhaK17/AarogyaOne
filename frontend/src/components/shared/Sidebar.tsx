@@ -56,6 +56,7 @@ const secondaryItems = [
 ];
 
 const govtNavItems = [
+  { label: 'Performance Analytics', href: '/government', icon: BarChart3 },
   { label: 'Pending Issues', href: '/government/dashboard', icon: AlertTriangle },
   { label: 'Action Panel', href: '/government/tasks', icon: ClipboardList },
   { label: 'Resolved Archive', href: '/government/completed', icon: CheckCircle2 },
@@ -79,11 +80,9 @@ const citizenNavItems = [
 
 const dhicNavItems = [
   { label: 'District Dashboard', href: '/dhic', icon: LayoutDashboard },
-  { label: 'Live District Map', href: '/dhic/map', icon: Map },
   { label: 'Hospital Intelligence', href: '/dhic/hospitals', icon: Building2 },
   { label: 'Resource Management', href: '/dhic/resources', icon: GitBranch },
   { label: 'AI Alert Centre', href: '/dhic/alerts', icon: Bell },
-  { label: 'Citizen Feedback', href: '/dhic/feedback', icon: MessageSquare },
   { label: 'Infrastructure', href: '/dhic/infrastructure', icon: Server },
   { label: 'Executive Reports', href: '/dhic/reports', icon: FileBarChart },
   { label: 'AI Decision Assistant', href: '/dhic/assistant', icon: Bot },

@@ -7,6 +7,13 @@ CORS and error handlers, and runs startup checks (DB tables + Supabase buckets).
 
 from __future__ import annotations
 
+import os
+# Prevent OpenMP runtime conflict crashes on Windows
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
+# Force PyTorch and NLP core components to import first to resolve Windows DLL ordering conflicts
+import app.intelligence.pipelines.nlp  # noqa: F401
+
 import logging
 
 from fastapi import FastAPI, Request, status

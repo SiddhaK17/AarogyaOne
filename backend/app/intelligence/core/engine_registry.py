@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 # Import the individual singletons/engines
 from app.intelligence.pipelines.forecasting import ForecasterSingleton
 from app.intelligence.pipelines.scoring import ScorerSingleton
-from app.intelligence.pipelines.speech import SpeechEngine
 from app.intelligence.pipelines.nlp import NLPEngine
+from app.intelligence.pipelines.speech import SpeechEngine
 from app.intelligence.pipelines.vision import VisionEngine
 
 class EngineRegistry:

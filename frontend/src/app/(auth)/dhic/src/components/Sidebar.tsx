@@ -21,11 +21,9 @@ import { useState } from "react";
 
 const navItems = [
   { to: "/dhic/app", icon: LayoutDashboard, label: "District Dashboard" },
-  { to: "/dhic/app/map", icon: Map, label: "Live District Map" },
   { to: "/dhic/app/hospitals", icon: Building2, label: "Hospital Intelligence" },
   { to: "/dhic/app/resources", icon: GitBranch, label: "Resource Management" },
   { to: "/dhic/app/alerts", icon: Bell, label: "AI Alert Centre" },
-  { to: "/dhic/app/feedback", icon: MessageSquare, label: "Citizen Feedback" },
   { to: "/dhic/app/infrastructure", icon: Server, label: "Infrastructure" },
   { to: "/dhic/app/reports", icon: FileBarChart, label: "Executive Reports" },
   { to: "/dhic/app/assistant", icon: Bot, label: "AI Decision Assistant" },

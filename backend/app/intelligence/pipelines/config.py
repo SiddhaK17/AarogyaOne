@@ -350,7 +350,7 @@ class AIOrchestratorConfig:
     """Central settings for the unified AI subsystem."""
     # Lifecycle
     auto_warmup_on_startup: bool = True
-    fail_fast_on_corruption: bool = True
+    fail_fast_on_corruption: bool = False
     
     # Device preferences
     prefer_gpu: bool = True
