@@ -83,7 +83,7 @@ async function request<T>(
   return response.json();
 }
 
-async function uploadFile(path: string, file: File, extraParams: Record<string, string> = {}): Promise<unknown> {
+async function uploadFile(path: string, file: File | Blob, extraParams: Record<string, string> = {}): Promise<unknown> {
   const token = await getFirebaseToken();
   const form = new FormData();
   form.append('file', file);
@@ -128,11 +128,20 @@ export interface UserProfile {
 }
 
 export const authApi = {
-  register: (data: RegisterRequest) =>
-    request<UserProfile>('/api/auth/register', { method: 'POST', body: JSON.stringify(data) }),
+  register: (data: any) =>
+    request('/api/auth/register', { method: 'POST', body: JSON.stringify(data), public: true }),
 
-  getMe: () =>
-    request<UserProfile>('/api/auth/me', { method: 'POST' }),
+  logout: () => {
+    // If backend had a stateful token to revoke, we would call it here.
+    // For now we just return a resolved promise since backend uses stateless JWTs.
+    return Promise.resolve();
+  },
+
+  getMe: (token?: string) =>
+    request<UserProfile>('/api/auth/me', { 
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined 
+    }),
 
   updateMe: (data: { full_name?: string }) =>
     request<UserProfile>('/api/auth/me', { method: 'PUT', body: JSON.stringify(data) }),
@@ -206,6 +215,10 @@ export const hospitalApi = {
 
   markNotificationRead: (id: number) =>
     request(`/api/hospitals/notifications/${id}/read`, { method: 'PUT' }),
+
+  // Reports
+  getReport: () =>
+    request('/api/hospitals/report'),
 };
 
 // ---------------------------------------------------------------------------
@@ -274,7 +287,7 @@ export const citizenApi = {
   submitComplaint: (data: ComplaintSubmitRequest) =>
     request('/api/citizens/report', { method: 'POST', body: JSON.stringify(data), public: true }),
 
-  uploadMedia: (complaintId: number, file: File) =>
+  uploadMedia: (complaintId: number, file: File | Blob) =>
     uploadFile('/api/citizens/report/upload', file, { complaint_id: String(complaintId) }),
 
   trackComplaint: (referenceNumber: string) =>
@@ -317,6 +330,8 @@ export const governmentApi = {
   getAnalytics: () =>
     request('/api/government/analytics'),
 };
+
+
 
 // ---------------------------------------------------------------------------
 // Supabase Realtime Subscription Helpers

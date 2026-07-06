@@ -5,6 +5,7 @@ import type { Alert } from "@/types";
 import Header from "@/components/Header";
 import { useDistrict } from "@/context/DistrictContext";
 import { getSeverityColor } from "@/data/mockData";
+import { dhicApi } from "@/lib/api";
 import {
   Bell,
   AlertTriangle,
@@ -59,6 +60,17 @@ export default function AIAlertCentre() {
     high: alerts.filter((a) => a.severity === "high").length,
     medium: alerts.filter((a) => a.severity === "medium").length,
     low: alerts.filter((a) => a.severity === "low").length,
+  };
+
+  const handleDismiss = async (alertId: string) => {
+    try {
+      await dhicApi.acknowledgeAlert(parseInt(alertId));
+      // Optionally update local state or trigger a reload
+      // Assuming DistrictContext updates via websocket/polling, or we can reload window.
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to dismiss alert", err);
+    }
   };
 
   return (
@@ -148,7 +160,7 @@ export default function AIAlertCentre() {
                     <div className="recommendation__actions">
                       <button className="btn btn--sm btn--primary" onClick={(e) => e.stopPropagation()}>Act Now</button>
                       <button className="btn btn--sm btn--outline" onClick={(e) => e.stopPropagation()}><Eye size={12} /> Details</button>
-                      <button className="btn btn--sm btn--ghost" onClick={(e) => e.stopPropagation()}>Dismiss</button>
+                      <button className="btn btn--sm btn--ghost" onClick={(e) => { e.stopPropagation(); handleDismiss(alert.id); }}>Dismiss</button>
                     </div>
                   </div>
                 );

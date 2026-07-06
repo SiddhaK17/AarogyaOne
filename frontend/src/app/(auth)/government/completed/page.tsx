@@ -17,66 +17,45 @@ import {
 } from 'lucide-react';
 
 /* ─── Mock Completed Tasks Database ─── */
-const MOCK_COMPLETED_TASKS = [
-  {
-    id: 'TSK-192',
-    hospital: 'PHC Agashi',
-    issue: 'Low-pressure water feed to dental clinic',
-    department: 'PWD (Public Works)',
-    completionDate: '2026-06-28',
-    officer: 'Rajesh Kumar',
-    resolution: 'Replaced malfunctioning booster pump pressure valve, flushed pipelines, and restored target water pressure of 3.2 bar to all chairs.',
-    photoUrl: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=600',
-    verification: 'Verified',
-    hospitalConfirmation: 'Confirmed by Dr. Arjun Mehta',
-    auditNotes: 'Onsite inspection completed by District Operations Lead. Standard checklist verified, water pressure pressure-tested successfully.'
-  },
-  {
-    id: 'TSK-189',
-    hospital: 'Rural Hospital Dahanu',
-    issue: 'Emergency backup generator battery failure',
-    department: 'Electricity Board',
-    completionDate: '2026-06-25',
-    officer: 'Vikas Patil',
-    resolution: 'Battery banks replaced completely with heavy-duty maintenance-free backups. Simulated grid failure test performed successfully.',
-    photoUrl: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=600',
-    verification: 'Verified',
-    hospitalConfirmation: 'Confirmed by Dr. Satish Joshi',
-    auditNotes: 'Telemetry checks confirm generator starts automatically within 6 seconds of grid drop.'
-  },
-  {
-    id: 'TSK-195',
-    hospital: 'District General Hospital Palghar',
-    issue: 'ICU Monitor #2 display panel flickering',
-    department: 'Biomedical Engineering',
-    completionDate: '2026-06-29',
-    officer: 'Anil Deshmukh',
-    resolution: 'Disassembled monitor, replaced failing LCD inverter board and main power cable, re-calibrated color brightness.',
-    photoUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&q=80&w=600',
-    verification: 'Awaiting Audit',
-    hospitalConfirmation: 'Awaiting Confirmation',
-    auditNotes: 'Task marked complete by engineer. Needs local superintendent confirmation and district audit validation.'
-  },
-  {
-    id: 'TSK-174',
-    hospital: 'Sub-District Hospital Vasai',
-    issue: 'Defective autoclave sterilizer gaskets',
-    department: 'Biomedical Engineering',
-    completionDate: '2026-06-20',
-    officer: 'Anil Deshmukh',
-    resolution: 'Installed new silicone high-temperature vacuum gaskets, pressure checked up to 134°C sterilization cycle.',
-    photoUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=600',
-    verification: 'Verified',
-    hospitalConfirmation: 'Confirmed by Admin Suresh Patil',
-    auditNotes: 'Autoclave performance log verified for 10 cycles without pressure drops.'
-  }
-];
+// Replaced with API call
+
+import { governmentApi } from '@/lib/api';
 
 export default function CompletedTasks() {
-  const [completedList] = useState(MOCK_COMPLETED_TASKS);
+  const [completedList, setCompletedList] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
   const [selectedAuditTask, setSelectedAuditTask] = useState<any | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('All');
+
+  React.useEffect(() => {
+    async function fetchCompleted() {
+      try {
+        setLoading(true);
+        const data = await governmentApi.getCompletedTasks(50) as any[];
+        const mapped = data.map(d => ({
+          id: `TSK-${d.id}`,
+          originalId: d.id,
+          hospital: d.hospital_name || 'N/A',
+          issue: d.title,
+          department: 'Govt Dept', // In an ideal state we'd fetch this or know it from profile
+          completionDate: d.completed_at ? new Date(d.completed_at).toLocaleDateString('en-IN') : 'N/A',
+          officer: 'Engineer',
+          resolution: d.completion_notes || 'No resolution notes provided',
+          photoUrl: d.has_evidence ? 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?auto=format&fit=crop&q=80&w=600' : null,
+          verification: d.verified_by_hospital ? 'Verified' : 'Awaiting Audit',
+          hospitalConfirmation: d.verified_by_hospital ? 'Confirmed by Hospital' : 'Awaiting Confirmation',
+          auditNotes: 'System audit pending.'
+        }));
+        setCompletedList(mapped);
+      } catch (err) {
+        console.error("Failed to fetch completed tasks", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchCompleted();
+  }, []);
 
   // Filters
   const filteredCompleted = completedList.filter(t => {
@@ -144,7 +123,13 @@ export default function CompletedTasks() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredCompleted.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={7} className="text-center py-12 text-sm text-slate-400 font-bold">
+                    Loading completed tasks...
+                  </td>
+                </tr>
+              ) : filteredCompleted.length > 0 ? (
                 filteredCompleted.map((task) => (
                   <tr key={task.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-bold text-slate-900">{task.id}</td>

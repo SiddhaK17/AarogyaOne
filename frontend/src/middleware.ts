@@ -11,7 +11,7 @@ import type { NextRequest } from 'next/server';
 const PROTECTED_PREFIXES = ['/hospital', '/dhic', '/government', '/citizen'];
 
 // Routes within protected prefixes that should remain accessible without auth
-const PUBLIC_EXCEPTIONS = ['/citizen/search'];
+const PUBLIC_EXCEPTIONS = ['/citizen/search', '/citizen/nearby'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -34,36 +34,46 @@ export function middleware(request: NextRequest) {
   const token = request.cookies.get('aarogya_token')?.value;
   const portalRole = request.cookies.get('portal_role')?.value;
 
-  if (!token) {
-    // Redirect to login with correct role context
+  const redirectToLogin = (roleQuery?: string) => {
     const loginUrl = new URL('/login', request.url);
-    if (pathname.startsWith('/hospital')) {
-      loginUrl.searchParams.set('role', 'hospital');
-    } else if (pathname.startsWith('/dhic')) {
-      loginUrl.searchParams.set('role', 'dhic');
-    } else if (pathname.startsWith('/government')) {
-      loginUrl.searchParams.set('role', 'government');
-    } else if (pathname.startsWith('/citizen')) {
-      loginUrl.searchParams.set('role', 'citizen');
+    if (roleQuery) {
+      loginUrl.searchParams.set('role', roleQuery);
+    } else {
+      if (pathname.startsWith('/hospital')) loginUrl.searchParams.set('role', 'hospital');
+      else if (pathname.startsWith('/dhic')) loginUrl.searchParams.set('role', 'dhic');
+      else if (pathname.startsWith('/government')) loginUrl.searchParams.set('role', 'government');
+      else if (pathname.startsWith('/citizen')) loginUrl.searchParams.set('role', 'citizen');
     }
     return NextResponse.redirect(loginUrl);
+  };
+
+  if (!token) {
+    return redirectToLogin();
   }
 
   // Enforce portal-role mismatch restrictions
   if (pathname.startsWith('/hospital') && portalRole !== 'hospital') {
-    return NextResponse.redirect(new URL('/login?role=hospital', request.url));
+    return redirectToLogin('hospital');
   }
   if (pathname.startsWith('/dhic') && portalRole !== 'dhic') {
-    return NextResponse.redirect(new URL('/login?role=dhic', request.url));
+    return redirectToLogin('dhic');
   }
   if (pathname.startsWith('/government') && portalRole !== 'government') {
-    return NextResponse.redirect(new URL('/login?role=government', request.url));
+    return redirectToLogin('government');
   }
   if (pathname.startsWith('/citizen') && portalRole !== 'citizen') {
-    return NextResponse.redirect(new URL('/login?role=citizen', request.url));
+    return redirectToLogin('citizen');
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  
+  // Apply aggressive cache control to protected responses to prevent
+  // browser "Back" button history bypass after logout.
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  response.headers.set('Pragma', 'no-cache');
+  response.headers.set('Expires', '0');
+
+  return response;
 }
 
 export const config = {
@@ -74,4 +84,3 @@ export const config = {
     '/citizen/:path*',
   ],
 };
-

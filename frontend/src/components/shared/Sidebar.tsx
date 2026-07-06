@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { useAuth } from '@/context/AuthContext';
 import {
   LayoutDashboard,
   Package,
@@ -101,37 +102,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const isDHIC = pathname?.startsWith('/dhic');
   const isCitizen = pathname?.startsWith('/citizen');
 
+  const { user, logout } = useAuth();
+  
   const handleSignOut = async () => {
-    try {
-      const isFirebaseConfigured = 
-        process.env.NEXT_PUBLIC_FIREBASE_API_KEY && 
-        process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== 'PLACEHOLDER_API_KEY';
-      if (isFirebaseConfigured) {
-        await signOut(auth);
-      }
-    } catch (err) {
-      console.error("Error signing out of Firebase: ", err);
-    } finally {
-      const cookiesToClear = [
-        'aarogya_token',
-        'portal_role',
-        'user_name',
-        'user_role',
-        'hospital_designation',
-        'dhic_district'
-      ];
-      cookiesToClear.forEach(cookie => {
-        document.cookie = `${cookie}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;`;
-      });
-
-      let loginTarget = '/login';
-      if (isGovernment) loginTarget += '?role=government';
-      else if (isDHIC) loginTarget += '?role=dhic';
-      else if (isCitizen) loginTarget += '?role=citizen';
-      else loginTarget += '?role=hospital';
-      
-      router.push(loginTarget);
-    }
+    await logout();
   };
 
   let items = navItems;
@@ -147,9 +121,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     secItems = [];
     portalLabel = 'District Command';
   } else if (isCitizen) {
-    items = citizenNavItems;
+    items = user ? citizenNavItems : citizenNavItems.filter(item => 
+      ['/citizen/search', '/citizen/nearby', '/citizen/about'].includes(item.href)
+    );
     secItems = [];
-    portalLabel = 'Citizen Gateway';
+    portalLabel = user ? 'Citizen Gateway' : 'Public Access';
   }
 
   return (
@@ -157,10 +133,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       className={`fixed top-0 left-0 z-40 h-screen bg-brand-navy border-r border-slate-800/50 flex flex-col transition-all duration-300 ${
         collapsed ? 'w-[72px]' : 'w-[260px]'
       }`}
+      aria-label={`${portalLabel} Sidebar`}
     >
       {/* Logo */}
       <div className="h-[72px] flex items-center gap-3 px-5 border-b border-slate-800/50 flex-shrink-0">
-        <div className="bg-gradient-to-br from-brand-cyan to-brand-blue p-2 rounded-xl shadow-lg shadow-brand-cyan/20 flex-shrink-0">
+        <div className="bg-gradient-to-br from-brand-cyan to-brand-blue p-2 rounded-xl shadow-lg shadow-brand-cyan/20 flex-shrink-0" aria-hidden="true">
           <Activity className="h-5 w-5 text-white" />
         </div>
         {!collapsed && (
@@ -171,8 +148,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       </div>
 
       {/* Portal label */}
-      {!collapsed && (
-        <div className="px-5 py-4 border-b border-slate-800/50">
+      {!collapsed && user && (
+        <div className="px-5 py-4 border-b border-slate-800/50" aria-hidden="true">
           <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
             {portalLabel}
           </span>
@@ -180,7 +157,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       )}
 
       {/* Main nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 no-scrollbar">
+      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 no-scrollbar" aria-label="Main Navigation">
         {items.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
           const Icon = item.icon;
@@ -189,7 +166,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               key={item.href}
               href={item.href}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group ${
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-brand-cyan ${
                 isActive
                   ? 'bg-brand-cyan/10 text-brand-cyan shadow-sm'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
@@ -201,17 +179,18 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     ? 'text-brand-cyan'
                     : 'text-slate-500 group-hover:text-slate-300'
                 }`}
+                aria-hidden="true"
               />
               {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
               {isActive && !collapsed && (
-                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-cyan" />
+                <span className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-cyan" aria-hidden="true" />
               )}
             </Link>
           );
         })}
 
         {/* Separator */}
-        <div className="!my-4 border-t border-slate-800/50" />
+        <div className="!my-4 border-t border-slate-800/50" role="separator" />
 
         {secItems.map((item) => {
           const isActive = pathname === item.href;
@@ -221,13 +200,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               key={item.href}
               href={item.href}
               title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group ${
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-brand-cyan ${
                 isActive
                   ? 'bg-slate-800 text-white'
                   : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800/30'
               }`}
             >
-              <Icon className="h-[18px] w-[18px] flex-shrink-0" />
+              <Icon className="h-[18px] w-[18px] flex-shrink-0" aria-hidden="true" />
               {!collapsed && <span className="whitespace-nowrap">{item.label}</span>}
             </Link>
           );
@@ -238,23 +218,38 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="px-3 py-4 border-t border-slate-800/50">
         <button
           onClick={onToggle}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-slate-300 hover:bg-slate-800/30 text-sm font-semibold transition-all"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-slate-300 hover:bg-slate-800/30 text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-brand-cyan"
         >
           <ChevronLeft
             className={`h-[18px] w-[18px] flex-shrink-0 transition-transform duration-300 ${
               collapsed ? 'rotate-180' : ''
             }`}
+            aria-hidden="true"
           />
           {!collapsed && <span>Collapse</span>}
         </button>
 
-        <button
-          onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 text-sm font-semibold transition-all mt-1"
-        >
-          <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
-          {!collapsed && <span>Sign Out</span>}
-        </button>
+        {user ? (
+          <button
+            onClick={handleSignOut}
+            aria-label="Sign out"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-400/70 hover:text-rose-400 hover:bg-rose-500/10 text-sm font-semibold transition-all mt-1 focus:outline-none focus:ring-2 focus:ring-rose-400"
+          >
+            <LogOut className="h-[18px] w-[18px] flex-shrink-0" aria-hidden="true" />
+            {!collapsed && <span>Sign Out</span>}
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            aria-label="Sign in"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-brand-cyan/70 hover:text-brand-cyan hover:bg-brand-cyan/10 text-sm font-semibold transition-all mt-1 focus:outline-none focus:ring-2 focus:ring-brand-cyan"
+          >
+            <User className="h-[18px] w-[18px] flex-shrink-0" aria-hidden="true" />
+            {!collapsed && <span>Sign In</span>}
+          </Link>
+        )}
       </div>
     </aside>
   );

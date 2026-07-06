@@ -1,19 +1,21 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Mic, Square, Play, Trash2, CheckCircle2, Sparkles } from "lucide-react";
+import { Mic, Square, Play, Trash2, CheckCircle2, Sparkles, AlertCircle } from "lucide-react";
 
 interface VoiceRecorderProps {
-  onTranscriptionComplete: (text: string) => void;
+  onAudioReady: (blob: Blob | null) => void;
 }
 
-export default function VoiceRecorder({ onTranscriptionComplete }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onAudioReady }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [transcribing, setTranscribing] = useState(false);
-  const [transcribedText, setTranscribedText] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
     if (isRecording) {
@@ -23,44 +25,53 @@ export default function VoiceRecorder({ onTranscriptionComplete }: VoiceRecorder
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
-
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isRecording]);
 
-  const startRecording = () => {
-    setIsRecording(true);
-    setDuration(0);
-    setAudioUrl(null);
-    setTranscribedText("");
+  const startRecording = async () => {
+    try {
+      setError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const url = URL.createObjectURL(audioBlob);
+        setAudioUrl(url);
+        onAudioReady(audioBlob);
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setDuration(0);
+      setAudioUrl(null);
+      onAudioReady(null);
+    } catch (err) {
+      console.error("Failed to start recording:", err);
+      setError("Microphone access denied or not available.");
+    }
   };
 
   const stopRecording = () => {
-    setIsRecording(false);
-    // Simulate recording save and speech-to-text transcriptions
-    setAudioUrl("mock-audio-blob-url");
-    setTranscribing(true);
-
-    setTimeout(() => {
-      setTranscribing(false);
-      const mockTranscripts = [
-        "दवाखाने मध्ये औषध उपलब्ध नाही, मी तीन दिवसांपासून हेलपाटे मारत आहे.", // Marathi
-        "अस्पताल में डॉक्टर उपस्थित नहीं थे और ओपीडी में बहुत भीड़ थी।", // Hindi
-        "The ceiling in the pediatric ward is leaking water and the floor is very slippery.", // English
-        "No stretchers were available at the main gate when the ambulance arrived.", // English
-      ];
-      // Pick a random mock transcript
-      const selectedText = mockTranscripts[Math.floor(Math.random() * mockTranscripts.length)];
-      setTranscribedText(selectedText);
-      onTranscriptionComplete(selectedText);
-    }, 2000); // 2 seconds transcribing
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
   const deleteRecording = () => {
     setAudioUrl(null);
     setDuration(0);
-    setTranscribedText("");
+    onAudioReady(null);
   };
 
   const formatTime = (secs: number) => {
@@ -80,6 +91,13 @@ export default function VoiceRecorder({ onTranscriptionComplete }: VoiceRecorder
         )}
       </div>
 
+      {error && (
+        <div className="flex items-center gap-2 p-3 mb-4 text-xs font-bold text-red-700 bg-red-100 rounded-lg">
+          <AlertCircle className="h-4 w-4" />
+          {error}
+        </div>
+      )}
+
       <div className="flex flex-col items-center justify-center py-6 text-center">
         {!isRecording && !audioUrl && (
           <>
@@ -98,76 +116,53 @@ export default function VoiceRecorder({ onTranscriptionComplete }: VoiceRecorder
         {isRecording && (
           <>
             {/* Audio Wave Visualizer Simulation */}
-            <div className="flex items-center gap-1.5 h-10 mb-5 justify-center">
-              {[...Array(9)].map((_, i) => (
-                <span
+            <div className="flex items-center justify-center gap-1.5 mb-6 h-12">
+              {[...Array(12)].map((_, i) => (
+                <div
                   key={i}
                   className="w-1.5 bg-teal-500 rounded-full animate-pulse"
                   style={{
-                    height: `${Math.floor(10 + Math.random() * 30)}px`,
-                    animationDelay: `${i * 0.1}s`,
-                    animationDuration: "0.6s",
+                    height: `${Math.max(10, Math.random() * 40)}px`,
+                    animationDelay: `${i * 0.05}s`,
+                    animationDuration: '0.5s'
                   }}
-                ></span>
+                ></div>
               ))}
             </div>
-            
-            <div className="text-xl font-black text-slate-800 tabular-nums mb-3">
-              {formatTime(duration)}
-            </div>
 
+            <p className="text-3xl font-black text-slate-800 mb-6 font-mono tracking-tight">
+              {formatTime(duration)}
+            </p>
             <button
               type="button"
               onClick={stopRecording}
-              className="h-14 w-14 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center shadow-lg hover:shadow-rose-500/20 hover:-translate-y-0.5 transition-all duration-300"
+              className="h-14 w-14 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-lg hover:shadow-rose-500/20 hover:-translate-y-0.5 transition-all duration-300"
             >
-              <Square className="h-5 w-5" />
+              <Square className="h-5 w-5 fill-current" />
             </button>
-            <p className="text-xs text-slate-500 font-bold mt-3">Click to stop and analyze voice</p>
+            <p className="text-xs text-slate-500 font-bold mt-3">Stop Recording</p>
           </>
         )}
 
-        {audioUrl && !transcribing && (
-          <div className="w-full">
-            <div className="flex items-center gap-4 justify-center bg-white border border-slate-100 p-3 rounded-xl shadow-sm max-w-sm mx-auto mb-4">
+        {audioUrl && !isRecording && (
+          <div className="w-full mt-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm max-w-sm mx-auto">
               <div className="bg-teal-50 text-teal-600 p-2 rounded-lg">
                 <Play className="h-4 w-4" />
               </div>
-              <div className="flex-1 text-left">
-                <p className="text-xs font-bold text-slate-700">VoiceRecording.wav</p>
+              <div className="flex-1 text-left w-full">
+                <p className="text-xs font-bold text-slate-700">Voice Recording</p>
                 <p className="text-[10px] text-slate-400">Duration: {formatTime(duration)}</p>
+                <audio src={audioUrl} controls className="w-full h-8 mt-2" />
               </div>
               <button
                 type="button"
                 onClick={deleteRecording}
-                className="text-rose-500 hover:text-rose-700 p-1.5 hover:bg-rose-50 rounded-lg transition-colors"
+                className="text-rose-500 hover:text-rose-700 p-2 hover:bg-rose-50 rounded-lg transition-colors flex-shrink-0"
               >
-                <Trash2 className="h-4 w-4" />
+                <Trash2 className="h-5 w-5" />
               </button>
             </div>
-
-            {transcribedText && (
-              <div className="bg-white border border-teal-100 rounded-xl p-4 text-left shadow-sm max-w-md mx-auto relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-teal-500/5 to-transparent -z-10"></div>
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-teal-600 uppercase tracking-wider mb-2">
-                  <Sparkles className="h-3 w-3 animate-spin" /> Speech Recognition Result
-                </div>
-                <p className="text-xs text-slate-700 leading-relaxed italic font-medium">
-                  "{transcribedText}"
-                </p>
-                <div className="flex items-center gap-1 text-[9px] text-emerald-600 font-bold mt-3 bg-emerald-50 px-2 py-0.5 rounded-full w-max">
-                  <CheckCircle2 className="h-3 w-3" /> Transcribed via IndicWhisper
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {transcribing && (
-          <div className="flex flex-col items-center justify-center">
-            <div className="h-8 w-8 rounded-full border-4 border-teal-500 border-t-transparent animate-spin mb-3"></div>
-            <p className="text-xs text-slate-600 font-bold">Transcribing & Translating...</p>
-            <p className="text-[10px] text-slate-400 mt-1">Executing IndicWhisper + IndicTrans2 Pipeline</p>
           </div>
         )}
       </div>

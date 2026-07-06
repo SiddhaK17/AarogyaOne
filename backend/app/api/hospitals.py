@@ -892,5 +892,34 @@ async def mark_notification_read(
     ).first()
     if notif:
         notif.is_read = True
-        db.commit()
-    return {"status": "ok"}
+    db.commit()
+    return {"message": "Marked as read"}
+
+
+# ---- Reports ----
+
+@router.get("/report")
+async def get_hospital_report(
+    user: AuthenticatedUser = Depends(require_hospital_role),
+    db: Session = Depends(get_db),
+):
+    hospital = _get_hospital(user, db)
+    
+    beds = db.query(models.BedOccupancy).filter(models.BedOccupancy.hospital_id == hospital.id).all()
+    inventory = db.query(models.Inventory).filter(models.Inventory.hospital_id == hospital.id).all()
+    issues = db.query(models.InfrastructureIssue).filter(models.InfrastructureIssue.hospital_id == hospital.id).all()
+    
+    return {
+        "hospital_id": hospital.id,
+        "hospital_name": hospital.name,
+        "health_score": hospital.health_score,
+        "total_beds": hospital.total_beds,
+        "beds_summary": [
+            {"category": b.category, "total": b.total_capacity, "occupied": b.occupied_count} for b in beds
+        ],
+        "inventory_summary": [
+            {"item": i.item_name, "quantity": i.quantity, "unit": i.unit, "ai_prediction": i.ai_prediction} for i in inventory
+        ],
+        "open_issues": len([i for i in issues if i.status != 'Resolved']),
+        "generated_at": datetime.now().isoformat()
+    }

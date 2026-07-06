@@ -18,7 +18,10 @@ import {
   Calendar,
   Clock,
   TrendingUp,
+  Loader2,
+  X,
 } from 'lucide-react';
+import { hospitalApi } from '@/lib/api';
 
 /* ─── Mock Data ─── */
 const reportTypes = [
@@ -48,8 +51,62 @@ const recentReports = [
 ];
 
 export default function ReportsPage() {
+  const [reportData, setReportData] = useState<any>(null);
+  const [loadingReport, setLoadingReport] = useState(false);
+  const [generatedBrief, setGeneratedBrief] = useState<any>(null);
+
+  const handleGenerateBrief = async (briefType: string) => {
+    setLoadingReport(true);
+    try {
+      const data = await hospitalApi.getReport() as any;
+      setReportData(data);
+      // Construct an executive brief dynamically
+      let text = `Executive Brief: ${briefType}\nGenerated: ${new Date(data.generated_at).toLocaleString('en-IN')}\n\n`;
+      text += `Hospital: ${data.hospital_name} (Score: ${data.health_score.toFixed(1)}/100)\n`;
+      text += `Total Beds: ${data.total_beds}\n`;
+      text += `Open Infrastructure Issues: ${data.open_issues}\n\n`;
+      text += `Beds Summary:\n`;
+      (data.beds_summary || []).forEach((b: any) => {
+        text += `- ${b.category}: ${b.occupied} / ${b.total} occupied\n`;
+      });
+      text += `\nInventory Alerts:\n`;
+      (data.inventory_summary || []).filter((i: any) => i.ai_prediction === 'Critical Shortage').forEach((i: any) => {
+        text += `- ${i.item}: Only ${i.quantity} ${i.unit} remaining\n`;
+      });
+
+      setGeneratedBrief({ title: briefType, content: text });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to generate report from server.');
+    } finally {
+      setLoadingReport(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
+      {generatedBrief && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100 bg-slate-50/50">
+              <h2 className="font-black text-slate-900 text-lg flex items-center gap-2">
+                <FileText className="h-5 w-5 text-teal-600" />
+                {generatedBrief.title}
+              </h2>
+              <button onClick={() => setGeneratedBrief(null)} className="p-2 rounded-full hover:bg-slate-200 text-slate-500 transition-colors">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              <pre className="text-xs text-slate-700 whitespace-pre-wrap font-medium font-mono bg-slate-50 p-4 rounded-xl border border-slate-100">{generatedBrief.content}</pre>
+            </div>
+            <div className="p-5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
+              <Button variant="ghost" onClick={() => setGeneratedBrief(null)}>Close</Button>
+              <Button variant="primary"><Download className="h-4 w-4" /> Download PDF</Button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -104,13 +161,16 @@ export default function ReportsPage() {
           {executiveBriefs.map((brief) => (
             <div
               key={brief.name}
+              onClick={() => handleGenerateBrief(brief.name)}
               className="bg-white/80 rounded-xl border border-slate-100 p-4 hover:shadow-md hover:border-teal-200 transition-all cursor-pointer group"
             >
               <h4 className="text-xs font-bold text-slate-900 mb-1">{brief.name}</h4>
               <p className="text-[10px] text-slate-500 font-medium mb-3">{brief.description}</p>
               <div className="flex items-center justify-between">
                 <Badge variant="neutral" size="sm">{brief.period}</Badge>
-                <span className="text-[9px] font-bold text-teal-600 group-hover:underline">Generate →</span>
+                <span className="text-[9px] font-bold text-teal-600 group-hover:underline">
+                  {loadingReport ? 'Generating...' : 'Generate →'}
+                </span>
               </div>
             </div>
           ))}

@@ -319,6 +319,9 @@ class CitizenComplaint(Base):
     ai_sentiment = Column(String(20), nullable=True)           # Positive/Neutral/Negative
     ai_confidence = Column(Float, nullable=True)
     ai_processed_at = Column(DateTime, nullable=True)
+    
+    # Store the entire WorkflowResult payload to avoid schema bloat
+    ai_metadata = Column(JSON, nullable=True)
 
     # Current status of the complaint
     # Received / Under AI Analysis / Assigned to Department / In Progress / Resolved / Closed

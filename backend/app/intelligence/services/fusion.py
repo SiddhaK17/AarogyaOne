@@ -171,6 +171,7 @@ class UnifiedEvidence:
     
     # Security / Deduplication
     evidence_hash: str
+    is_duplicate: bool = False
 
 
 # ════════════════════════════════════════════════════════════════════════════
@@ -191,6 +192,7 @@ class EvidenceFusionService:
         self._citizen: Optional[CitizenMetadata] = None
         self._hospital: Optional[HospitalMetadata] = None
         self._location: Optional[LocationMetadata] = None
+        self._metadata: Dict[str, Any] = {}
 
     def merge_speech(self, speech: SpeechEvidence) -> None:
         """Merges speech-to-text evidence."""
@@ -211,12 +213,14 @@ class EvidenceFusionService:
         self, 
         citizen: CitizenMetadata, 
         hospital: HospitalMetadata, 
-        location: LocationMetadata
+        location: LocationMetadata,
+        metadata: Dict[str, Any] = None
     ) -> None:
         """Merges citizen, hospital, and location metadata context."""
         self._citizen = citizen
         self._hospital = hospital
         self._location = location
+        self._metadata = metadata or {}
         logger.info("Metadata (Citizen, Hospital, Location) merged.")
 
     def _determine_pipeline_status(self) -> Dict[str, PipelineStatus]:
@@ -486,7 +490,8 @@ class EvidenceFusionService:
             evidence_sources=evidence_sources,
             evidence_summary=self.generate_evidence_summary(),
             evidence_statistics=self._compile_evidence_statistics(),
-            evidence_hash=self._generate_evidence_hash()
+            evidence_hash=self._generate_evidence_hash(),
+            is_duplicate=self._metadata.get("is_duplicate", False)
         )
         
         logger.info("Fusion completed. Evidence ID: %s", unified.evidence_id)
@@ -554,11 +559,31 @@ class FusionEngine(BaseAIEngine):
     Standardized wrapper for the EvidenceFusionService.
     Conforms to the BaseAIEngine contract for registry compatibility.
     """
-    def __init__(self):
+    def __init__(
+        self,
+        speech_output=None,
+        vision_output=None,
+        nlp_output=None,
+        metadata=None
+    ):
         super().__init__()
         self._service = EvidenceFusionService()
         self._is_loaded = False
         self._last_warmup = None
+        
+        if speech_output:
+            self.merge_speech(speech_output)
+        if vision_output:
+            self.merge_vision(vision_output)
+        if nlp_output:
+            self.merge_nlp(nlp_output)
+            
+        if metadata:
+            citizen = metadata.get("citizen")
+            hospital = metadata.get("hospital")
+            location = metadata.get("location")
+            if citizen and hospital and location:
+                self.merge_metadata(citizen, hospital, location, metadata)
 
     def load(self) -> None:
         if not self._is_loaded:
@@ -587,7 +612,7 @@ class FusionEngine(BaseAIEngine):
             citizen = CitizenMetadata("TEST_C", "TEST_C_ID", None, None)
             hospital = HospitalMetadata("TEST_H", "TEST_NAME", "TEST_DIST", "TEST_STATE")
             location = LocationMetadata(10.0, 20.0, "TEST_ADDR")
-            temp_service.merge_metadata(citizen, hospital, location)
+            temp_service.merge_metadata(citizen, hospital, location, {})
             temp_service.merge()
             self._last_warmup = time.time()
             logger.info("fusion_engine_warmup", extra={"event_message": "FusionEngine warmup successful."})
@@ -628,13 +653,16 @@ class FusionEngine(BaseAIEngine):
     def merge_nlp(self, nlp: Any) -> None:
         self._service.merge_nlp(nlp)
 
-    def merge_metadata(self, citizen: Any, hospital: Any, location: Any) -> None:
-        self._service.merge_metadata(citizen, hospital, location)
+    def merge_metadata(self, citizen: Any, hospital: Any, location: Any, metadata: Any = None) -> None:
+        self._service.merge_metadata(citizen, hospital, location, metadata)
 
     def merge(self) -> UnifiedEvidence:
         if not self._is_loaded:
             self.load()
         return self._service.merge()
+        
+    def fuse(self) -> UnifiedEvidence:
+        return self.merge()
         
     def export_json(self) -> str:
         return self._service.export_json()

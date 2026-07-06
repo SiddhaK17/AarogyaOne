@@ -31,6 +31,8 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 # ---------------------------------------------------------------------------
 
 class RegisterRequest(BaseModel):
+    firebase_uid: str
+    email: str
     full_name: str
     role: str
     # Hospital staff: must provide their hospital_id
@@ -96,7 +98,6 @@ GOVERNMENT_ROLES = {"engineer", "supplier"}
 @router.post("/register", response_model=UserProfileResponse, status_code=status.HTTP_201_CREATED)
 async def register(
     body: RegisterRequest,
-    current_user: AuthenticatedUser = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -130,7 +131,7 @@ async def register(
 
     # Check for duplicate registration
     existing = db.query(models.User).filter(
-        models.User.firebase_uid == current_user.uid
+        models.User.firebase_uid == body.firebase_uid
     ).first()
     if existing:
         raise HTTPException(
@@ -152,8 +153,8 @@ async def register(
 
     # Persist user profile in database
     user = models.User(
-        firebase_uid=current_user.uid,
-        email=current_user.email,
+        firebase_uid=body.firebase_uid,
+        email=body.email,
         full_name=body.full_name,
         role=body.role,
         hospital_id=body.hospital_id,
@@ -166,7 +167,7 @@ async def register(
 
     # Set Firebase custom claims — embedded in all future ID tokens
     set_user_custom_claims(
-        uid=current_user.uid,
+        uid=body.firebase_uid,
         role=body.role,
         hospital_id=body.hospital_id,
         district=body.district,

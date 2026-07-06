@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { hospitalApi } from '@/lib/api';
 import { X, CheckCheck, Loader2 } from 'lucide-react';
 import {
   Users,
@@ -32,15 +33,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
-/* ─── Mock Data ─── */
-const staffSummary = [
-  { label: 'Doctors', present: 14, total: 18, icon: Stethoscope, color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Nurses', present: 28, total: 32, icon: Users, color: 'text-violet-600', bg: 'bg-violet-50' },
-  { label: 'Lab Technicians', present: 6, total: 8, icon: FlaskConical, color: 'text-teal-600', bg: 'bg-teal-50' },
-  { label: 'Pharmacists', present: 3, total: 4, icon: Syringe, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { label: 'Ambulance Drivers', present: 3, total: 4, icon: Truck, color: 'text-orange-600', bg: 'bg-orange-50' },
-  { label: 'Support Staff', present: 12, total: 15, icon: Wrench, color: 'text-slate-600', bg: 'bg-slate-100' },
-];
+/* ─── Mock Data for charts without backend support yet ─── */
 
 interface StaffRecord {
   id: string;
@@ -53,16 +46,7 @@ interface StaffRecord {
   checkOut: string;
 }
 
-const initialStaffList: StaffRecord[] = [
-  { id: 'EMP001', name: 'Dr. Arjun Mehta', department: 'General Medicine', designation: 'Medical Superintendent', shift: 'Morning', status: 'Present', checkIn: '08:15 AM', checkOut: '—' },
-  { id: 'EMP002', name: 'Dr. Priya Sharma', department: 'ICU', designation: 'Senior Doctor', shift: 'Morning', status: 'Present', checkIn: '08:00 AM', checkOut: '—' },
-  { id: 'EMP003', name: 'Dr. Rajesh Kulkarni', department: 'Emergency', designation: 'Medical Officer', shift: 'Night', status: 'On Leave', checkIn: '—', checkOut: '—' },
-  { id: 'EMP004', name: 'Nurse Anita Desai', department: 'General Ward', designation: 'Nurse Supervisor', shift: 'Morning', status: 'Present', checkIn: '07:45 AM', checkOut: '—' },
-  { id: 'EMP005', name: 'Sanjay Patil', department: 'Pharmacy', designation: 'Chief Pharmacist', shift: 'Morning', status: 'Present', checkIn: '08:30 AM', checkOut: '—' },
-  { id: 'EMP006', name: 'Dr. Neha Joshi', department: 'Pediatrics', designation: 'Junior Doctor', shift: 'Evening', status: 'Absent', checkIn: '—', checkOut: '—' },
-  { id: 'EMP007', name: 'Ravi Kumar', department: 'Radiology', designation: 'Lab Technician', shift: 'Morning', status: 'Present', checkIn: '08:05 AM', checkOut: '—' },
-  { id: 'EMP008', name: 'Suresh Gade', department: 'Transport', designation: 'Ambulance Driver', shift: 'Morning', status: 'Present', checkIn: '07:30 AM', checkOut: '—' },
-];
+const initialStaffList: StaffRecord[] = [];
 
 /* ─── Attendance Modal ─── */
 function AttendanceModal({ onClose, onSubmit }: { onClose: () => void; onSubmit: (r: StaffRecord) => void }) {
@@ -79,14 +63,29 @@ function AttendanceModal({ onClose, onSubmit }: { onClose: () => void; onSubmit:
     if (!name) return;
     setSubmitting(true);
     await new Promise((r) => setTimeout(r, 700));
-    const now = new Date();
-    const checkIn = status === 'Present' ? now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—';
-    onSubmit({
-      id: `EMP${String(Math.floor(Math.random() * 900) + 100)}`,
-      name, designation, department, shift, status, checkIn, checkOut: '—',
-    });
-    setSuccess(true);
-    setTimeout(() => onClose(), 1100);
+    try {
+      await hospitalApi.logAttendance({
+        employee_name: name,
+        designation,
+        department,
+        shift,
+        status,
+        check_in_time: status === 'Present' ? new Date().toISOString() : null,
+      });
+      const now = new Date();
+      const checkIn = status === 'Present' ? now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—';
+      onSubmit({
+        id: `EMP${String(Math.floor(Math.random() * 900) + 100)}`,
+        name, designation, department, shift, status, checkIn, checkOut: '—',
+      });
+      setSuccess(true);
+      setTimeout(() => onClose(), 1100);
+    } catch (err) {
+      console.error("Failed to log attendance", err);
+      alert("Failed to log attendance.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (success) {
@@ -170,8 +169,34 @@ const aiStaffPrediction = {
 export default function StaffPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [staffList, setStaffList] = useState(initialStaffList);
+  const [staffList, setStaffList] = useState<StaffRecord[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const fetchStaff = async () => {
+    setLoading(true);
+    try {
+      const data = await hospitalApi.getStaff() as any[];
+      setStaffList(data.map((s: any) => ({
+        id: s.employee_id || `EMP${s.id}`,
+        name: s.employee_name,
+        department: s.department,
+        designation: s.designation,
+        shift: s.shift,
+        status: s.status,
+        checkIn: s.check_in_time ? new Date(s.check_in_time).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '—',
+        checkOut: '—',
+      })));
+    } catch (err) {
+      console.error("Failed to load staff", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStaff();
+  }, []);
 
   const filtered = staffList.filter((s) => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || s.department.toLowerCase().includes(searchTerm.toLowerCase());
@@ -182,13 +207,46 @@ export default function StaffPage() {
   const totalPresent = staffList.filter(s => s.status === 'Present').length;
   const totalStaff = staffList.length;
 
+  const dynamicStaffSummary = React.useMemo(() => {
+    const counts: Record<string, { present: number, total: number }> = {
+      Doctors: { present: 0, total: 0 },
+      Nurses: { present: 0, total: 0 },
+      'Lab Technicians': { present: 0, total: 0 },
+      Pharmacists: { present: 0, total: 0 },
+      'Ambulance Drivers': { present: 0, total: 0 },
+      'Support Staff': { present: 0, total: 0 },
+    };
+
+    staffList.forEach(s => {
+      const d = s.designation.toLowerCase();
+      let category = 'Support Staff';
+      if (d.includes('doctor') || d.includes('officer') || d.includes('surgeon')) category = 'Doctors';
+      else if (d.includes('nurse')) category = 'Nurses';
+      else if (d.includes('lab') || d.includes('tech')) category = 'Lab Technicians';
+      else if (d.includes('pharm')) category = 'Pharmacists';
+      else if (d.includes('driver') || d.includes('ambulance')) category = 'Ambulance Drivers';
+
+      counts[category].total += 1;
+      if (s.status === 'Present') counts[category].present += 1;
+    });
+
+    return [
+      { label: 'Doctors', present: counts['Doctors'].present, total: counts['Doctors'].total || 1, icon: Stethoscope, color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Nurses', present: counts['Nurses'].present, total: counts['Nurses'].total || 1, icon: Users, color: 'text-violet-600', bg: 'bg-violet-50' },
+      { label: 'Lab Technicians', present: counts['Lab Technicians'].present, total: counts['Lab Technicians'].total || 1, icon: FlaskConical, color: 'text-teal-600', bg: 'bg-teal-50' },
+      { label: 'Pharmacists', present: counts['Pharmacists'].present, total: counts['Pharmacists'].total || 1, icon: Syringe, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Ambulance Drivers', present: counts['Ambulance Drivers'].present, total: counts['Ambulance Drivers'].total || 1, icon: Truck, color: 'text-orange-600', bg: 'bg-orange-50' },
+      { label: 'Support Staff', present: counts['Support Staff'].present, total: counts['Support Staff'].total || 1, icon: Wrench, color: 'text-slate-600', bg: 'bg-slate-100' },
+    ];
+  }, [staffList]);
+
   return (
     <div className="space-y-8">
       {showModal && (
         <AttendanceModal
           onClose={() => setShowModal(false)}
-          onSubmit={(record) => {
-            setStaffList((prev) => [record, ...prev]);
+          onSubmit={async () => {
+            await fetchStaff();
             setShowModal(false);
           }}
         />
@@ -228,7 +286,7 @@ export default function StaffPage() {
 
       {/* ─── Department Cards ─── */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {staffSummary.map((dept) => {
+        {dynamicStaffSummary.map((dept) => {
           const Icon = dept.icon;
           const percent = Math.round((dept.present / dept.total) * 100);
           return (

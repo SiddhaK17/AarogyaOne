@@ -1,22 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { Upload, X, Check, Image as ImageIcon, Sparkles } from "lucide-react";
+import { Upload, X, Check, Image as ImageIcon, Sparkles, AlertCircle } from "lucide-react";
 
 interface ImageUploaderProps {
-  onImageUploaded: (url: string) => void;
+  onImageReady: (file: File | null) => void;
 }
 
-export default function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
+export default function ImageUploader({ onImageReady }: ImageUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [aiAnalysis, setAiAnalysis] = useState<{
-    damageDetected: boolean;
-    objects: string[];
-    severity: string;
-    description: string;
-  } | null>(null);
+  const [selectedImagePreview, setSelectedImagePreview] = useState<string | null>(null);
+  const [fileDetails, setFileDetails] = useState<{name: string, size: string} | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -29,49 +24,24 @@ export default function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   };
 
   const processFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      alert("Only image uploads are allowed.");
+    setError(null);
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      setError("Only image and video uploads are allowed.");
+      return;
+    }
+    if (file.size > 20 * 1024 * 1024) { // 20MB limit
+      setError("File size exceeds 20MB limit.");
       return;
     }
 
     const reader = new FileReader();
     reader.onload = () => {
-      const dataUrl = reader.result as string;
-      setSelectedImage(dataUrl);
-      onImageUploaded(dataUrl);
-      
-      // Trigger mock Vision Intelligence (YOLOv11 / LLaVA)
-      setAnalyzing(true);
-      setAiAnalysis(null);
-
-      setTimeout(() => {
-        setAnalyzing(false);
-        const fileName = file.name.toLowerCase();
-        let objects = ["Structural Damage", "General Clinic"];
-        let severity = "Medium";
-        let description = "Unstructured area inspected. Minor discrepancies identified.";
-
-        if (fileName.includes("leak") || fileName.includes("water") || fileName.includes("pipe")) {
-          objects = ["Water Leakage", "Damp Ceiling", "Piping Anomaly"];
-          severity = "High";
-          description = "Water leakage on ceilings / walls detected. High risk of slip hazards and infrastructure deterioration.";
-        } else if (fileName.includes("dirty") || fileName.includes("garbage") || fileName.includes("dust") || fileName.includes("trash")) {
-          objects = ["Overflowing Waste", "Garbage Pile", "Sanitation Neglect"];
-          severity = "Medium";
-          description = "Piles of unmanaged waste detected in public transit corridor. Sanitation compliance violation.";
-        } else if (fileName.includes("broken") || fileName.includes("mri") || fileName.includes("wheelchair") || fileName.includes("bed")) {
-          objects = ["Broken Equipment", "Damaged Support Asset"];
-          severity = "High";
-          description = "Broken clinical support assets detected. Immediate repair needed to ensure operational throughput.";
-        }
-
-        setAiAnalysis({
-          damageDetected: true,
-          objects,
-          severity,
-          description
-        });
-      }, 2500); // 2.5s analysis time
+      setSelectedImagePreview(reader.result as string);
+      setFileDetails({
+        name: file.name,
+        size: (file.size / (1024 * 1024)).toFixed(2) + " MB"
+      });
+      onImageReady(file);
     };
     reader.readAsDataURL(file);
   };
@@ -94,8 +64,9 @@ export default function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
   };
 
   const removeImage = () => {
-    setSelectedImage(null);
-    setAiAnalysis(null);
+    setSelectedImagePreview(null);
+    setFileDetails(null);
+    onImageReady(null);
   };
 
   return (
@@ -107,7 +78,7 @@ export default function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
         <span className="text-[10px] text-slate-400 font-bold">Max file size: 5MB</span>
       </div>
 
-      {!selectedImage ? (
+      {!selectedImagePreview ? (
         <div
           onDragEnter={handleDrag}
           onDragOver={handleDrag}
@@ -126,6 +97,7 @@ export default function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
             accept="image/*"
             onChange={handleChange}
           />
+          <div className="flex flex-col items-center justify-center py-10 px-4 text-center">
           <div className="h-12 w-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 mb-3">
             <Upload className="h-5 w-5" />
           </div>
@@ -140,11 +112,12 @@ export default function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
           </p>
           <p className="text-xs text-slate-400 mt-1">Supports PNG, JPG, JPEG formats</p>
         </div>
+        </div>
       ) : (
         <div className="space-y-4">
           <div className="relative rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 flex items-center justify-center p-2 max-w-md mx-auto">
             <img
-              src={selectedImage}
+              src={selectedImagePreview}
               alt="Evidence preview"
               className="max-h-60 rounded-xl object-contain shadow-sm"
             />
@@ -156,57 +129,14 @@ export default function ImageUploader({ onImageUploaded }: ImageUploaderProps) {
               <X className="h-4 w-4" />
             </button>
           </div>
-
-          {analyzing && (
-            <div className="bg-slate-900/90 text-white p-4 rounded-xl border border-slate-800 flex items-center gap-4 max-w-md mx-auto shadow-lg">
-              <div className="h-6 w-6 rounded-full border-2 border-teal-400 border-t-transparent animate-spin shrink-0"></div>
-              <div>
-                <p className="text-xs font-bold flex items-center gap-1.5 text-teal-400">
-                  <Sparkles className="h-3.5 w-3.5 animate-pulse" /> AI Vision Engine Analysis
-                </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">Running YOLOv11 + LLaVA object detection...</p>
+          {fileDetails && (
+            <div className="bg-white border border-slate-100 p-3 rounded-xl max-w-md mx-auto shadow-sm flex items-center gap-3">
+              <div className="bg-slate-50 text-slate-500 p-2 rounded-lg">
+                <ImageIcon className="h-4 w-4" />
               </div>
-            </div>
-          )}
-
-          {aiAnalysis && (
-            <div className="bg-white border border-teal-100 rounded-xl p-4 shadow-sm max-w-md mx-auto relative overflow-hidden text-left">
-              <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-teal-500/5 to-transparent -z-10"></div>
-              
-              <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
-                <span className="text-[10px] font-black text-teal-600 uppercase tracking-wider flex items-center gap-1">
-                  <Sparkles className="h-3 w-3 text-teal-500" /> AI Visual Diagnostics
-                </span>
-                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                  aiAnalysis.severity === "Critical" 
-                    ? "bg-rose-50 text-rose-700 border border-rose-100" 
-                    : aiAnalysis.severity === "High"
-                    ? "bg-amber-50 text-amber-700 border border-amber-100"
-                    : "bg-slate-50 text-slate-600 border border-slate-100"
-                }`}>
-                  Severity: {aiAnalysis.severity}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex flex-wrap gap-1.5 items-center">
-                  <span className="text-[10px] font-bold text-slate-400 mr-1">Objects Identified:</span>
-                  {aiAnalysis.objects.map((obj, i) => (
-                    <span key={i} className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">
-                      {obj}
-                    </span>
-                  ))}
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 mb-0.5">Summary:</p>
-                  <p className="text-xs text-slate-600 leading-relaxed font-semibold">
-                    {aiAnalysis.description}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 text-[9px] text-emerald-600 font-bold mt-3.5 bg-emerald-50 px-2 py-0.5 rounded-full w-max border border-emerald-100">
-                <Check className="h-3 w-3" /> Image scan parsed successfully
+              <div className="text-left">
+                <p className="text-xs font-bold text-slate-700 truncate max-w-[200px]">{fileDetails.name}</p>
+                <p className="text-[10px] text-slate-400">{fileDetails.size}</p>
               </div>
             </div>
           )}

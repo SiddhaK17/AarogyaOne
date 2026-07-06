@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from '@/components/shared/Sidebar';
 import Navbar from '@/components/shared/Navbar';
+import { useAuth } from '@/context/AuthContext';
+import { PageLoader } from '@/components/ui/Loaders';
 
 export default function GovernmentLayout({
   children,
@@ -10,6 +13,23 @@ export default function GovernmentLayout({
   children: React.ReactNode;
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return <PageLoader message="Authenticating Government session..." />;
+  }
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login?role=government');
+    }
+  }, [user, loading, router]);
+
+  if (!user && !loading) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">

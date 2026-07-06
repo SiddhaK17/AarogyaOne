@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { useAppData } from '@/context/AppDataContext';
-import { useHospitalSession } from '../layout';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useHospitalSession } from '@/context/HospitalSessionContext';
+import { hospitalApi } from '@/lib/api';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -35,10 +35,10 @@ interface Issue {
   priority: string;
   status: string;
   reporter: string;
-  timestamp: string;
-  aiCategory: string;
-  aiSeverity: string;
-  aiUrgency: string;
+  created_at: string;
+  ai_category: string;
+  ai_severity: string;
+  ai_assigned_department: string;
 }
 
 /* ─── Seeded Mock Data (matches database seed) ─── */
@@ -52,10 +52,10 @@ const initialIssues: Issue[] = [
     priority: 'Critical',
     status: 'Open',
     reporter: 'Dr. Priya Sharma',
-    timestamp: '2 hours ago',
-    aiCategory: 'Biomedical Engineering',
-    aiSeverity: 'Critical',
-    aiUrgency: 'Immediate',
+    created_at: '2 hours ago',
+    ai_category: 'Biomedical Engineering',
+    ai_severity: 'Critical',
+    ai_assigned_department: 'Biomedical',
   },
   {
     id: 'ISS-002',
@@ -66,10 +66,10 @@ const initialIssues: Issue[] = [
     priority: 'Critical',
     status: 'In Progress',
     reporter: 'Nurse Anita Desai',
-    timestamp: '5 hours ago',
-    aiCategory: 'Medical Gas Systems',
-    aiSeverity: 'High',
-    aiUrgency: 'Within 4 Hours',
+    created_at: '5 hours ago',
+    ai_category: 'Medical Gas Systems',
+    ai_severity: 'High',
+    ai_assigned_department: 'Facilities',
   },
   {
     id: 'ISS-003',
@@ -80,10 +80,10 @@ const initialIssues: Issue[] = [
     priority: 'High',
     status: 'Open',
     reporter: 'Suresh Gade',
-    timestamp: '1 day ago',
-    aiCategory: 'Electrical / PWD',
-    aiSeverity: 'High',
-    aiUrgency: 'Within 24 Hours',
+    created_at: '1 day ago',
+    ai_category: 'Electrical / PWD',
+    ai_severity: 'High',
+    ai_assigned_department: 'Facilities',
   },
   {
     id: 'ISS-004',
@@ -94,10 +94,10 @@ const initialIssues: Issue[] = [
     priority: 'High',
     status: 'In Progress',
     reporter: 'Dr. Arjun Mehta',
-    timestamp: '1 day ago',
-    aiCategory: 'PWD / Civil',
-    aiSeverity: 'Medium',
-    aiUrgency: 'Within 24 Hours',
+    created_at: '1 day ago',
+    ai_category: 'PWD / Civil',
+    ai_severity: 'Medium',
+    ai_assigned_department: 'Facilities',
   },
   {
     id: 'ISS-005',
@@ -108,15 +108,33 @@ const initialIssues: Issue[] = [
     priority: 'Medium',
     status: 'Open',
     reporter: 'Ravi Kumar',
-    timestamp: '3 hours ago',
-    aiCategory: 'IT Department',
-    aiSeverity: 'Medium',
-    aiUrgency: 'Within 8 Hours',
+    created_at: '3 hours ago',
+    ai_category: 'IT Department',
+    ai_severity: 'Medium',
+    ai_assigned_department: 'IT / Admin',
   },
 ];
 
-const issueTypeOptions = ['Equipment Failure', 'Infrastructure', 'Electrical', 'Plumbing', 'IT Infrastructure', 'Civil', 'Other'];
-const departmentOptions = ['Radiology', 'General Ward', 'ICU', 'Facilities', 'OPD', 'Pediatrics', 'Emergency', 'Pharmacy', 'Lab', 'Maternity'];
+const issueTypeOptions = [
+  'Equipment Failure',
+  'Infrastructure',
+  'Electrical',
+  'Plumbing',
+  'IT Infrastructure',
+  'Civil',
+  'Other',
+];
+
+const departmentOptions = [
+  'Radiology',
+  'ICU',
+  'OPD',
+  'Emergency',
+  'General Ward',
+  'Facilities',
+  'IT / Admin',
+];
+
 const priorityOptions = ['Critical', 'High', 'Medium', 'Low'] as const;
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -152,12 +170,11 @@ function getAIClassification(type: string, priority: string) {
     'Low': 'Scheduled',
   };
   return {
-    aiCategory: categoryMap[type] ?? 'District Admin',
-    aiSeverity: priority,
-    aiUrgency: urgencyMap[priority] ?? 'Scheduled',
+    ai_category: categoryMap[type] ?? 'District Admin',
+    ai_severity: priority,
+    ai_assigned_department: categoryMap[type] ?? 'District Admin',
   };
 }
-
 /* ─── New Issue Modal ─── */
 function NewIssueModal({
   mode,
@@ -166,7 +183,7 @@ function NewIssueModal({
 }: {
   mode: 'form' | 'photo' | 'voice';
   onClose: () => void;
-  onSubmit: (issue: Partial<Issue>) => void;
+  onSubmit: (issue: any) => Promise<void>;
 }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -184,23 +201,22 @@ function NewIssueModal({
     if (!title.trim() || !description.trim()) return;
 
     setSubmitting(true);
-    // Simulate API call delay
-    await new Promise((res) => setTimeout(res, 900));
-
-    const ai = getAIClassification(type, priority);
-    onSubmit({
-      title,
-      description,
-      type,
-      department,
-      priority,
-      reporter,
-      status: 'Open',
-      timestamp: 'Just now',
-      ...ai,
-    });
-    setSuccess(true);
-    setTimeout(() => onClose(), 1200);
+    try {
+      await onSubmit({
+        title,
+        description,
+        issue_type: type,
+        department,
+        priority,
+        reporter_name: reporter,
+      });
+      setSuccess(true);
+      setTimeout(() => onClose(), 1500);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to submit issue');
+      setSubmitting(false);
+    }
   };
 
   const handleVoiceToggle = () => {
@@ -369,8 +385,8 @@ function NewIssueModal({
               <span className="text-[10px] font-bold text-teal-700 uppercase tracking-wider">AI Pre-Classification</span>
             </div>
             <div className="flex gap-4 text-[11px]">
-              <span><span className="text-slate-400">Routes to:</span> <span className="font-bold text-slate-800">{getAIClassification(type, priority).aiCategory}</span></span>
-              <span><span className="text-slate-400">Urgency:</span> <span className="font-bold text-slate-800">{getAIClassification(type, priority).aiUrgency}</span></span>
+              <span><span className="text-slate-400">Routes to:</span> <span className="font-bold text-slate-800">{getAIClassification(type, priority).ai_assigned_department}</span></span>
+              <span><span className="text-slate-400">Severity:</span> <span className="font-bold text-slate-800">{getAIClassification(type, priority).ai_severity}</span></span>
             </div>
           </div>
 
@@ -399,51 +415,48 @@ function NewIssueModal({
 
 /* ─── Main Page ─── */
 export default function InfrastructurePage() {
-  const { infraIssues, addInfraIssue, updateIssueStatus } = useAppData();
   const { session } = useHospitalSession();
+  const [issues, setIssues] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('All');
   const [modalMode, setModalMode] = useState<'form' | 'photo' | 'voice' | null>(null);
 
-  // Filter issues for the active hospital
-  const hospitalId = session?.hospital_id ?? 1;
-  const hospitalIssues = useMemo(() => {
-    return infraIssues.filter((i) => i.hospital_id === hospitalId);
-  }, [infraIssues, hospitalId]);
+  useEffect(() => {
+    async function loadIssues() {
+      try {
+        const data = await hospitalApi.getIssues();
+        setIssues(data as any[]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadIssues();
+  }, []);
 
   const issueStats = [
-    { label: 'Open Issues', value: hospitalIssues.filter(i => i.status === 'Open').length, color: 'text-rose-600', bg: 'bg-rose-50' },
-    { label: 'In Progress', value: hospitalIssues.filter(i => i.status === 'In Progress').length, color: 'text-amber-600', bg: 'bg-amber-50' },
-    { label: 'Resolved (Today)', value: hospitalIssues.filter(i => i.status === 'Resolved').length, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Open Issues', value: issues.filter(i => i.status === 'Open').length, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'In Progress', value: issues.filter(i => i.status === 'In Progress').length, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'Resolved (Today)', value: issues.filter(i => i.status === 'Resolved').length, color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { label: 'Avg Resolution', value: '4.2 hrs', color: 'text-blue-600', bg: 'bg-blue-50' },
   ];
 
-  const filtered = hospitalIssues.filter((issue) => {
+  const filtered = issues.filter((issue) => {
     if (activeFilter === 'All') return true;
     return issue.status === activeFilter;
   });
 
-  const handleNewIssue = (partial: Partial<Issue>) => {
+  const handleNewIssue = async (partial: Partial<Issue>) => {
     if (!session) return;
-    addInfraIssue({
-      hospital_id: session.hospital_id,
-      hospital_name: session.hospital_name,
-      taluka: session.taluka,
-      district: 'Palghar',
-      title: partial.title ?? 'Untitled Issue',
-      description: partial.description ?? '',
-      type: partial.type ?? 'Other',
-      department: partial.department ?? 'Facilities',
-      priority: (partial.priority as any) ?? 'Medium',
-      status: 'Open',
-      reporter: partial.reporter ?? session.user_name,
-      ai_category: partial.aiCategory ?? 'District Admin',
-      ai_severity: partial.aiSeverity ?? 'Medium',
-      ai_urgency: partial.aiUrgency ?? 'Within 72 Hours',
-    });
-  };
-
-  const handleStatusChange = (issueId: string, newStatus: string) => {
-    updateIssueStatus(issueId, newStatus as any);
+    try {
+      await hospitalApi.reportIssue(partial);
+      const data = await hospitalApi.getIssues();
+      setIssues(data as any[]);
+    } catch (e) {
+      console.error(e);
+      throw e; // propagate to modal
+    }
   };
 
   return (
@@ -453,7 +466,7 @@ export default function InfrastructurePage() {
         <NewIssueModal
           mode={modalMode}
           onClose={() => setModalMode(null)}
-          onSubmit={(issue) => {
+          onSubmit={async (issue) => {
             handleNewIssue(issue);
             setModalMode(null);
           }}
@@ -538,30 +551,8 @@ export default function InfrastructurePage() {
                 <div className="flex items-center gap-4 text-[10px] text-slate-400 font-medium">
                   <span className="flex items-center gap-1">{statusIcons[issue.status]} {issue.status}</span>
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {new Date(issue.created_at).toLocaleDateString('en-IN')}</span>
-                  <span>Reported by: {issue.reporter}</span>
+                  <span>Reported by: {issue.reporter_name}</span>
                 </div>
-
-                {/* Status actions */}
-                {issue.status !== 'Resolved' && (
-                  <div className="flex gap-2 mt-3">
-                    {issue.status === 'Open' && (
-                      <button
-                        onClick={() => handleStatusChange(issue.id, 'In Progress')}
-                        className="px-3 py-1.5 text-[10px] font-bold rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors border border-amber-200"
-                      >
-                        Mark In Progress
-                      </button>
-                    )}
-                    {issue.status === 'In Progress' && (
-                      <button
-                        onClick={() => handleStatusChange(issue.id, 'Resolved')}
-                        className="px-3 py-1.5 text-[10px] font-bold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors border border-emerald-200"
-                      >
-                        Mark Resolved
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
 
               {/* AI Classification Panel */}
@@ -581,7 +572,7 @@ export default function InfrastructurePage() {
                   </div>
                   <div className="flex justify-between text-[10px]">
                     <span className="text-slate-500 font-medium">Urgency</span>
-                    <span className="font-bold text-slate-800">{issue.ai_urgency}</span>
+                    <span className="font-bold text-slate-800">{issue.ai_assigned_department ?? 'Evaluating'}</span>
                   </div>
                   <div className="pt-2 border-t border-slate-200/50">
                     <p className="text-[9px] text-slate-400 italic">Auto-routed to Government Authority Portal</p>

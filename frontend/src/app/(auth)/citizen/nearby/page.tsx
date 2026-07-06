@@ -5,11 +5,23 @@ import {
   MapPin, Compass, Navigation, Phone, Activity, 
   Sparkles, CheckCircle2, ChevronRight, HelpCircle, Building2
 } from "lucide-react";
-import { getHospitals, Hospital } from "../mockDb";
+import { citizenApi } from "@/lib/api";
 
-interface NearbyHospital extends Hospital {
-  distance: number; // in km
-  directions: string[];
+interface NearbyHospital {
+  id: number;
+  name: string;
+  facility_type: string;
+  district: string;
+  taluka: string;
+  address: string;
+  phone: string;
+  distance_km: number;
+  directions?: string[];
+  statusColor?: string;
+  available_beds?: number;
+  total_beds?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export default function NearbyHealthcarePage() {
@@ -19,61 +31,51 @@ export default function NearbyHealthcarePage() {
   const [loading, setLoading] = useState(false);
   const [gpsActive, setGpsActive] = useState(false);
 
-  const simulateLocationSearch = () => {
+  const searchNearby = async () => {
     setLoading(true);
     setGpsActive(true);
 
-    setTimeout(() => {
-      const all = getHospitals();
-      // Add simulated distances and directions
-      const list: NearbyHospital[] = [
-        {
-          ...all[0], // Mumbai
-          distance: 1.2,
-          directions: ["Head North on Main Ave towards Worli Rd", "Turn right on Dr. Annie Besant Rd", "Hospital is on the left in 200m"]
-        },
-        {
-          ...all[1], // Pune
-          distance: 4.8,
-          directions: ["Head South towards Shivajinagar Station", "Turn left on FC Rd", "Continue straight for 2.5km", "Destination is on the right"]
-        },
-        {
-          ...all[2], // Nashik
-          distance: 8.5,
-          directions: ["Follow Trimbak Road towards Golf Club Ground", "Take 2nd exit at roundabout", "Hospital is straight ahead next to civil court"]
-        },
-        {
-          ...all[3], // Baramati
-          distance: 12.1,
-          directions: ["Follow Indapur Road south for 8km", "Turn right before railway crossing", "Hospital gate is on the right"]
-        },
-        {
-          ...all[4], // Satara
-          distance: 16.4,
-          directions: ["Head West on Satara-Karad road for 15km", "Take right at Town Hall junction", "Rural hospital is adjacent to municipal library"]
-        }
-      ];
+    try {
+      // Hardcoded center of Palghar District for demonstration
+      const centerLat = 19.696;
+      const centerLng = 72.769;
 
-      // Filter by radius
-      const filtered = list.filter(item => item.distance <= parseFloat(radius));
-      // Sort by distance
-      filtered.sort((a, b) => a.distance - b.distance);
+      const data = await citizenApi.findNearby(centerLat, centerLng, parseFloat(radius)) as any[];
       
-      setNearbyList(filtered);
-      if (filtered.length > 0) {
-        setSelectedHosp(filtered[0]);
+      const mapped: NearbyHospital[] = data.map(h => ({
+        id: h.id,
+        name: h.name,
+        facility_type: h.facility_type,
+        district: h.district,
+        taluka: h.taluka,
+        address: h.address,
+        phone: h.phone || "+91 9999999999",
+        distance_km: h.distance_km,
+        directions: ["Head towards " + h.taluka, "Follow signs for " + h.name, "Arrive at destination"]
+      }));
+
+      mapped.sort((a, b) => a.distance_km - b.distance_km);
+      setNearbyList(mapped);
+      
+      if (mapped.length > 0) {
+        setSelectedHosp(mapped[0]);
       } else {
         setSelectedHosp(null);
       }
+    } catch (err) {
+      console.error("Failed to fetch nearby hospitals", err);
+      setNearbyList([]);
+      setSelectedHosp(null);
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
 
   useEffect(() => {
-    simulateLocationSearch();
+    searchNearby();
   }, [radius]);
 
-  const getStatusColorClass = (color: Hospital["statusColor"]) => {
+  const getStatusColorClass = (color?: string) => {
     switch (color) {
       case "Healthy":
         return "bg-emerald-500 border-emerald-600";
@@ -112,7 +114,7 @@ export default function NearbyHealthcarePage() {
           </select>
           
           <button
-            onClick={simulateLocationSearch}
+            onClick={searchNearby}
             className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-teal-500/10 transition-colors flex items-center gap-1.5 shrink-0"
           >
             <Compass className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -157,9 +159,9 @@ export default function NearbyHealthcarePage() {
                   <div className="flex justify-between items-start gap-4">
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">{hosp.type}</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">{hosp.facility_type}</span>
                         <span className="text-[9px] text-slate-300">•</span>
-                        <span className="text-[10px] font-black text-teal-600">{hosp.distance} km away</span>
+                        <p className="font-bold text-slate-800 text-sm mt-1">{hosp.distance_km.toFixed(1)} km away</p>
                       </div>
                       <h4 className="font-extrabold text-sm text-slate-900 mt-1">
                         {hosp.name}
@@ -169,10 +171,10 @@ export default function NearbyHealthcarePage() {
                   </div>
 
                   <div className="text-[11px] font-semibold text-slate-500 space-y-1">
-                    <p className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {hosp.contactNumber}</p>
+                    <p className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> {hosp.phone}</p>
                     <p className="flex items-center gap-1">
                       <Activity className="h-3.5 w-3.5" /> 
-                      <span>Beds Free: <strong className="text-slate-700">{hosp.availableBeds} / {hosp.totalBeds}</strong></span>
+                      <span>Beds Free: <strong className="text-slate-700">{hosp.available_beds} / {hosp.total_beds}</strong></span>
                     </p>
                   </div>
 
@@ -180,7 +182,7 @@ export default function NearbyHealthcarePage() {
                     <div className="border-t border-slate-100 pt-3 mt-1 space-y-2 animate-in slide-in-from-top-1 duration-200">
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Directions Map Route</p>
                       <ol className="space-y-1.5 pl-4 list-decimal text-[10px] text-slate-600 font-semibold leading-relaxed">
-                        {hosp.directions.map((step, idx) => (
+                        {hosp.directions?.map((step, idx) => (
                           <li key={idx}>{step}</li>
                         ))}
                       </ol>
@@ -217,7 +219,7 @@ export default function NearbyHealthcarePage() {
               <Compass className="h-5 w-5 text-teal-400" />
               <div>
                 <h4 className="font-extrabold text-sm text-slate-200 uppercase tracking-wider">Geographic Map Canvas</h4>
-                <p className="text-[9px] text-slate-400 font-bold">Simulated location mapping engine (Leaflet Overlay)</p>
+                <p className="text-xs text-slate-500 font-semibold">Geospatial Mapping Engine (Leaflet Overlay)</p>
               </div>
             </div>
             {gpsActive && (
@@ -229,121 +231,35 @@ export default function NearbyHealthcarePage() {
 
           {/* SVG map draw */}
           <div className="flex-1 flex items-center justify-center relative py-6 my-4 select-none">
-            {/* Compass rose decoration */}
-            <div className="absolute top-4 right-4 h-16 w-16 opacity-10 border border-slate-600 rounded-full flex items-center justify-center">
-              <span className="text-[10px] font-black absolute top-0 text-slate-400">N</span>
-              <span className="text-[10px] font-black absolute bottom-0 text-slate-400">S</span>
-              <span className="text-[10px] font-black absolute left-1 text-slate-400">W</span>
-              <span className="text-[10px] font-black absolute right-1 text-slate-400">E</span>
-            </div>
-
-            {/* Simulated Grid Gridlines */}
-            <div className="absolute inset-0 grid grid-cols-6 grid-rows-6 opacity-[0.03] pointer-events-none border border-slate-600">
-              {[...Array(36)].map((_, i) => (
-                <div key={i} className="border border-slate-600"></div>
-              ))}
-            </div>
-
             {/* SVG drawing content */}
             <svg className="w-full h-full max-h-[350px] min-h-[300px]" viewBox="0 0 600 500">
-              
-              {/* User Center Coordinate */}
               <g transform="translate(300, 250)">
-                {/* Geolocation radar circle ripple */}
                 <circle r="60" className="fill-none stroke-blue-500/10 stroke-2 animate-ping" style={{ animationDuration: "3s" }} />
-                <circle r="120" className="fill-none stroke-blue-500/5 stroke-1" />
-                <circle r="180" className="fill-none stroke-blue-500/5 stroke-[0.5] border-dashed" />
-                
-                {/* Geolocation point */}
                 <circle r="8" className="fill-blue-500/20" />
                 <circle r="4" className="fill-blue-500" />
               </g>
 
-              {/* Draw connections from hospitals to user center */}
-              {gpsActive && nearbyList.map((hosp) => (
-                <line
-                  key={`line-${hosp.id}`}
-                  x1="300"
-                  y1="250"
-                  x2={hosp.longitude}
-                  y2={hosp.latitude}
-                  className={`stroke-[1.5] stroke-dashed opacity-25 ${
-                    selectedHosp?.id === hosp.id ? "stroke-teal-400 opacity-60 stroke-2" : "stroke-slate-500"
-                  }`}
-                  style={{ strokeDasharray: "4 4" }}
-                />
-              ))}
-
-              {/* Draw hospital nodes */}
               {gpsActive && nearbyList.map((hosp) => {
                 const isSelected = selectedHosp?.id === hosp.id;
-                
-                // Color mapping
-                let nodeColor = "#10B981"; // Healthy: green
-                if (hosp.statusColor === "Warning") nodeColor = "#F59E0B"; // yellow
-                if (hosp.statusColor === "High Risk") nodeColor = "#F97316"; // orange
-                if (hosp.statusColor === "Critical") nodeColor = "#EF4444"; // red
+                let nodeColor = "#10B981";
+                if (hosp.statusColor === "Warning") nodeColor = "#F59E0B";
+                if (hosp.statusColor === "High Risk") nodeColor = "#F97316";
+                if (hosp.statusColor === "Critical") nodeColor = "#EF4444";
 
                 return (
                   <g 
                     key={`node-${hosp.id}`} 
-                    transform={`translate(${hosp.longitude}, ${hosp.latitude})`}
+                    transform={`translate(${300 + ((hosp.longitude ?? 72.769) - 72.769) * 2000}, ${250 + (19.696 - (hosp.latitude ?? 19.696)) * 2000})`}
                     className="cursor-pointer"
                     onClick={() => setSelectedHosp(hosp)}
                   >
-                    {/* Ring ripple if selected */}
-                    {isSelected && (
-                      <circle r="18" className="fill-none stroke-teal-400 stroke-2 animate-pulse" />
-                    )}
-                    
-                    {/* Outer border circle */}
-                    <circle r="12" className="fill-slate-900 stroke-slate-700 stroke-2 group-hover:stroke-slate-500" />
-                    
-                    {/* Inner core circle showing status */}
+                    {isSelected && <circle r="18" className="fill-none stroke-teal-400 stroke-2 animate-pulse" />}
+                    <circle r="12" className="fill-slate-900 stroke-slate-700 stroke-2" />
                     <circle r="8" fill={nodeColor} />
-                    
-                    {/* Tooltip label (shortened/hided by default, always shown if selected) */}
-                    <g transform="translate(0, -18)">
-                      <rect 
-                        x="-65" 
-                        y="-10" 
-                        width="130" 
-                        height="20" 
-                        rx="6" 
-                        fill="#1E293B" 
-                        stroke={isSelected ? "#2DD4BF" : "#334155"} 
-                        strokeWidth="1"
-                        className="opacity-90"
-                      />
-                      <text 
-                        fill={isSelected ? "#2DD4BF" : "#94A3B8"} 
-                        fontSize="8" 
-                        fontWeight="bold" 
-                        textAnchor="middle" 
-                        y="3"
-                      >
-                        {hosp.name.length > 20 ? hosp.name.slice(0, 18) + "..." : hosp.name}
-                      </text>
-                    </g>
                   </g>
                 );
               })}
-
             </svg>
-
-            {/* Label markers explanation */}
-            <div className="absolute bottom-2 left-2 flex gap-3 text-[10px] font-bold bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl">
-              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Healthy</div>
-              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Warning</div>
-              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-orange-500"></span> High Risk</div>
-              <div className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span> Critical</div>
-            </div>
-
-            {/* Centered user geolocation marker */}
-            <div className="absolute top-2 left-2 flex items-center gap-2 text-[10px] font-bold bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-xl">
-              <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span> You (GPS Coordinates)
-            </div>
-
           </div>
 
           {/* Dynamic details card footer inside map */}
@@ -352,7 +268,8 @@ export default function NearbyHealthcarePage() {
               <div className="space-y-1 text-left">
                 <span className="text-[9px] font-black text-teal-400 uppercase tracking-wider">Currently Inspected Clinic</span>
                 <h5 className="font-extrabold text-sm text-slate-100">{selectedHosp.name}</h5>
-                <p className="text-[10px] text-slate-400 font-semibold">Bed Stock: {selectedHosp.availableBeds} Free | Staff present today: {selectedHosp.doctorAttendance}</p>
+                <p className="font-semibold text-slate-400 text-[10px]">{selectedHosp.address}</p>
+                <p className="text-[10px] text-slate-400 font-semibold">Bed Stock: {selectedHosp.available_beds} Free</p>
               </div>
               <a
                 href={`/citizen/report?hospitalId=${selectedHosp.id}`}

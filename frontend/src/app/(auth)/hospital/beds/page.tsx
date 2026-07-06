@@ -1,9 +1,10 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { hospitalApi } from '@/lib/api';
 import {
   BedDouble,
   AlertTriangle,
@@ -28,14 +29,14 @@ import {
   CartesianGrid,
 } from 'recharts';
 
-/* ─── Mock Data ─── */
-const bedCategories = [
-  { name: 'General Beds', total: 80, occupied: 38, reserved: 4, icon: BedDouble, color: '#1E3ABA' },
-  { name: 'ICU Beds', total: 20, occupied: 14, reserved: 2, icon: Heart, color: '#ef4444' },
-  { name: 'Emergency Beds', total: 12, occupied: 8, reserved: 1, icon: ShieldAlert, color: '#f59e0b' },
-  { name: 'Isolation Beds', total: 10, occupied: 3, reserved: 0, icon: ShieldAlert, color: '#8b5cf6' },
-  { name: 'Pediatric Beds', total: 15, occupied: 6, reserved: 1, icon: Baby, color: '#06B6D4' },
-  { name: 'Maternity Beds', total: 10, occupied: 7, reserved: 1, icon: Users, color: '#ec4899' },
+/* ─── Base Categories for UI ─── */
+const baseBedCategories = [
+  { name: 'General Beds', icon: BedDouble, color: '#1E3ABA' },
+  { name: 'ICU Beds', icon: Heart, color: '#ef4444' },
+  { name: 'Emergency Beds', icon: ShieldAlert, color: '#f59e0b' },
+  { name: 'Isolation Beds', icon: ShieldAlert, color: '#8b5cf6' },
+  { name: 'Pediatric Beds', icon: Baby, color: '#06B6D4' },
+  { name: 'Maternity Beds', icon: Users, color: '#ec4899' },
 ];
 
 const occupancyTrend = [
@@ -48,19 +49,56 @@ const occupancyTrend = [
   { hour: '6PM', general: 48, icu: 70, emergency: 60 },
 ];
 
-const aiPrediction = {
-  currentICU: 84,
-  predictedTomorrow: 96,
-  riskLevel: 'HIGH',
-  recommendation: 'Temporarily reserve 6 additional ICU beds. Consider redirecting non-critical admissions to CHC Warje (3.1 km away).',
-};
-
 export default function BedManagementPage() {
+  const [bedsData, setBedsData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [aiPrediction, setAiPrediction] = useState({
+    currentICU: 0,
+    predictedTomorrow: 0,
+    riskLevel: 'EVALUATING',
+    recommendation: 'Analyzing occupancy patterns...',
+  });
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const res = await hospitalApi.getBeds() as any[];
+        setBedsData(res);
+        
+        // Mocking AI prediction based on real data for now
+        const icu = res.find(b => b.category.includes('ICU'));
+        if (icu) {
+          setAiPrediction({
+            currentICU: icu.occupancy_percent,
+            predictedTomorrow: icu.predicted_occupancy_tomorrow || icu.occupancy_percent + 12,
+            riskLevel: icu.occupancy_percent > 80 ? 'HIGH' : 'MODERATE',
+            recommendation: icu.occupancy_percent > 80 ? 'Temporarily reserve additional ICU beds.' : 'Capacity is stable.',
+          });
+        }
+      } catch (err) {
+        console.error("Failed to load beds", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  const bedCategories = baseBedCategories.map(base => {
+    const data = bedsData.find(b => b.category === base.name);
+    return {
+      ...base,
+      total: data?.total_capacity || 0,
+      occupied: data?.occupied_count || 0,
+      reserved: data?.reserved_count || 0,
+    };
+  });
+
   const totalBeds = bedCategories.reduce((a, b) => a + b.total, 0);
   const totalOccupied = bedCategories.reduce((a, b) => a + b.occupied, 0);
   const totalAvailable = totalBeds - totalOccupied - bedCategories.reduce((a, b) => a + b.reserved, 0);
 
-  const pieData = bedCategories.map((cat) => ({
+  const pieData = bedCategories.filter(cat => cat.occupied > 0).map((cat) => ({
     name: cat.name,
     value: cat.occupied,
     color: cat.color,
@@ -95,7 +133,7 @@ export default function BedManagementPage() {
         </Card>
         <Card padding="md" className="text-center">
           <p className="text-4xl font-black text-amber-600">
-            {Math.round((totalOccupied / totalBeds) * 100)}%
+            {totalBeds > 0 ? Math.round((totalOccupied / totalBeds) * 100) : 0}%
           </p>
           <p className="text-xs font-bold text-slate-500 mt-1 uppercase tracking-wider">Occupancy Rate</p>
         </Card>
@@ -105,7 +143,7 @@ export default function BedManagementPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {bedCategories.map((cat) => {
           const available = cat.total - cat.occupied - cat.reserved;
-          const occupancyPercent = Math.round((cat.occupied / cat.total) * 100);
+          const occupancyPercent = cat.total > 0 ? Math.round((cat.occupied / cat.total) * 100) : 0;
           const Icon = cat.icon;
           const statusVariant: 'healthy' | 'warning' | 'critical' =
             occupancyPercent >= 90 ? 'critical' : occupancyPercent >= 70 ? 'warning' : 'healthy';

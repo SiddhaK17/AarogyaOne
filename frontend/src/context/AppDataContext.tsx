@@ -284,8 +284,10 @@ interface AppDataContextValue {
   // Infrastructure Issues
   infraIssues: InfrastructureIssue[];
   addInfraIssue: (issue: Omit<InfrastructureIssue, 'id' | 'created_at' | 'updated_at'>) => void;
-  updateIssueStatus: (id: string, status: InfrastructureIssue['status']) => void;
+  updateInfraIssueStatus: (id: string, status: InfrastructureIssue['status']) => void;
   getIssuesForHospital: (hospitalId: number) => InfrastructureIssue[];
+  getIssuesByDepartment: (dept: string) => InfrastructureIssue[];
+  clearAppData: () => void;
 
   // Active hospital session
   activeHospital: ActiveHospitalSession | null;
@@ -378,7 +380,7 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const updateIssueStatus = useCallback(
+  const updateInfraIssueStatus = useCallback(
     (id: string, status: InfrastructureIssue['status']) => {
       setInfraIssues((prev) =>
         prev.map((i) =>
@@ -394,6 +396,22 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
     [infraIssues]
   );
 
+  const getIssuesByDepartment = useCallback(
+    (dept: string) => infraIssues.filter((i) => i.department === dept),
+    [infraIssues]
+  );
+
+  const clearAppData = useCallback(() => {
+    setActiveHospitalState(null);
+    setComplaints(DEMO_COMPLAINTS);
+    setInfraIssues(DEMO_ISSUES);
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem(KEYS.HOSPITAL_SESSION);
+        localStorage.removeItem(KEYS.COMPLAINTS);
+        localStorage.removeItem(KEYS.INFRA_ISSUES);
+    }
+  }, []);
+
   const setActiveHospital = useCallback((session: ActiveHospitalSession | null) => {
     setActiveHospitalState(session);
   }, []);
@@ -407,8 +425,10 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
         getComplaintsForHospital,
         infraIssues,
         addInfraIssue,
-        updateIssueStatus,
+        updateInfraIssueStatus,
         getIssuesForHospital,
+        getIssuesByDepartment,
+        clearAppData,
         activeHospital,
         setActiveHospital,
       }}

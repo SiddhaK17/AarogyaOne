@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
@@ -26,26 +26,9 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
+import { hospitalApi } from '@/lib/api';
 
-/* ─── Mock Data ─── */
-const todayStats = [
-  { label: "Today's OPD", value: 412, icon: Users, change: '+38 vs yesterday', color: 'text-teal-600', bg: 'bg-teal-50' },
-  { label: "Today's IPD", value: 67, icon: Activity, change: '+4 admissions', color: 'text-blue-600', bg: 'bg-blue-50' },
-  { label: 'Emergency', value: 12, icon: Ambulance, change: '+2 critical', color: 'text-rose-600', bg: 'bg-rose-50' },
-  { label: 'Discharges', value: 23, icon: TrendingUp, change: '—', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  { label: 'Referrals', value: 5, icon: ArrowRight, change: '2 to District Hospital', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-  { label: 'Avg Wait Time', value: '28 min', icon: Clock, change: '-5 min from last week', color: 'text-amber-600', bg: 'bg-amber-50' },
-];
-
-const weeklyTrend = [
-  { day: 'Mon', opd: 380, ipd: 52, emergency: 8 },
-  { day: 'Tue', opd: 420, ipd: 65, emergency: 11 },
-  { day: 'Wed', opd: 395, ipd: 58, emergency: 7 },
-  { day: 'Thu', opd: 450, ipd: 71, emergency: 14 },
-  { day: 'Fri', opd: 412, ipd: 67, emergency: 12 },
-  { day: 'Sat', opd: 310, ipd: 45, emergency: 6 },
-  { day: 'Sun', opd: 280, ipd: 38, emergency: 9 },
-];
+/* ─── Mock Data for charts without backend support yet ─── */
 
 const departmentDistribution = [
   { dept: 'General', patients: 145 },
@@ -78,6 +61,55 @@ const aiPrediction = {
 };
 
 export default function StatisticsPage() {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadStats() {
+      try {
+        const data = await hospitalApi.getStatistics();
+        // data should be array of PatientStatsResponse ordered by date desc
+        setRecords(data as any[]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStats();
+  }, []);
+
+  // Compute UI values from the fetched records
+  const latest = records.length > 0 ? records[0] : null;
+  const previous = records.length > 1 ? records[1] : null;
+
+  const getChangeStr = (curr: number, prev: number | undefined) => {
+    if (prev === undefined || prev === null) return "—";
+    const diff = curr - prev;
+    if (diff > 0) return `+${diff} vs yesterday`;
+    if (diff < 0) return `${diff} vs yesterday`;
+    return "No change";
+  };
+
+  const dynamicTodayStats = [
+    { label: "Today's OPD", value: latest?.opd_count ?? 0, icon: Users, change: getChangeStr(latest?.opd_count ?? 0, previous?.opd_count), color: 'text-teal-600', bg: 'bg-teal-50' },
+    { label: "Today's IPD", value: latest?.ipd_count ?? 0, icon: Activity, change: getChangeStr(latest?.ipd_count ?? 0, previous?.ipd_count), color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Emergency', value: latest?.emergency_admissions ?? 0, icon: Ambulance, change: getChangeStr(latest?.emergency_admissions ?? 0, previous?.emergency_admissions), color: 'text-rose-600', bg: 'bg-rose-50' },
+    { label: 'Discharges', value: latest?.discharges ?? 0, icon: TrendingUp, change: getChangeStr(latest?.discharges ?? 0, previous?.discharges), color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Referrals', value: latest?.referrals_out ?? 0, icon: ArrowRight, change: getChangeStr(latest?.referrals_out ?? 0, previous?.referrals_out), color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { label: 'Avg Wait Time', value: `${latest?.avg_wait_time_minutes ?? 0} min`, icon: Clock, change: getChangeStr(latest?.avg_wait_time_minutes ?? 0, previous?.avg_wait_time_minutes), color: 'text-amber-600', bg: 'bg-amber-50' },
+  ];
+
+  const dynamicWeeklyTrend = [...records].reverse().map(r => {
+    const d = new Date(r.date);
+    return {
+      day: d.toLocaleDateString('en-US', { weekday: 'short' }),
+      opd: r.opd_count,
+      ipd: r.ipd_count,
+      emergency: r.emergency_admissions,
+    };
+  });
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -86,25 +118,29 @@ export default function StatisticsPage() {
           <h1 className="text-2xl font-black text-slate-900 tracking-tight">Patient Statistics</h1>
           <p className="text-sm text-slate-500 font-medium mt-1">Aggregate operational statistics for AI forecasting</p>
         </div>
-        <Button variant="primary" size="sm"><Plus className="h-4 w-4" /> Log Today&apos;s Data</Button>
+        <Button variant="primary" size="sm" onClick={() => window.alert('Submission modal not implemented yet')}><Plus className="h-4 w-4" /> Log Today&apos;s Data</Button>
       </div>
 
       {/* ─── Summary Cards ─── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {todayStats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={stat.label} padding="md" hover>
-              <div className={`p-2 rounded-xl ${stat.bg} w-fit mb-3`}>
-                <Icon className={`h-4 w-4 ${stat.color}`} />
-              </div>
-              <p className="text-2xl font-black text-slate-900">{stat.value}</p>
-              <p className="text-[10px] font-semibold text-slate-500 mt-0.5">{stat.label}</p>
-              <p className="text-[9px] text-slate-400 font-medium mt-1">{stat.change}</p>
-            </Card>
-          );
-        })}
-      </div>
+      {loading ? (
+        <div className="animate-pulse flex gap-4 h-32 bg-slate-100 rounded-xl" />
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {dynamicTodayStats.map((stat) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={stat.label} padding="md" hover>
+                <div className={`p-2 rounded-xl ${stat.bg} w-fit mb-3`}>
+                  <Icon className={`h-4 w-4 ${stat.color}`} />
+                </div>
+                <p className="text-2xl font-black text-slate-900">{stat.value}</p>
+                <p className="text-[10px] font-semibold text-slate-500 mt-0.5">{stat.label}</p>
+                <p className="text-[9px] text-slate-400 font-medium mt-1">{stat.change}</p>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* ─── Row: Weekly Trend + AI Prediction ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -113,7 +149,7 @@ export default function StatisticsPage() {
             <CardHeader title="Weekly Patient Trend" subtitle="OPD, IPD, and Emergency admissions" />
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={weeklyTrend}>
+                <AreaChart data={dynamicWeeklyTrend}>
                   <defs>
                     <linearGradient id="statsOpdGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#06B6D4" stopOpacity={0.15} />

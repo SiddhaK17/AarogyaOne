@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode, useMemo } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import type {
   DistrictInfo,
   DistrictSummary,
@@ -18,15 +18,11 @@ import type {
   Notification,
 } from "@/types";
 import {
-  alerts as mockAlerts,
-  transferRequests as mockTransferRequests,
-  citizenFeedback as mockCitizenFeedback,
   executiveReportData as mockExecutiveReportData,
   settingsData as mockSettingsData,
   aiRecommendations as mockAiRecommendations,
 } from "@/data/mockData";
-import { PALGHAR_HOSPITALS } from "@/data/palgharHospitals";
-import { useAppData } from "@/context/AppDataContext";
+import { dhicApi, subscribeToInventoryChanges, subscribeToBedChanges, subscribeToComplaints } from "@/lib/api";
 
 interface DistrictContextValue {
   districtInfo: DistrictInfo;
@@ -53,10 +49,19 @@ interface DistrictContextValue {
 const DistrictContext = createContext<DistrictContextValue | null>(null);
 
 export function DistrictProvider({ children }: { children: ReactNode }) {
-  const { complaints, infraIssues } = useAppData();
   const [activeFilter, setActiveFilter] = useState("all");
   const [selectedHospital, setSelectedHospital] = useState<Hospital | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  
+  const [districtSummary, setDistrictSummary] = useState<DistrictSummary | null>(null);
+  const [districtHealthScore, setDistrictHealthScore] = useState<DistrictHealthScore | null>(null);
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [riskDistribution, setRiskDistribution] = useState<RiskDistributionItem[]>([]);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [transferRequests, setTransferRequests] = useState<TransferRequest[]>([]);
+  const [citizenFeedback, setCitizenFeedback] = useState<CitizenFeedback | null>(null);
+  const [infrastructureIssues, setInfrastructureIssues] = useState<InfrastructureIssue[]>([]);
+  const [operationalEvents, setOperationalEvents] = useState<OperationalEvent[]>([]);
 
   const addNotification = useCallback((msg: string) => {
     setNotifications((prev) => [
@@ -65,8 +70,7 @@ export function DistrictProvider({ children }: { children: ReactNode }) {
     ]);
   }, []);
 
-  // Compute District Info (Palghar Scoped)
-  const districtInfo = useMemo<DistrictInfo>(() => ({
+  const districtInfo: DistrictInfo = {
     name: "Palghar District",
     code: "MH-48",
     state: "Maharashtra",
@@ -75,167 +79,176 @@ export function DistrictProvider({ children }: { children: ReactNode }) {
     dho: "Dr. Rajesh Patil",
     cmo: "Dr. Priya Sharma",
     lastUpdated: new Date().toISOString(),
-  }), []);
+  };
 
-  // Compute Dynamic Hospitals List
-  const hospitalsList = useMemo<Hospital[]>(() => {
-    return PALGHAR_HOSPITALS.map((h, idx) => {
-      // Find active complaints & issues from context
-      const activeComplaints = complaints.filter(
-        c => c.hospital_id === h.id && c.status !== 'Resolved' && c.status !== 'Closed'
-      ).length;
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [dashboardRes, hospitalsRes, alertsRes, transfersRes, feedbackRes, infraRes] = await Promise.all([
+          dhicApi.getDashboard().catch(() => null) as Promise<any>,
+          dhicApi.getHospitals().catch(() => []) as Promise<any[]>,
+          dhicApi.getAlerts().catch(() => []) as Promise<any[]>,
+          dhicApi.getTransfers().catch(() => []) as Promise<any[]>,
+          dhicApi.getFeedback().catch(() => null) as Promise<any>,
+          dhicApi.getInfrastructure().catch(() => []) as Promise<any[]>
+        ]);
 
-      const activeIssues = infraIssues.filter(
-        i => i.hospital_id === h.id && i.status !== 'Resolved'
-      ).length;
+        if (dashboardRes) {
+          setDistrictSummary({
+            totalHospitalsConnected: dashboardRes.total_hospitals || 0,
+            activePHCs: dashboardRes.phc_count || 0,
+            activeCHCs: dashboardRes.chc_count || 0,
+            totalAvailableBeds: dashboardRes.total_available_beds || 0,
+            icuBedsAvailable: dashboardRes.icu_beds_available || 0,
+            doctorsOnDuty: dashboardRes.doctors_on_duty || 0,
+            activeAmbulances: dashboardRes.active_ambulances || 0,
+            pendingCriticalIssues: dashboardRes.pending_critical_issues || 0,
+          });
+          
+          setDistrictHealthScore({
+            overall: dashboardRes.district_health_score || 0,
+            breakdown: {
+              resourceAvailability: 76,
+              bedCapacity: 74,
+              staffAvailability: 68,
+              citizenSatisfaction: 80,
+              infrastructureHealth: 72,
+              aiRiskPredictions: 75,
+            },
+            trend: (dashboardRes.district_health_score || 0) > 70 ? "stable" : "declining",
+            previousScore: 73,
+          });
+        }
 
-      // Seed dynamic properties based on hospital metadata
-      const totalBeds = h.total_beds;
-      const availableBeds = Math.floor(totalBeds * 0.45); // 45% available
-      const totalICU = h.icu_capacity;
-      const availableICU = Math.floor(totalICU * 0.35); // 35% available
+        if (hospitalsRes && Array.isArray(hospitalsRes)) {
+          const mappedHospitals: Hospital[] = hospitalsRes.map((h: any) => ({
+            id: String(h.id),
+            name: h.name,
+            type: h.facility_type,
+            lat: h.latitude || 0,
+            lng: h.longitude || 0,
+            status: h.risk_level === 'Critical' ? 'critical' : h.risk_level === 'High' ? 'warning' : 'healthy',
+            beds: {
+              total: h.total_beds,
+              available: h.available_beds,
+              icu: { total: 0, available: 0 }
+            },
+            doctors: { total: 0, onDuty: 0 },
+            medicineStock: 100 - ((h.low_stock_count || 0) * 5),
+            citizenSatisfaction: 4.0,
+            aiHealthScore: h.health_score,
+            activeIssues: h.open_issues,
+            ambulances: 0,
+            activeTransfers: 0,
+            activeComplaints: 0,
+          }));
+          setHospitals(mappedHospitals);
 
-      // Determine status
-      let status = "healthy";
-      if (activeComplaints > 2 || activeIssues > 2) status = "critical";
-      else if (activeComplaints > 0 || activeIssues > 0 || availableBeds < 5) status = "warning";
+          const low = mappedHospitals.filter(h => h.status === "healthy").length;
+          const medium = mappedHospitals.filter(h => h.status === "warning").length;
+          const critical = mappedHospitals.filter(h => h.status === "critical").length;
 
-      // AI Health Score calculation
-      const baseScore = h.services_24x7 ? 80 : 60;
-      const deduction = (activeComplaints * 8) + (activeIssues * 10);
-      const aiHealthScore = Math.max(30, Math.min(100, baseScore - deduction));
+          setRiskDistribution([
+            { level: "Low Risk", count: low, color: "#22c55e", hospitals: [] },
+            { level: "Medium Risk", count: medium, color: "#eab308", hospitals: [] },
+            { level: "High Risk", count: 0, color: "#f97316", hospitals: [] },
+            { level: "Critical", count: critical, color: "#ef4444", hospitals: [] },
+          ]);
+        }
+        
+        if (alertsRes && Array.isArray(alertsRes)) {
+           setAlerts(alertsRes.map((a: any) => ({
+             id: String(a.id),
+             category: a.category || 'System',
+             severity: (a.priority || 'Low').toLowerCase(),
+             confidence: 90,
+             hospital: '',
+             generatedAt: a.created_at,
+             action: a.action_url || '',
+             evidence: '',
+             status: a.is_read ? 'Read' : 'Unread'
+           })));
+        }
+        
+        if (transfersRes && Array.isArray(transfersRes)) {
+           setTransferRequests(transfersRes.map((t: any) => ({
+             id: String(t.id),
+             item: t.item,
+             quantity: t.quantity,
+             from: t.from_hospital,
+             to: t.to_hospital,
+             status: t.status,
+             urgency: 'Medium',
+             estimatedTime: `${t.eta_minutes} mins`,
+             aiConfidence: 95
+           })));
+        }
 
-      return {
-        id: `H${String(h.id).padStart(3, "0")}`,
-        name: h.name,
-        type: h.facility_type,
-        lat: h.latitude,
-        lng: h.longitude,
-        status,
-        beds: {
-          total: totalBeds,
-          available: availableBeds,
-          icu: { total: totalICU, available: availableICU }
-        },
-        doctors: {
-          total: Math.max(2, Math.floor(totalBeds / 8)),
-          onDuty: Math.max(1, Math.floor(totalBeds / 10))
-        },
-        medicineStock: Math.max(40, 95 - (idx * 2) % 35), // dynamic stock
-        citizenSatisfaction: parseFloat((3.8 + (idx * 0.1) % 1.2).toFixed(1)),
-        aiHealthScore,
-        activeIssues,
-        ambulances: h.has_ambulance ? 2 : 0,
-        activeTransfers: 0,
-        activeComplaints,
-      };
-    });
-  }, [complaints, infraIssues]);
+        if (infraRes && Array.isArray(infraRes)) {
+           setInfrastructureIssues(infraRes.map((i: any) => ({
+             id: String(i.id),
+             hospital: i.hospital_name,
+             type: i.issue_type,
+             severity: i.priority,
+             description: i.title,
+             reportedAt: i.created_at,
+             status: i.status,
+             estimatedResolution: '24 hrs',
+             ai_assigned_department: i.ai_assigned_department
+           })));
+           
+           setOperationalEvents(infraRes.map((i: any, idx: number) => ({
+             id: i.id || idx,
+             type: "infrastructure",
+             title: `Hospital Issue: ${i.title}`,
+             detail: `Status: ${i.status}`,
+             time: new Date(i.created_at).toLocaleTimeString('en-IN'),
+             icon: "infrastructure",
+           })));
+        }
+        
+        if (feedbackRes) {
+           setCitizenFeedback(feedbackRes as CitizenFeedback);
+        }
 
-  // Compute District Summary Cards
-  const districtSummary = useMemo<DistrictSummary>(() => {
-    let totalBeds = 0;
-    let icuBeds = 0;
-    let doctorsOnDuty = 0;
-    let ambulances = 0;
+      } catch (err) {
+        console.error("Failed to load DHIC data", err);
+      }
+    }
+    
+    fetchData();
 
-    hospitalsList.forEach(h => {
-      totalBeds += h.beds.available;
-      icuBeds += h.beds.icu.available;
-      doctorsOnDuty += h.doctors.onDuty;
-      ambulances += h.ambulances;
-    });
+    // Subscribe to realtime changes
+    const unsubInv = subscribeToInventoryChanges(() => fetchData());
+    const unsubBed = subscribeToBedChanges(() => fetchData());
+    const unsubComp = subscribeToComplaints(() => fetchData());
 
-    const activePHCs = PALGHAR_HOSPITALS.filter(h => h.facility_type === "Primary Health Centre (PHC)").length;
-    const activeCHCs = PALGHAR_HOSPITALS.filter(h => h.facility_type.includes("Rural") || h.facility_type.includes("Sub-District")).length;
-
-    return {
-      totalHospitalsConnected: PALGHAR_HOSPITALS.length,
-      activePHCs,
-      activeCHCs,
-      totalAvailableBeds: totalBeds,
-      icuBedsAvailable: icuBeds,
-      doctorsOnDuty,
-      activeAmbulances: ambulances,
-      pendingCriticalIssues: complaints.filter(c => c.severity === 'Critical').length + infraIssues.filter(i => i.priority === 'Critical').length,
+    return () => {
+      unsubInv();
+      unsubBed();
+      unsubComp();
     };
-  }, [hospitalsList, complaints, infraIssues]);
-
-  // Compute District Health Score
-  const districtHealthScore = useMemo<DistrictHealthScore>(() => {
-    const totalScore = hospitalsList.reduce((acc, h) => acc + h.aiHealthScore, 0);
-    const avgScore = Math.round(totalScore / hospitalsList.length);
-
-    return {
-      overall: avgScore,
-      breakdown: {
-        resourceAvailability: 76,
-        bedCapacity: 74,
-        staffAvailability: 68,
-        citizenSatisfaction: 80,
-        infrastructureHealth: 72,
-        aiRiskPredictions: 75,
-      },
-      trend: avgScore > 70 ? "stable" : "declining",
-      previousScore: 73,
-    };
-  }, [hospitalsList]);
-
-  // Compute Risk Distribution
-  const riskDistribution = useMemo<RiskDistributionItem[]>(() => {
-    const low = hospitalsList.filter(h => h.status === "healthy").length;
-    const medium = hospitalsList.filter(h => h.status === "warning").length;
-    const critical = hospitalsList.filter(h => h.status === "critical").length;
-
-    return [
-      { level: "Low Risk", count: low, color: "#22c55e", hospitals: [] },
-      { level: "Medium Risk", count: medium, color: "#eab308", hospitals: [] },
-      { level: "High Risk", count: 0, color: "#f97316", hospitals: [] },
-      { level: "Critical", count: critical, color: "#ef4444", hospitals: [] },
-    ];
-  }, [hospitalsList]);
-
-  // Compute Operational Events Feed
-  const operationalEvents = useMemo<OperationalEvent[]>(() => {
-    const events: OperationalEvent[] = [];
-
-    complaints.slice(0, 5).forEach((c, idx) => {
-      events.push({
-        id: idx + 1,
-        type: "complaint",
-        title: `Citizen Complaint: ${c.category}`,
-        detail: `Reported at ${c.hospital_short_name} (${c.taluka} Taluka). Status: ${c.status}`,
-        time: new Date(c.created_at).toLocaleTimeString('en-IN'),
-        icon: "complaint",
-      });
-    });
-
-    infraIssues.slice(0, 5).forEach((i, idx) => {
-      events.push({
-        id: idx + 10,
-        type: "infrastructure",
-        title: `Hospital Issue: ${i.title}`,
-        detail: `Logged by ${i.hospital_name} (${i.taluka} Taluka). Status: ${i.status}`,
-        time: new Date(i.created_at).toLocaleTimeString('en-IN'),
-        icon: "infrastructure",
-      });
-    });
-
-    return events.sort((a, b) => b.id - a.id);
-  }, [complaints, infraIssues]);
+  }, []);
 
   const value: DistrictContextValue = {
     districtInfo,
-    districtSummary,
-    districtHealthScore,
+    districtSummary: districtSummary || {
+      totalHospitalsConnected: 0, activePHCs: 0, activeCHCs: 0,
+      totalAvailableBeds: 0, icuBedsAvailable: 0, doctorsOnDuty: 0,
+      activeAmbulances: 0, pendingCriticalIssues: 0
+    },
+    districtHealthScore: districtHealthScore || {
+      overall: 0, breakdown: { resourceAvailability: 0, bedCapacity: 0, staffAvailability: 0, citizenSatisfaction: 0, infrastructureHealth: 0, aiRiskPredictions: 0 },
+      trend: "stable", previousScore: 0
+    },
     riskDistribution,
-    hospitals: hospitalsList,
+    hospitals,
     operationalEvents,
     aiRecommendations: mockAiRecommendations,
-    alerts: mockAlerts,
-    transferRequests: mockTransferRequests,
-    citizenFeedback: mockCitizenFeedback,
-    infrastructureIssues: infraIssues as any,
+    alerts,
+    transferRequests,
+    citizenFeedback: citizenFeedback || { overallSatisfaction: 0, totalReviews: 0, distribution: [], topComplaints: [], hospitalRatings: [] },
+    infrastructureIssues,
     executiveReportData: mockExecutiveReportData,
     settingsData: mockSettingsData,
     activeFilter,

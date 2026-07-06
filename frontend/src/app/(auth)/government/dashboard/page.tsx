@@ -29,7 +29,7 @@ import {
   Bar,
   Cell,
 } from 'recharts';
-import { useAppData } from '@/context/AppDataContext';
+import { governmentApi } from '@/lib/api';
 
 /* ─── Mock Department Info ─── */
 const DEPARTMENTS = [
@@ -41,74 +41,55 @@ const DEPARTMENTS = [
 ];
 
 export default function GovernmentDashboard() {
-  const { complaints, infraIssues } = useAppData();
-  const [selectedDeptId, setSelectedDeptId] = useState('pwd');
-  const currentDept = DEPARTMENTS.find(d => d.id === selectedDeptId) || DEPARTMENTS[0];
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const currentDeptName = analytics?.department || 'Department';
 
-  // Helper to map department names
-  const getTaskDeptCode = (deptName?: string): string => {
-    if (!deptName) return 'other';
-    const dn = deptName.toLowerCase();
-    if (dn.includes('public works') || dn.includes('pwd') || dn.includes('civil')) return 'pwd';
-    if (dn.includes('biomedical') || dn.includes('equipment')) return 'biomedical';
-    if (dn.includes('medical store') || dn.includes('stockout') || dn.includes('medicine')) return 'medical_store';
-    if (dn.includes('electricity') || dn.includes('msedcl')) return 'electricity';
-    if (dn.includes('water') || dn.includes('sanitation')) return 'water';
-    return 'other';
-  };
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        const [anData, tsData] = await Promise.all([
+          governmentApi.getAnalytics(),
+          governmentApi.getTasks()
+        ]);
+        setAnalytics(anData);
+        setTasks(tsData as any[]);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
 
-  // Process and aggregate dynamic stats for the selected department
   const deptData = useMemo(() => {
-    const allComplaintsMapped = complaints.map(c => ({
-      id: c.id,
-      hospital: c.hospital_name,
-      issue: c.category,
-      priority: c.severity === 'Critical' ? 'Critical' : c.severity === 'High' ? 'High' : 'Medium',
-      status: (c.status === 'Resolved' || c.status === 'Closed') ? 'Completed' : 'Open',
-      department: getTaskDeptCode(c.assigned_department || c.category),
-      created_at: c.created_at,
-    }));
-
-    const allInfraMapped = infraIssues.map(i => ({
-      id: i.id,
-      hospital: i.hospital_name,
-      issue: i.title,
-      priority: i.priority,
-      status: i.status === 'Resolved' ? 'Completed' : 'Open',
-      department: getTaskDeptCode(i.department || i.type),
-      created_at: i.created_at,
-    }));
-
-    const combined = [...allComplaintsMapped, ...allInfraMapped];
-    const deptTasks = combined.filter(t => t.department === selectedDeptId);
-
-    const pending = deptTasks.filter(t => t.status === 'Open').length;
-    const completed = deptTasks.filter(t => t.status === 'Completed').length;
-    const highPriorityResolved = deptTasks.filter(t => t.status === 'Completed' && (t.priority === 'Critical' || t.priority === 'High')).length;
-    const overdue = deptTasks.filter(t => t.status === 'Open' && (t.priority === 'Critical' || t.priority === 'High')).length;
+    if (!analytics) return { stats: [], weeklyTrend: [], issueTypes: [], urgentTasks: [] };
 
     const stats = [
-      { label: 'Avg. Resolution Time', value: '4.8 hrs', icon: Clock, change: 'Target: < 12 hrs', color: 'text-cyan-600', bg: 'bg-cyan-50' },
-      { label: 'Tasks Completed', value: String(completed + 12), icon: CheckCircle2, change: '+3 this week', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-      { label: 'Pending Work', value: String(pending), icon: AlertCircle, change: `${pending} active issues`, color: 'text-blue-600', bg: 'bg-blue-50' },
-      { label: 'Overdue Tasks', value: String(overdue), icon: AlertTriangle, change: 'Requires escalation', color: 'text-rose-600', bg: 'bg-rose-50' },
-      { label: 'High Priority Resolved', value: String(highPriorityResolved + 4), icon: Award, change: '100% compliance', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+      { label: 'Avg. Resolution Time', value: analytics.avg_resolution_hours ? `${analytics.avg_resolution_hours} hrs` : 'N/A', icon: Clock, change: 'Target: < 12 hrs', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+      { label: 'Tasks Completed', value: String(analytics.completed_count), icon: CheckCircle2, change: 'Recent', color: 'text-emerald-600', bg: 'bg-emerald-50' },
+      { label: 'Pending Work', value: String(analytics.pending_count), icon: AlertCircle, change: `${analytics.in_progress_count} in progress`, color: 'text-blue-600', bg: 'bg-blue-50' },
+      { label: 'Overdue Tasks', value: String(analytics.overdue_count), icon: AlertTriangle, change: 'Requires escalation', color: 'text-rose-600', bg: 'bg-rose-50' },
+      { label: 'High Priority Open', value: String(analytics.high_tasks + analytics.critical_tasks), icon: Award, change: 'Critical & High', color: 'text-indigo-600', bg: 'bg-indigo-50' },
     ];
 
     const weeklyTrend = [
-      { day: 'Mon', completed: 4, assigned: pending },
-      { day: 'Tue', completed: 6, assigned: pending + 1 },
-      { day: 'Wed', completed: 5, assigned: pending },
-      { day: 'Thu', completed: 8, assigned: pending + 2 },
-      { day: 'Fri', completed: 7, assigned: pending },
-      { day: 'Sat', completed: 3, assigned: Math.max(0, pending - 1) },
-      { day: 'Sun', completed: 2, assigned: Math.max(0, pending - 1) },
+      { day: 'Mon', completed: 4, assigned: Math.max(0, analytics.pending_count - 5) },
+      { day: 'Tue', completed: 6, assigned: Math.max(0, analytics.pending_count - 3) },
+      { day: 'Wed', completed: 5, assigned: Math.max(0, analytics.pending_count - 4) },
+      { day: 'Thu', completed: 8, assigned: Math.max(0, analytics.pending_count - 1) },
+      { day: 'Fri', completed: 7, assigned: analytics.pending_count },
+      { day: 'Sat', completed: 3, assigned: Math.max(0, analytics.pending_count - 1) },
+      { day: 'Sun', completed: 2, assigned: Math.max(0, analytics.pending_count - 1) },
     ];
 
-    // Issue categories list
     const categoriesMap: Record<string, number> = {};
-    deptTasks.forEach(t => {
-      categoriesMap[t.issue] = (categoriesMap[t.issue] || 0) + 1;
+    tasks.forEach(t => {
+      const issue = t.title || 'General';
+      categoriesMap[issue] = (categoriesMap[issue] || 0) + 1;
     });
 
     const colors = ['#1E3ABA', '#06B6D4', '#6366F1', '#F59E0B', '#EC4899', '#8B5CF6'];
@@ -122,18 +103,22 @@ export default function GovernmentDashboard() {
       issueTypes.push({ name: 'General Support', count: 0, color: '#1E3ABA' });
     }
 
-    const urgentTasks = deptTasks
-      .filter(t => t.status === 'Open' && (t.priority === 'Critical' || t.priority === 'High'))
+    const urgentTasks = tasks
+      .filter(t => t.status !== 'Completed' && (t.priority === 'Critical' || t.priority === 'High'))
       .map(t => ({
-        id: t.id,
-        hospital: t.hospital,
-        issue: t.issue,
+        id: `TSK-${t.id}`,
+        hospital: t.hospital_name || 'N/A',
+        issue: t.title,
         priority: t.priority,
-        daysOpen: Math.max(1, Math.floor((Date.now() - new Date(t.created_at).getTime()) / 86400000))
+        daysOpen: Math.max(1, Math.floor((Date.now() - new Date(t.assigned_at).getTime()) / 86400000))
       }));
 
     return { stats, weeklyTrend, issueTypes, urgentTasks };
-  }, [complaints, infraIssues, selectedDeptId]);
+  }, [analytics, tasks]);
+
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500 font-bold">Loading dashboard...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -145,24 +130,8 @@ export default function GovernmentDashboard() {
           </div>
           <h1 className="text-3xl font-black tracking-tight">Department Performance Analytics</h1>
           <p className="text-sm text-slate-300 font-medium">
-            Monitor response efficiency, resolution rate, and AI-assigned tasks for {currentDept.name} (Officer in Charge: {currentDept.lead}).
+            Monitor response efficiency, resolution rate, and AI-assigned tasks for {currentDeptName}.
           </p>
-        </div>
-
-        {/* Department Switcher */}
-        <div className="flex items-center gap-3 bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/15 w-fit">
-          <span className="text-xs font-bold text-slate-300 pl-2">Dept:</span>
-          <select
-            value={selectedDeptId}
-            onChange={(e) => setSelectedDeptId(e.target.value)}
-            className="bg-slate-900 text-white border-0 rounded-xl px-3 py-2 text-sm font-bold focus:ring-2 focus:ring-brand-cyan focus:outline-none cursor-pointer"
-          >
-            {DEPARTMENTS.map((dept) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name.split(' (')[0]}
-              </option>
-            ))}
-          </select>
         </div>
       </div>
 

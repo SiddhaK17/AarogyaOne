@@ -20,10 +20,10 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from app.intelligence.pipelines.speech import SpeechEngine
-from app.intelligence.pipelines.vision import VisionEngine
+from app.intelligence.pipelines.speech import SpeechEngine, TranscriptResult
+from app.intelligence.pipelines.vision import VisionEngine, VisionResult
 from app.intelligence.pipelines.nlp import NLPEngine
-from app.intelligence.services.fusion import FusionEngine, UnifiedEvidence
+from app.intelligence.services.fusion import FusionEngine, UnifiedEvidence, SpeechEvidence, VisionEvidence, NLPEvidence
 from app.intelligence.services.priority import PriorityEngine, PriorityDecision
 from app.intelligence.services.recommendation import RecommendationEngine, RecommendationBundle
 from app.intelligence.services.dispatcher import DispatcherEngine, DispatchPlan
@@ -148,8 +148,16 @@ class WorkflowEngine:
             
         t0 = time.perf_counter()
         try:
-            engine = SpeechEngine(self.audio_path)
-            self.speech_result = engine.process()
+            engine = SpeechEngine()
+            raw_res = engine.transcribe(self.audio_path)
+            self.speech_result = SpeechEvidence(
+                transcript=raw_res.transcript,
+                language=raw_res.language,
+                language_code=raw_res.language_code,
+                processing_time=raw_res.processing_time,
+                confidence=None,
+                metadata=raw_res.audio_metadata
+            )
             logger.info("Speech completed")
         except Exception as e:
             logger.exception("Failed to execute Speech Engine.")
@@ -164,8 +172,20 @@ class WorkflowEngine:
             
         t0 = time.perf_counter()
         try:
-            engine = VisionEngine(self.image_path)
-            self.vision_result = engine.process()
+            engine = VisionEngine()
+            raw_res = engine.process_image(self.image_path)
+            self.vision_result = VisionEvidence(
+                detected_objects=[asdict(obj) for obj in raw_res.objects],
+                ocr_text=raw_res.ocr_text,
+                caption=raw_res.caption,
+                scene_summary=raw_res.scene_summary,
+                evidence_summary="",
+                risk_level=raw_res.overall_risk,
+                confidence=raw_res.overall_confidence,
+                annotated_image_path=raw_res.annotated_image_path,
+                image_metadata=raw_res.image_metadata,
+                processing_time=raw_res.processing_time
+            )
             logger.info("Vision completed")
         except Exception as e:
             logger.exception("Failed to execute Vision Engine.")
@@ -187,8 +207,18 @@ class WorkflowEngine:
             if not text_to_process:
                 return
                 
-            engine = NLPEngine(text_to_process)
-            self.nlp_result = engine.process()
+            engine = NLPEngine()
+            raw_res = engine.predict(text_to_process)
+            res_dict = raw_res[0] if isinstance(raw_res, list) else raw_res
+            self.nlp_result = NLPEvidence(
+                complaint_category=res_dict.get("category", "Unknown"),
+                sentiment="Negative" if res_dict.get("severity") in ["Critical", "High"] else "Neutral",
+                urgency=res_dict.get("severity", "Medium"),
+                confidence=res_dict.get("confidence", 0.0),
+                entities=[],
+                keywords=[],
+                processing_time=round(time.perf_counter() - t0, 3)
+            )
             logger.info("NLP completed")
         except Exception as e:
             logger.exception("Failed to execute NLP Engine.")

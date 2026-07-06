@@ -2,8 +2,12 @@
 
 import React from "react";
 import { Check, Clipboard, Search, AlertCircle, FileCheck, Circle } from "lucide-react";
-import { TimelineEvent } from "../mockDb";
-
+export interface TimelineEvent {
+  timestamp: string;
+  status: string;
+  description: string;
+  updatedBy: string;
+}
 interface TimelineProps {
   currentStatus: string;
   events: TimelineEvent[];

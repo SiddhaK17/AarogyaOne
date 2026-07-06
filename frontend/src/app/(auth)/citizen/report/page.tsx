@@ -3,16 +3,19 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Building2, AlertTriangle, ClipboardCheck, Sparkles, CheckCircle,
-  ArrowLeft, MapPin, Mic, Camera, ChevronDown, Phone, X, Loader2
+  Building2, CheckCircle,
+  ArrowLeft, MapPin, Mic,  ChevronDown,
+  Loader2,
+  Camera,
+  X,
+  Phone
 } from "lucide-react";
-import {
-  PALGHAR_HOSPITALS,
-  PALGHAR_TALUKAS,
-  getHospitalsByTaluka,
-  type PalgharHospital,
-} from "@/data/palgharHospitals";
-import { useAppData, type ComplaintCategory, type IssueSeverity } from "@/context/AppDataContext";
+import { citizenApi } from "@/lib/api";
+import VoiceRecorder from "../components/voice-recorder";
+import ImageUploader from "../components/image-uploader";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
+
+type ComplaintCategory = string;
 
 const CATEGORIES: ComplaintCategory[] = [
   "Medicine Not Available",
@@ -26,36 +29,15 @@ const CATEGORIES: ComplaintCategory[] = [
   "Other",
 ];
 
-function classifyComplaint(text: string, category: string) {
-  const t = (text + " " + category).toLowerCase();
-  let severity: IssueSeverity = "Medium";
-  let department = "District Health Office";
-  let aiCategory = category || "General Grievance";
-  let confidence = 85 + Math.floor(Math.random() * 12);
-
-  if (t.includes("medicine") || t.includes("drug") || t.includes("tablet") || t.includes("ors") || t.includes("stockout")) {
-    severity = "Critical"; department = "District Medical Store"; aiCategory = "Medicine Stockout";
-  } else if (t.includes("icu") || t.includes("oxygen") || t.includes("ventilator") || t.includes("emergency") || t.includes("dying") || t.includes("accident")) {
-    severity = "Critical"; department = "Emergency Logistics"; aiCategory = "Emergency Services";
-  } else if (t.includes("doctor") || t.includes("absent") || t.includes("unavailable") || t.includes("nurse")) {
-    severity = "High"; department = "Medical Superintendent Office"; aiCategory = "Staff Unavailability";
-  } else if (t.includes("equipment") || t.includes("machine") || t.includes("xray") || t.includes("x-ray") || t.includes("mri")) {
-    severity = "High"; department = "Biomedical Engineering Team"; aiCategory = "Equipment Failure";
-  } else if (t.includes("leak") || t.includes("water") || t.includes("broken") || t.includes("damage") || t.includes("infrastructure")) {
-    severity = "High"; department = "Public Works Department (PWD)"; aiCategory = "Infrastructure Damage";
-  } else if (t.includes("clean") || t.includes("garbage") || t.includes("dirt") || t.includes("toilet") || t.includes("smell")) {
-    severity = "Low"; department = "Hospital Sanitation Committee"; aiCategory = "Cleanliness Issue";
-  } else if (t.includes("wait") || t.includes("queue") || t.includes("long")) {
-    severity = "Medium"; department = "Hospital Administration"; aiCategory = "Long Waiting Time";
-  }
-
-  const priority = severity === "Critical" ? "Immediate Attention" : severity === "High" ? "High Priority" : "Routine";
-  return { severity, department, aiCategory, confidence, priority: priority as "Immediate Attention" | "High Priority" | "Routine" };
-}
+// Replaced mock classifyComplaint with real backend AI pipeline processing.
 
 export default function ReportIssuePage() {
   const router = useRouter();
-  const { addComplaint } = useAppData();
+
+  // ── Data state ─────────────────────────────────────────────────────────
+  const [hospitals, setHospitals] = useState<any[]>([]);
+  const [talukas, setTalukas] = useState<string[]>([]);
+  const [isLoadingHospitals, setIsLoadingHospitals] = useState(true);
 
   // ── Step state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -74,72 +56,77 @@ export default function ReportIssuePage() {
   const [voiceSimulating, setVoiceSimulating] = useState(false);
 
   // Step 3 — Submitted
-  const [submittedId, setSubmittedId] = useState<string | null>(null);
+  const [submittedReference, setSubmittedReference] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mediaFile, setMediaFile] = useState<File | Blob | null>(null);
+  const [activeTab, setActiveTab] = useState<"text" | "voice" | "image">("text");
 
-  const hospitalsInTaluka = useMemo(() => getHospitalsByTaluka(selectedTaluka), [selectedTaluka]);
-  const selectedHospital: PalgharHospital | undefined = useMemo(
-    () => PALGHAR_HOSPITALS.find((h) => h.id === selectedHospitalId),
-    [selectedHospitalId]
+  // Protect against unsaved changes
+  const isDirty = step < 3 && (description.trim().length > 0 || mediaFile !== null);
+  useUnsavedChanges(isDirty, "You have an incomplete grievance report. Are you sure you want to leave?");
+
+  useEffect(() => {
+    async function loadHospitals() {
+      try {
+        setIsLoadingHospitals(true);
+        const data = await citizenApi.searchHospitals({});
+        setHospitals(data);
+        const uniqueTalukas = Array.from(new Set(data.map((h: any) => h.taluka))).filter(Boolean) as string[];
+        setTalukas(uniqueTalukas.sort());
+      } catch (err) {
+        console.error("Failed to load hospitals", err);
+      } finally {
+        setIsLoadingHospitals(false);
+      }
+    }
+    loadHospitals();
+  }, []);
+
+  const hospitalsInTaluka = useMemo(() => hospitals.filter((h) => h.taluka === selectedTaluka), [hospitals, selectedTaluka]);
+  const selectedHospital = useMemo(
+    () => hospitals.find((h) => h.id === selectedHospitalId),
+    [hospitals, selectedHospitalId]
   );
 
-  const aiResult = useMemo(() => {
-    if (!description && !category) return null;
-    return classifyComplaint(description, category);
-  }, [description, category]);
+  // Voice simulation is removed in favor of real recording
+  const handleAudioReady = (blob: Blob | null) => {
+    setMediaFile(blob);
+  };
 
-  // Voice simulation
-  const simulateVoice = () => {
-    setVoiceSimulating(true);
-    setTimeout(() => {
-      const samples = [
-        "PHC mein doctor kal se aa hi nahi rahe. Mera baccha beemar hai aur koi dekhne wala nahi hai.",
-        "Medicines counter par kuch bhi nahi hai. Paracetamol bhi khatam ho gaya 3 din se.",
-        "OPD mein 3 ghante se wait kar raha hoon. Koi system nahi hai — pahle aao pahle pao nahi chal raha.",
-        "X-ray machine kharab hai 1 week se. Private hospital bhej rahe hain.",
-      ];
-      const sample = samples[Math.floor(Math.random() * samples.length)];
-      setDescription((prev) => (prev ? prev + " " + sample : sample));
-      setVoiceSimulating(false);
-    }, 2000);
+  const handleImageReady = (file: File | null) => {
+    setMediaFile(file);
   };
 
   const handleSubmit = async () => {
     if (!selectedHospital || !description) return;
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 800));
+    
+    try {
+      const result = await citizenApi.submitComplaint({
+        hospital_id: selectedHospital.id,
+        category,
+        description,
+        date_of_visit: dateOfVisit,
+        is_anonymous: isAnonymous,
+        contact_info: isAnonymous ? undefined : contactInfo,
+      }) as any;
 
-    const ai = classifyComplaint(description, category);
-    const result = addComplaint({
-      hospital_id: selectedHospital.id,
-      hospital_name: selectedHospital.name,
-      hospital_short_name: selectedHospital.short_name,
-      taluka: selectedHospital.taluka,
-      district: "Palghar",
-      hospital_address: selectedHospital.address,
-      hospital_phone: selectedHospital.phone,
-      category,
-      description,
-      severity: ai.severity,
-      priority: ai.priority,
-      date_of_visit: dateOfVisit,
-      is_anonymous: isAnonymous,
-      reporter_name: isAnonymous ? undefined : reporterName,
-      contact_info: isAnonymous ? undefined : contactInfo,
-      status: "Submitted",
-      ai_classification: ai.aiCategory,
-      ai_confidence: ai.confidence,
-      assigned_department: ai.department,
-    });
+      if (mediaFile && result.id) {
+        await citizenApi.uploadMedia(result.id, mediaFile);
+      }
 
-    setSubmittedId(result.id);
-    setIsSubmitting(false);
-    setStep(3);
+      setSubmittedReference(result.reference_number);
+      setStep(3);
+    } catch (err) {
+      console.error("Submission failed", err);
+      alert("Failed to submit complaint. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // ── Step 3 — Success ────────────────────────────────────────────────────
-  if (step === 3 && submittedId) {
-    const ai = classifyComplaint(description, category);
+  if (step === 3 && submittedReference) {
     return (
       <div className="max-w-2xl mx-auto space-y-6 pb-16">
         <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-8 text-center space-y-4">
@@ -147,39 +134,23 @@ export default function ReportIssuePage() {
             <CheckCircle className="h-8 w-8 text-emerald-600" />
           </div>
           <h2 className="text-2xl font-black text-slate-900">Complaint Registered!</h2>
-          <p className="text-slate-600 text-sm">Your complaint has been submitted and auto-classified by our AI system.</p>
+          <p className="text-slate-600 text-sm">Your complaint has been submitted and is currently being auto-classified by our AI system in the background.</p>
           <div className="bg-white rounded-2xl p-5 text-left space-y-3 border border-emerald-100">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Complaint ID</span>
-              <span className="font-black text-slate-900 font-mono">{submittedId}</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Reference Number</span>
+              <span className="font-black text-slate-900 font-mono">{submittedReference}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Hospital</span>
-              <span className="text-sm font-bold text-slate-800">{selectedHospital?.short_name}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">AI Classification</span>
-              <span className="text-sm font-bold text-blue-700">{ai.aiCategory}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Severity</span>
-              <span className={`text-xs font-black px-3 py-1 rounded-full ${
-                ai.severity === "Critical" ? "bg-red-100 text-red-700" :
-                ai.severity === "High" ? "bg-orange-100 text-orange-700" :
-                "bg-yellow-100 text-yellow-700"
-              }`}>{ai.severity}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Routed To</span>
-              <span className="text-xs font-bold text-slate-700">{ai.department}</span>
+              <span className="text-sm font-bold text-slate-800">{selectedHospital?.name}</span>
             </div>
           </div>
         </div>
         <div className="flex gap-3">
-          <button onClick={() => router.push("/citizen")} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors">
-            View My Complaints
+          <button onClick={() => router.push(`/citizen/track?ref=${submittedReference}`)} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors">
+            Track Progress
           </button>
-          <button onClick={() => { setStep(1); setSelectedTaluka(""); setSelectedHospitalId(null); setDescription(""); setCategory("Other"); setSubmittedId(null); }}
+          <button onClick={() => { setStep(1); setSelectedTaluka(""); setSelectedHospitalId(null); setDescription(""); setCategory("Other"); setSubmittedReference(null); setMediaFile(null); }}
             className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors">
             File Another
           </button>
@@ -235,8 +206,8 @@ export default function ReportIssuePage() {
             <div className="relative">
               <select value={selectedTaluka} onChange={(e) => { setSelectedTaluka(e.target.value); setSelectedHospitalId(null); }}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 font-semibold text-sm appearance-none focus:outline-none focus:ring-2 focus:ring-slate-900">
-                <option value="">— Select Taluka —</option>
-                {PALGHAR_TALUKAS.map((t) => <option key={t} value={t}>{t}</option>)}
+                <option value="">{isLoadingHospitals ? "Loading..." : "— Select Taluka —"}</option>
+                {talukas.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
               <ChevronDown className="absolute right-3 top-3.5 h-4 w-4 text-slate-400 pointer-events-none" />
             </div>
@@ -317,47 +288,70 @@ export default function ReportIssuePage() {
               </div>
             </div>
 
-            {/* Description */}
+            {/* Input Modality Tabs */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Description *</label>
-                <button type="button" onClick={simulateVoice} disabled={voiceSimulating}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    voiceSimulating ? "bg-red-100 text-red-600 animate-pulse" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                  }`}>
-                  {voiceSimulating ? <><Loader2 className="h-3 w-3 animate-spin" /> Recording…</> : <><Mic className="h-3 w-3" /> Voice Input</>}
-                </button>
+              <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">How would you like to report?</label>
+              <div className="flex bg-slate-100 p-1 rounded-xl">
+                <button type="button" onClick={() => setActiveTab("text")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === "text" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>Text</button>
+                <button type="button" onClick={() => setActiveTab("voice")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === "voice" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>Voice</button>
+                <button type="button" onClick={() => setActiveTab("image")} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${activeTab === "image" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}>Photo / Video</button>
               </div>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={4}
-                placeholder="Describe the issue clearly. You can also use the voice input button above to record your complaint in Hindi or English..."
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none placeholder:text-slate-400"
-              />
             </div>
 
-            {/* AI Analysis live panel */}
-            {aiResult && description.length > 15 && (
-              <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 rounded-2xl p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-indigo-600" />
-                  <span className="text-xs font-black text-indigo-700 uppercase tracking-wider">AI Analysis — Live</span>
-                  <span className="ml-auto text-xs font-bold text-indigo-500">{aiResult.confidence}% confidence</span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-xs">
-                  <div><p className="text-slate-500 font-medium">Classification</p><p className="font-black text-slate-900">{aiResult.aiCategory}</p></div>
-                  <div><p className="text-slate-500 font-medium">Severity</p>
-                    <span className={`inline-block px-2 py-0.5 rounded-full font-black text-[11px] ${
-                      aiResult.severity === "Critical" ? "bg-red-100 text-red-700" :
-                      aiResult.severity === "High" ? "bg-orange-100 text-orange-700" : "bg-yellow-100 text-yellow-700"
-                    }`}>{aiResult.severity}</span>
-                  </div>
-                  <div><p className="text-slate-500 font-medium">Routed To</p><p className="font-bold text-slate-800">{aiResult.department}</p></div>
-                  <div><p className="text-slate-500 font-medium">Priority</p><p className="font-bold text-slate-800">{aiResult.priority}</p></div>
+            {/* Description (Text Mode) */}
+            {activeTab === "text" && (
+              <div>
+                <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 block">Description *</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={4}
+                  placeholder="Describe the issue clearly..."
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none placeholder:text-slate-400"
+                />
+              </div>
+            )}
+
+            {/* Voice Mode */}
+            {activeTab === "voice" && (
+              <div>
+                <VoiceRecorder onAudioReady={handleAudioReady} />
+                {/* Fallback description input if they also want to type */}
+                <div className="mt-4">
+                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 block">Additional Comments (Optional)</label>
+                   <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={2}
+                    placeholder="Any other details..."
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none placeholder:text-slate-400"
+                  />
                 </div>
               </div>
             )}
+
+            {/* Image Mode */}
+            {activeTab === "image" && (
+              <div>
+                <ImageUploader onImageReady={handleImageReady} />
+                <div className="mt-4">
+                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 block">Photo Description *</label>
+                   <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={2}
+                    placeholder="Describe what is in the photo..."
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 resize-none placeholder:text-slate-400"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Information panel */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-2 text-sm text-slate-600">
+              <p>By submitting this form, your complaint will be automatically routed to the correct department by our AI triage system.</p>
+              <p>You will receive a tracking reference number to follow updates.</p>
+            </div>
 
             {/* Date of visit */}
             <div>
@@ -394,7 +388,7 @@ export default function ReportIssuePage() {
               </div>
             )}
 
-            <button onClick={handleSubmit} disabled={!description || isSubmitting}
+            <button onClick={handleSubmit} disabled={!description && !mediaFile || isSubmitting}
               className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
               {isSubmitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : "Submit Complaint →"}
             </button>

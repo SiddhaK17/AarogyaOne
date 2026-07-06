@@ -30,6 +30,7 @@ class SQLAlchemyComplaintRepository:
         if complaint:
             if "priority_result" in metadata and metadata["priority_result"]:
                 complaint.ai_priority = metadata["priority_result"].get("priority_level")
+            complaint.ai_metadata = metadata
             self.db.flush()
 
 class SQLAlchemyTaskRepository:

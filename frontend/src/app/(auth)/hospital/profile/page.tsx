@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
-import { useHospitalSession } from '../layout';
+import { useHospitalSession } from '@/context/HospitalSessionContext';
 import { PALGHAR_HOSPITALS, type PalgharHospital } from '@/data/palgharHospitals';
 import {
   Building2,

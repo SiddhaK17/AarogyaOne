@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card, { CardHeader } from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import Button from '@/components/ui/Button';
+import { hospitalApi } from '@/lib/api';
 import {
   Pill,
   Wind,
@@ -45,17 +46,7 @@ interface InventoryItem {
   depletionDays: number;
 }
 
-/* ─── Seeded Mock Data ─── */
-const initialItems: InventoryItem[] = [
-  { id: 'M001', name: 'Paracetamol 500mg', category: 'Medicines', current: 120, min: 200, max: 1000, expiry: '2027-03-15', supplier: 'Sun Pharma', status: 'critical', depletionDays: 3 },
-  { id: 'M002', name: 'Amoxicillin 250mg', category: 'Medicines', current: 380, min: 150, max: 800, expiry: '2027-06-20', supplier: 'Cipla Ltd.', status: 'healthy', depletionDays: 12 },
-  { id: 'M003', name: 'Insulin Glargine', category: 'Medicines', current: 45, min: 50, max: 200, expiry: '2026-12-01', supplier: 'Novo Nordisk', status: 'warning', depletionDays: 5 },
-  { id: 'O001', name: 'Oxygen Cylinder (Type D)', category: 'Oxygen', current: 8, min: 15, max: 50, expiry: '—', supplier: 'Linde Gas', status: 'critical', depletionDays: 2 },
-  { id: 'B001', name: 'Blood Unit A+', category: 'Blood Units', current: 3, min: 10, max: 30, expiry: '2026-08-10', supplier: 'District Blood Bank', status: 'critical', depletionDays: 1 },
-  { id: 'P001', name: 'N95 Masks', category: 'PPE Kits', current: 420, min: 100, max: 500, expiry: '2028-01-01', supplier: 'Venus Safety', status: 'healthy', depletionDays: 45 },
-  { id: 'V001', name: 'Covishield Dose', category: 'Vaccines', current: 180, min: 200, max: 1000, expiry: '2026-11-30', supplier: 'SII', status: 'warning', depletionDays: 7 },
-  { id: 'E001', name: 'Defibrillator Pads', category: 'Emergency', current: 12, min: 5, max: 20, expiry: '2027-09-01', supplier: 'Philips Health', status: 'healthy', depletionDays: 90 },
-];
+const initialItems: InventoryItem[] = [];
 
 const categoryIcons: Record<string, React.ElementType> = {
   'Medicines': Pill,
@@ -296,9 +287,38 @@ function InventoryModal({
 export default function InventoryPage() {
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
-  const [items, setItems] = useState<InventoryItem[]>(initialItems);
+  const [items, setItems] = useState<InventoryItem[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchInventory = async () => {
+    setIsLoading(true);
+    try {
+      const data = await hospitalApi.getInventory() as any[];
+      const mapped = data.map(item => ({
+        id: String(item.id),
+        name: item.item_name,
+        category: item.category,
+        current: item.quantity,
+        min: item.min_threshold,
+        max: item.max_capacity || item.min_threshold * 5, // fallback
+        expiry: item.expiry_date || '—',
+        supplier: item.supplier_name || '—',
+        status: computeStatus(item.quantity, item.min_threshold),
+        depletionDays: item.ai_stockout_forecast_days || Math.ceil(item.quantity / 30),
+      }));
+      setItems(mapped);
+    } catch (err) {
+      console.error("Failed to load inventory", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInventory();
+  }, []);
 
   const categories = Object.keys(categoryIcons).map((name) => {
     const catItems = items.filter((i) => i.category === name);
@@ -326,21 +346,37 @@ export default function InventoryPage() {
     { name: 'N95 Masks', used: 15 },
   ];
 
-  const handleSubmit = (partial: Partial<InventoryItem>, isEdit: boolean) => {
-    if (isEdit && editItem) {
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === editItem.id
-            ? { ...i, ...partial }
-            : i
-        )
-      );
-    } else {
-      const newId = `${(partial.category ?? 'X')[0]}${String(items.length + 1).padStart(3, '0')}`;
-      setItems((prev) => [{ ...partial, id: newId } as InventoryItem, ...prev]);
+  const handleSubmit = async (partial: Partial<InventoryItem>, isEdit: boolean) => {
+    try {
+      if (isEdit && editItem) {
+        await hospitalApi.updateInventoryItem(parseInt(editItem.id), {
+          item_name: partial.name,
+          category: partial.category,
+          quantity: partial.current,
+          min_threshold: partial.min,
+          max_capacity: partial.max,
+          expiry_date: partial.expiry === '—' ? null : partial.expiry,
+          supplier_name: partial.supplier,
+        });
+      } else {
+        await hospitalApi.addInventoryItem({
+          item_name: partial.name,
+          category: partial.category,
+          quantity: partial.current,
+          min_threshold: partial.min,
+          max_capacity: partial.max,
+          expiry_date: partial.expiry === '—' ? null : partial.expiry,
+          supplier_name: partial.supplier,
+        });
+      }
+      await fetchInventory();
+    } catch (err) {
+      console.error("Failed to save inventory item", err);
+      alert("Error saving item");
+    } finally {
+      setEditItem(null);
+      setShowModal(false);
     }
-    setEditItem(null);
-    setShowModal(false);
   };
 
   const handleDelete = (id: string) => {

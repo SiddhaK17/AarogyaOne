@@ -5,35 +5,30 @@ import Sidebar from '@/components/shared/Sidebar';
 import Navbar from '@/components/shared/Navbar';
 import { useAppData, type ActiveHospitalSession } from '@/context/AppDataContext';
 import { PALGHAR_HOSPITALS } from '@/data/palgharHospitals';
+import { useAuth } from '@/context/AuthContext';
+import { PageLoader } from '@/components/ui/Loaders';
+import { useRouter } from 'next/navigation';
 
-// ── Hospital Session Context ─────────────────────────────────────────────────
-// Lets all hospital portal pages read the active hospital without prop drilling
-
-interface HospitalSessionContextValue {
-  session: ActiveHospitalSession | null;
-}
-
-const HospitalSessionContext = createContext<HospitalSessionContextValue>({ session: null });
-
-export function useHospitalSession() {
-  return useContext(HospitalSessionContext);
-}
+import { HospitalSessionContext } from '@/context/HospitalSessionContext';
 
 // ── Layout ───────────────────────────────────────────────────────────────────
 
 export default function HospitalLayout({ children }: { children: React.ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const { activeHospital, setActiveHospital } = useAppData();
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-  // On mount — if no session in context, try reading from cookies (handles page refresh)
   useEffect(() => {
+    const getCookie = (name: string) => {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]*)'));
+      return match ? decodeURIComponent(match[2]) : '';
+    };
+
+    // Always try to restore from cookies on mount — don't wait for user
     if (!activeHospital) {
-      const getCookie = (name: string) => {
-        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]*)'));
-        return match ? decodeURIComponent(match[2]) : '';
-      };
       const hospitalId = parseInt(getCookie('hospital_id'));
-      if (hospitalId) {
+      if (hospitalId && !isNaN(hospitalId)) {
         const h = PALGHAR_HOSPITALS.find((h) => h.id === hospitalId);
         if (h) {
           setActiveHospital({
@@ -50,7 +45,16 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
         }
       }
     }
-  }, []);
+  }, []); // Run once on mount only — empty deps, no re-runs
+
+  if (loading && !activeHospital) {
+    return <PageLoader message="Restoring hospital session..." />;
+  }
+
+  if (!user && !loading) {
+    router.replace('/login?role=hospital');
+    return null;
+  }
 
   return (
     <HospitalSessionContext.Provider value={{ session: activeHospital }}>

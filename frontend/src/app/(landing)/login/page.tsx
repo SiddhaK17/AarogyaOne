@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useState, useMemo } from 'react';
+import React, { Suspense, useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
@@ -21,6 +21,7 @@ import {
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { authApi } from '@/lib/api';
+import { useToast } from '@/context/ToastContext';
 
 const HOSPITAL_DESIGNATIONS = [
   'Medical Superintendent',
@@ -66,9 +67,10 @@ function getFriendlyErrorMessage(error: any): string {
     case 'auth/invalid-email':
       return 'Please enter a valid email address.';
     case 'auth/invalid-credential':
-    case 'auth/user-not-found':
     case 'auth/wrong-password':
-      return 'Incorrect email or password. Please check your credentials and try again.';
+      return 'Invalid email or password.';
+    case 'auth/user-not-found':
+      return 'No account found. Please register first.';
     case 'auth/email-already-in-use':
       return 'An account already exists with this email address.';
     case 'auth/weak-password':
@@ -85,8 +87,20 @@ function getFriendlyErrorMessage(error: any): string {
 function LoginContent() {
   const searchParams = useSearchParams();
   const role = searchParams.get('role') || '';
+  const isExpired = searchParams.get('expired') === 'true';
   const router = useRouter();
   const { setActiveHospital } = useAppData();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (isExpired) {
+      toast("Your session has expired. Please sign in again.", "error");
+      // Clean up the URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete('expired');
+      window.history.replaceState({}, '', url);
+    }
+  }, [isExpired, toast]);
 
   // ── Authentication view toggle ──────────────────────────────────────────────
   const [isSignUp, setIsSignUp] = useState(false);
@@ -188,27 +202,31 @@ function LoginContent() {
       document.cookie = `gov_department=${encodeURIComponent(profile.department || 'Public Works Department (PWD)')}; path=/; max-age=86400; SameSite=Lax;`;
       document.cookie = `user_role=${encodeURIComponent(profile.role + ' Officer')}; path=/; max-age=86400; SameSite=Lax;`;
     } else {
+      document.cookie = `portal_role=citizen; path=/; max-age=86400; SameSite=Lax;`;
       document.cookie = `user_role=Citizen User; path=/; max-age=86400; SameSite=Lax;`;
     }
   };
 
   const handleAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[AUTH] START AUTH SUBMIT");
     setErrorMsg('');
     setLoading(true);
 
     try {
       if (isSignUp) {
-        // Validation before attempting Sign Up
+        console.log("[AUTH] START REGISTER");
         if (role === 'hospital' && !selectedHospitalId) {
           throw new Error('Please select a hospital to register.');
         }
 
-        // 1. Firebase auth user creation
+        console.log("[AUTH] Creating Firebase User...");
         const credential = await createUserWithEmailAndPassword(auth, email, password);
-        const token = await credential.user.getIdToken();
+        console.log("[AUTH] Firebase User Created");
 
-        // Determine correct backend role mapping
+        const token = await credential.user.getIdToken();
+        console.log("[AUTH] ID Token Received");
+
         let dbRole = 'citizen';
         let requestHospitalId: number | undefined;
         let requestDistrict: string | undefined;
@@ -225,48 +243,79 @@ function LoginContent() {
           requestDepartment = govDepartment;
         }
 
-        // 2. Register user in backend database
         try {
-          // Injects token automatically in header via lib/api configuration
+          console.log("[AUTH] Calling authApi.register...");
           const profile = await authApi.register({
+            firebase_uid: credential.user.uid,
+            email: credential.user.email,
             full_name: name,
             role: dbRole,
             hospital_id: requestHospitalId,
             district: requestDistrict,
             department: requestDepartment,
           });
+          console.log("[AUTH] Backend Registration Success");
 
-          // Write appropriate routing cookies
-          writeSessionCookies(token, profile);
+          // CRITICAL: Force token refresh to pick up custom claims just set by backend.
+          // The token fetched before register() has NO claims. We must get a new one.
+          console.log("[AUTH] Force-refreshing token to pick up custom claims...");
+          const freshToken = await credential.user.getIdToken(true); // true = force refresh
+          console.log("[AUTH] Fresh token with claims obtained");
+
+          console.log("[AUTH] Writing Session Cookies...");
+          writeSessionCookies(freshToken, profile);
+          console.log("[AUTH] Session Cookies Written");
         } catch (dbErr: any) {
-          // Cleanup Firebase account if backend registration fails (ensures consistency)
-          if (auth.currentUser) {
-            await auth.currentUser.delete();
+          if (credential && credential.user) {
+            await credential.user.delete();
           }
           throw new Error(`Profile registration failed: ${dbErr?.message || 'Database error'}`);
         }
       } else {
-        // 1. Firebase sign in
+        console.log("[AUTH] START SIGN IN");
+        console.log("[AUTH] Signing into Firebase...");
         const credential = await signInWithEmailAndPassword(auth, email, password);
-        const token = await credential.user.getIdToken();
+        console.log("[AUTH] Firebase Sign In Success");
 
-        // 2. Fetch profile from backend database
-        const profile = await authApi.getMe();
+        const token = await credential.user.getIdToken();
+        console.log("[AUTH] ID Token Received");
+
+        console.log("[AUTH] Calling authApi.getMe...");
+        const profile = await authApi.getMe(token);
+        console.log("[AUTH] Backend /auth/me Success");
+
+        // Validate portal-role match — prevent cross-portal sign-in
+        const resolvedPortal = getPortalByRole(profile.role);
+        const attemptedPortal = role || 'citizen';
+        
+        if (resolvedPortal !== attemptedPortal) {
+          await signOut(auth);
+          throw new Error("You are not authorized to access this portal.");
+        }
+
+        console.log("[AUTH] Writing Session Cookies...");
         writeSessionCookies(token, profile);
+        console.log("[AUTH] Session Cookies Written");
       }
 
-      // 3. Routing redirect based on targeted portal
-      if (role === 'hospital') router.push('/hospital/dashboard');
-      else if (role === 'dhic') router.push('/dhic');
-      else if (role === 'government') router.push('/government/dashboard');
-      else router.push('/citizen');
+      // Signal to AuthContext that this is an intentional login — do not clear session
+      sessionStorage.setItem('aarogya_login_in_progress', 'true');
+
+      setTimeout(() => {
+        console.log(`[AUTH] Executing redirect to portal: ${role || 'citizen'}`);
+        if (role === 'hospital') window.location.href = '/hospital/dashboard';
+        else if (role === 'dhic') window.location.href = '/dhic';
+        else if (role === 'government') window.location.href = '/government/dashboard';
+        else window.location.href = '/citizen';
+      }, 1000);
 
     } catch (err: any) {
-      console.error(err);
+      console.error("[AUTH] Error caught in try block:", err);
       setErrorMsg(getFriendlyErrorMessage(err));
-      // Sign out to clear any partial firebase session
-      await signOut(auth).catch(() => {});
+      console.log("[AUTH] Attempting to sign out corrupted session...");
+      signOut(auth).catch(() => {});
     } finally {
+      console.log("[AUTH] Finally block executing - setting loading to false");
       setLoading(false);
     }
   };

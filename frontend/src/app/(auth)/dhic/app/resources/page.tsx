@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import { useDistrict } from "@/context/DistrictContext";
+import { dhicApi } from "@/lib/api";
 import {
   Truck,
   CheckCircle,
@@ -45,6 +46,10 @@ export default function ResourceManagement() {
   const [activeTab, setActiveTab] = useState("pending");
   const [transfers, setTransfers] = useState(transferRequests);
 
+  useEffect(() => {
+    setTransfers(transferRequests);
+  }, [transferRequests]);
+
   const filtered = transfers.filter((t) => {
     if (activeTab === "all") return true;
     return t.status === activeTab;
@@ -60,18 +65,30 @@ export default function ResourceManagement() {
     { name: "Antibiotics", stock: 71, color: "#3b82f6" },
   ];
 
-  const handleApprove = (id: string) => {
-    setTransfers((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "approved" } : t))
-    );
-    addNotification(`Transfer ${id} approved`);
+  const handleApprove = async (id: string) => {
+    try {
+      await dhicApi.approveTransfer(parseInt(id));
+      setTransfers((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, status: "approved" } : t))
+      );
+      addNotification(`Transfer ${id} approved`);
+    } catch (err) {
+      console.error("Failed to approve transfer", err);
+      alert("Failed to approve transfer");
+    }
   };
 
-  const handleReject = (id: string) => {
-    setTransfers((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: "rejected" } : t))
-    );
-    addNotification(`Transfer ${id} rejected`);
+  const handleReject = async (id: string) => {
+    try {
+      await dhicApi.rejectTransfer(parseInt(id));
+      setTransfers((prev) =>
+        prev.map((t) => (t.id === id ? { ...t, status: "rejected" } : t))
+      );
+      addNotification(`Transfer ${id} rejected`);
+    } catch (err) {
+      console.error("Failed to reject transfer", err);
+      alert("Failed to reject transfer");
+    }
   };
 
   const stats = {
@@ -182,8 +199,8 @@ export default function ResourceManagement() {
                         </td>
                         <td style={{ fontSize: 12 }}>{t.estimatedTime}</td>
                         <td>
-                          <span style={{ fontWeight: 700, color: t.aiConfidence >= 0.9 ? "#22c55e" : t.aiConfidence >= 0.8 ? "#eab308" : "#f97316" }}>
-                            {Math.round(t.aiConfidence * 100)}%
+                          <span style={{ fontWeight: 700, color: t.aiConfidence >= 90 ? "#22c55e" : t.aiConfidence >= 80 ? "#eab308" : "#f97316" }}>
+                            {t.aiConfidence}%
                           </span>
                         </td>
                         <td>

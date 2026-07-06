@@ -176,3 +176,14 @@ uploads/
 
 # OS generated
 Desktop.ini
+
+
+# Environment
+.env.*
+!.env.example
+
+# Python bytecode
+*.pyo
+
+# Runtime dumps
+*.stackdump

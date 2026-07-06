@@ -328,6 +328,13 @@ async def track_complaint(
             detail=f"No complaint found with reference '{reference_number}'.",
         )
 
+    metadata = complaint.ai_metadata or {}
+    
+    # Extract telemetry explicitly from the WorkflowResult payload
+    speech_result = metadata.get("speech_result") or {}
+    vision_result = metadata.get("vision_result") or {}
+    priority_result = metadata.get("priority_result") or {}
+
     return {
         "reference_number": complaint.reference_number,
         "hospital_name": complaint.hospital.name,
@@ -335,6 +342,11 @@ async def track_complaint(
         "status": complaint.status,
         "ai_severity": complaint.ai_severity,
         "ai_assigned_department": complaint.ai_assigned_department,
+        "ai_confidence": complaint.ai_confidence,
+        "ai_sentiment": complaint.ai_sentiment,
+        "ai_transcript": speech_result.get("transcript"),
+        "ai_ocr_text": vision_result.get("ocr_text"),
+        "ai_reasoning": priority_result.get("reasoning"),
         "created_at": complaint.created_at,
         "tracking_history": complaint.tracking,
     }

@@ -1,22 +1,35 @@
-import type { Metadata } from "next";
-import { ReactNode } from "react";
+'use client';
+
+import { ReactNode, useEffect } from "react";
+import { useRouter } from 'next/navigation';
 import "@/index.css";
 import { DistrictProvider } from "@/context/DistrictContext";
 import Layout from "@/components/Layout";
+import { useAuth } from '@/context/AuthContext';
+import { PageLoader } from '@/components/ui/Loaders';
 
-export const metadata: Metadata = {
-  title: "ArogyaOne – District Health Intelligence Centre",
-  description: "District Health Intelligence Centre for monitoring healthcare operations",
-};
+export default function DhicLayout({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login?role=dhic');
+    }
+  }, [user, loading, router]);
+
+  if (!user && !loading) {
+    return null; // useEffect above handles redirect
+  }
+
+  if (loading) {
+    return <PageLoader message="Authenticating DHIC session..." />;
+  }
+
   return (
-    <html lang="en">
-      <body>
-        <DistrictProvider>
-          <Layout>{children}</Layout>
-        </DistrictProvider>
-      </body>
-    </html>
+    <DistrictProvider>
+      <Layout>{children}</Layout>
+    </DistrictProvider>
   );
 }

@@ -54,29 +54,29 @@ function generateScores(hospital: Hospital): ScoreDimensions {
   };
 }
 
-const aiInsights = {
-  "H003": [
-    { type: "declining", text: "Performance has declined for 3 consecutive weeks" },
-    { type: "shortage", text: "Medicine stock at 45% — 5 critical medicines below threshold" },
-    { type: "complaint", text: "Complaints tripled in the past 7 days" },
-  ],
-  "H004": [
-    { type: "declining", text: "AI Health Score dropped from 42 → 28 over 3 weeks" },
-    { type: "shortage", text: "Only 18% medicine stock remaining — emergency procurement needed" },
-    { type: "attendance", text: "Doctor attendance at 25% — lowest in district" },
-  ],
-  "H012": [
-    { type: "consumption", text: "Ventilator utilisation at 97% — 2 units non-functional" },
-    { type: "shortage", text: "Oxygen stock may last less than 6 hours at current rate" },
-    { type: "complaint", text: "27 active complaints — highest per-capita ratio" },
-  ],
-};
-
 export default function HospitalIntelligence() {
-  const { hospitals } = useDistrict();
+  const { hospitals, alerts } = useDistrict();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Hospital | null>(null);
   const [sortBy, setSortBy] = useState<string>("score");
+
+  const generateDynamicInsights = (h: Hospital) => {
+    const insights = [];
+    if (h.aiHealthScore < 50) insights.push({ type: "declining", text: `AI Health Score is critically low (${h.aiHealthScore})` });
+    if (h.medicineStock < 50) insights.push({ type: "shortage", text: `Medicine stock is low (${h.medicineStock}%)` });
+    if (h.activeIssues > 10) insights.push({ type: "complaint", text: `${h.activeIssues} active issues reported` });
+    
+    // Check global alerts for this hospital
+    const hospitalAlerts = alerts.filter(a => a.hospital === h.name);
+    hospitalAlerts.slice(0, 2).forEach(a => {
+      insights.push({ type: a.severity === 'Critical' ? "declining" : "complaint", text: a.category });
+    });
+
+    if (insights.length === 0) {
+      insights.push({ type: "stable", text: "No significant AI-detected concerns for this facility" });
+    }
+    return insights;
+  };
 
   const filtered = hospitals
     .filter(
@@ -223,9 +223,7 @@ export default function HospitalIntelligence() {
                   {/* AI Insights */}
                   <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: "#0f172a" }}>AI Insights</h4>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {(aiInsights[selected.id as keyof typeof aiInsights] || [
-                      { type: "stable", text: "No significant AI-detected concerns for this facility" }
-                    ]).map((insight, i) => (
+                    {generateDynamicInsights(selected).map((insight, i) => (
                       <div key={i} style={{
                         display: "flex", gap: 10, padding: "10px 14px", borderRadius: 8,
                         background: insight.type === "declining" || insight.type === "shortage" ? "#fef2f2" : insight.type === "attendance" ? "#fff7ed" : "#f0fdf4",

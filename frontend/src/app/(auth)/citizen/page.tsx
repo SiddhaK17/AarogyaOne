@@ -7,10 +7,9 @@ import {
   BrainCircuit, PhoneCall, AlertTriangle, CheckCircle, 
   Clock, ArrowRight, ShieldAlert, Sparkles, Activity
 } from "lucide-react";
-import { getComplaints, Complaint } from "./mockDb";
 
 export default function CitizenDashboard() {
-  const [complaints, setComplaints] = useState<Complaint[]>([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
   const [stats, setStats] = useState({
     total: 0,
     active: 0,
@@ -18,7 +17,8 @@ export default function CitizenDashboard() {
   });
 
   useEffect(() => {
-    const list = getComplaints();
+    // Phase 5: mockDb removed. Complaints tracked via reference number.
+    const list: any[] = [];
     setComplaints(list);
     
     const active = list.filter(c => c.status !== "Resolved" && c.status !== "Closed").length;
@@ -31,7 +31,7 @@ export default function CitizenDashboard() {
     });
   }, []);
 
-  const getStatusStyle = (status: Complaint["status"]) => {
+  const getStatusStyle = (status: string) => {
     switch (status) {
       case "Received":
         return "bg-slate-100 text-slate-700 border-slate-200";
