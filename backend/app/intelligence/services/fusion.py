@@ -578,12 +578,29 @@ class FusionEngine(BaseAIEngine):
         if nlp_output:
             self.merge_nlp(nlp_output)
             
-        if metadata:
-            citizen = metadata.get("citizen")
-            hospital = metadata.get("hospital")
-            location = metadata.get("location")
-            if citizen and hospital and location:
-                self.merge_metadata(citizen, hospital, location, metadata)
+        meta_dict = metadata if isinstance(metadata, dict) else {}
+        citizen = meta_dict.get("citizen")
+        if not isinstance(citizen, CitizenMetadata):
+            citizen = CitizenMetadata(
+                citizen_id=str(meta_dict.get("citizen_id", "ANONYMOUS")),
+                complaint_id=str(meta_dict.get("complaint_id", "COMP-4")),
+            )
+        hospital = meta_dict.get("hospital")
+        if not isinstance(hospital, HospitalMetadata):
+            hospital = HospitalMetadata(
+                hospital_id=str(meta_dict.get("hospital_id", "HOSP-1")),
+                hospital_name=str(meta_dict.get("hospital_name", "General Hospital")),
+                district=str(meta_dict.get("district", "Mumbai")),
+                state=str(meta_dict.get("state", "Maharashtra")),
+            )
+        location = meta_dict.get("location")
+        if not isinstance(location, LocationMetadata):
+            location = LocationMetadata(
+                latitude=float(meta_dict.get("latitude", 19.0760)),
+                longitude=float(meta_dict.get("longitude", 72.8777)),
+                address=str(meta_dict.get("address", "Mumbai, Maharashtra, India")),
+            )
+        self.merge_metadata(citizen, hospital, location, meta_dict)
 
     def load(self) -> None:
         if not self._is_loaded:

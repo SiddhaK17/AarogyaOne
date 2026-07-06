@@ -3,6 +3,10 @@ AarogyaOne Backend — Dependencies
 =========================================================================
 Provides FastAPI dependency injection functions.
 """
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+import app.intelligence.pipelines.nlp  # noqa: F401
+
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 from fastapi import Depends

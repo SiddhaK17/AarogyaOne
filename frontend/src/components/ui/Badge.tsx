@@ -5,6 +5,7 @@ interface BadgeProps {
   variant?: 'healthy' | 'warning' | 'critical' | 'info' | 'neutral' | 'high-risk';
   size?: 'sm' | 'md';
   dot?: boolean;
+  className?: string;
 }
 
 export default function Badge({
@@ -12,6 +13,7 @@ export default function Badge({
   variant = 'neutral',
   size = 'sm',
   dot = false,
+  className = '',
 }: BadgeProps) {
   const variants: Record<string, string> = {
     healthy: 'bg-emerald-50 text-emerald-700 border-emerald-200/60',
@@ -38,7 +40,7 @@ export default function Badge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-bold rounded-full border ${variants[variant]} ${sizes[size]}`}
+      className={`inline-flex items-center gap-1.5 font-bold rounded-full border ${variants[variant]} ${sizes[size]} ${className}`}
     >
       {dot && (
         <span

@@ -44,7 +44,7 @@ const categoryFilters = [
 ];
 
 export default function AIAlertCentre() {
-  const { alerts } = useDistrict();
+  const { alerts, acknowledgeAlert } = useDistrict();
   const [severityFilter, setSeverityFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
@@ -63,14 +63,7 @@ export default function AIAlertCentre() {
   };
 
   const handleDismiss = async (alertId: string) => {
-    try {
-      await dhicApi.acknowledgeAlert(parseInt(alertId));
-      // Optionally update local state or trigger a reload
-      // Assuming DistrictContext updates via websocket/polling, or we can reload window.
-      window.location.reload();
-    } catch (err) {
-      console.error("Failed to dismiss alert", err);
-    }
+    await acknowledgeAlert(alertId);
   };
 
   return (
@@ -158,7 +151,7 @@ export default function AIAlertCentre() {
                       </div>
                     </div>
                     <div className="recommendation__actions">
-                      <button className="btn btn--sm btn--primary" onClick={(e) => e.stopPropagation()}>Act Now</button>
+                      <button className="btn btn--sm btn--primary" onClick={(e) => { e.stopPropagation(); acknowledgeAlert(alert.id); }}>Act Now</button>
                       <button className="btn btn--sm btn--outline" onClick={(e) => e.stopPropagation()}><Eye size={12} /> Details</button>
                       <button className="btn btn--sm btn--ghost" onClick={(e) => { e.stopPropagation(); handleDismiss(alert.id); }}>Dismiss</button>
                     </div>

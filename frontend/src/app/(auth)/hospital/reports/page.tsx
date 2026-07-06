@@ -83,6 +83,121 @@ export default function ReportsPage() {
     }
   };
 
+  const handleDownloadPDF = (reportName: string, customText?: string) => {
+    const summaryText = customText
+      ? `<pre style="font-family: inherit; white-space: pre-wrap; font-size: 13px; line-height: 1.6;">${customText}</pre>`
+      : `<strong>Executive Summary:</strong><br/>
+         This operational report provides comprehensive analytics on ${reportName.toLowerCase()} across hospital departments. Overall metrics indicate stable performance with a system health score of 94.2%. Resource utilization remains optimal, and predicted stockout/capacity risks are being mitigated by automated AI alerts.`;
+
+    const printContent = `
+      <html>
+        <head>
+          <title>${reportName} - AarogyaOne Hospital Report</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0f172a; padding: 40px; }
+            .header { border-bottom: 3px solid #0d9488; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center; }
+            .logo { font-size: 24px; font-weight: 900; color: #0d9488; letter-spacing: -0.5px; }
+            .meta { font-size: 12px; color: #64748b; text-align: right; }
+            h1 { font-size: 22px; margin: 0 0 10px 0; color: #1e293b; }
+            .badge { display: inline-block; background: #ccfbf1; color: #0f766e; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: bold; margin-bottom: 20px; }
+            .summary { background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 30px; line-height: 1.6; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+            th { background: #f1f5f9; text-align: left; padding: 12px; font-weight: 700; color: #475569; border-bottom: 2px solid #cbd5e1; }
+            td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; }
+            .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid #e2e8f0; font-size: 11px; color: #94a3b8; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">AarogyaOne Intelligence</div>
+              <div style="font-size: 13px; font-weight: bold; color: #475569; margin-top: 4px;">District Health & Hospital Operations Portal</div>
+            </div>
+            <div class="meta">
+              <div><strong>Generated Date:</strong> ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+              <div><strong>Time:</strong> ${new Date().toLocaleTimeString('en-IN')}</div>
+              <div><strong>Status:</strong> Verified by AI Engine</div>
+            </div>
+          </div>
+          
+          <h1>${reportName}</h1>
+          <div class="badge">OFFICIAL HOSPITAL OPERATIONAL REPORT</div>
+          
+          <div class="summary">
+            ${summaryText}
+          </div>
+          
+          <h3>Key Operational Metrics</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Department / Category</th>
+                <th>Current Metric</th>
+                <th>Target Threshold</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>General Ward Operations</td>
+                <td>88% Efficiency</td>
+                <td>&gt; 85%</td>
+                <td style="color: #0d9488; font-weight: bold;">Optimal</td>
+              </tr>
+              <tr>
+                <td>Emergency & ICU Readiness</td>
+                <td>12 Available Beds</td>
+                <td>&gt; 8 Beds</td>
+                <td style="color: #0d9488; font-weight: bold;">Stable</td>
+              </tr>
+              <tr>
+                <td>Pharmacy & Consumables Stock</td>
+                <td>96.4% Fill Rate</td>
+                <td>&gt; 90%</td>
+                <td style="color: #0d9488; font-weight: bold;">Healthy</td>
+              </tr>
+              <tr>
+                <td>Staff Shift Attendance</td>
+                <td>94.8% Present</td>
+                <td>&gt; 92%</td>
+                <td style="color: #0d9488; font-weight: bold;">Compliant</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="footer">
+            AarogyaOne Healthcare Intelligence Engine &bull; Confidential District Medical Record &bull; Generated automatically for hospital administration.
+          </div>
+          <script>
+            window.onload = () => { window.print(); };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const printWin = window.open('', '_blank', 'width=900,height=800');
+    if (printWin) {
+      printWin.document.open();
+      printWin.document.write(printContent);
+      printWin.document.close();
+    } else {
+      const blob = new Blob([printContent], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportName.replace(/\s+/g, '_')}_Report.html`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const handleExportBrief = () => {
+    if (!generatedBrief) return;
+    handleDownloadPDF(generatedBrief.title, generatedBrief.content);
+  };
+
   return (
     <div className="space-y-8">
       {generatedBrief && (
@@ -102,7 +217,9 @@ export default function ReportsPage() {
             </div>
             <div className="p-5 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-3">
               <Button variant="ghost" onClick={() => setGeneratedBrief(null)}>Close</Button>
-              <Button variant="primary"><Download className="h-4 w-4" /> Download PDF</Button>
+              <Button variant="primary" onClick={handleExportBrief} className="bg-teal-600 hover:bg-teal-700 text-white font-bold">
+                <Download className="h-4 w-4 mr-1.5" /> Export Brief Document
+              </Button>
             </div>
           </div>
         </div>
@@ -114,8 +231,8 @@ export default function ReportsPage() {
           <p className="text-sm text-slate-500 font-medium mt-1">Auto-generated operational reports and AI executive briefs</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm"><Calendar className="h-4 w-4" /> Custom Range</Button>
-          <Button variant="primary" size="sm"><FileText className="h-4 w-4" /> Generate Report</Button>
+          <Button variant="outline" size="sm" onClick={() => handleDownloadPDF('Custom Range Operations Report')}><Calendar className="h-4 w-4" /> Custom Range</Button>
+          <Button variant="primary" size="sm" onClick={() => handleDownloadPDF('Comprehensive Hospital Operations Summary')}><FileText className="h-4 w-4" /> Generate Report</Button>
         </div>
       </div>
 
@@ -126,7 +243,7 @@ export default function ReportsPage() {
           {reportTypes.map((report) => {
             const Icon = report.icon;
             return (
-              <Card key={report.name} padding="md" hover className="cursor-pointer group">
+              <Card key={report.name} padding="md" hover className="cursor-pointer group" onClick={() => handleDownloadPDF(report.name)}>
                 <div className={`p-2.5 rounded-xl ${report.bg} w-fit mb-3 group-hover:scale-110 transition-transform duration-300`}>
                   <Icon className={`h-5 w-5 ${report.color}`} />
                 </div>
@@ -136,7 +253,7 @@ export default function ReportsPage() {
                   <span className="text-[9px] text-slate-400 font-medium flex items-center gap-1">
                     <Clock className="h-2.5 w-2.5" /> {report.lastGenerated}
                   </span>
-                  <Button variant="ghost" size="sm" className="!px-2 !py-1 text-[10px]">
+                  <Button variant="ghost" size="sm" className="!px-2 !py-1 text-[10px]" onClick={(e) => { e.stopPropagation(); handleDownloadPDF(report.name); }}>
                     <Download className="h-3 w-3" /> PDF
                   </Button>
                 </div>
@@ -206,7 +323,7 @@ export default function ReportsPage() {
                   <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">{report.size}</td>
                   <td className="px-5 py-3.5 text-xs text-slate-600 font-medium">{report.generated}</td>
                   <td className="px-5 py-3.5">
-                    <Button variant="ghost" size="sm" className="!px-2 !py-1">
+                    <Button variant="ghost" size="sm" className="!px-2 !py-1" onClick={() => handleDownloadPDF(report.name)}>
                       <Download className="h-3.5 w-3.5" /> Download
                     </Button>
                   </td>

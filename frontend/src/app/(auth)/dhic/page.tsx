@@ -66,6 +66,8 @@ export default function Dashboard() {
     riskDistribution,
     operationalEvents,
     aiRecommendations,
+    approveRecommendation,
+    deferRecommendation,
   } = useDistrict();
 
   const scoreData = [
@@ -192,8 +194,8 @@ export default function Dashboard() {
                       <span className="recommendation__field">{rec.reasoning.slice(0, 120)}…</span>
                     </div>
                     <div className="recommendation__actions">
-                      <button className="btn btn--sm btn--success"><ThumbsUp size={12} /> Approve</button>
-                      <button className="btn btn--sm btn--outline"><ThumbsDown size={12} /> Defer</button>
+                      <button onClick={() => approveRecommendation(rec.id)} className="btn btn--sm btn--success"><ThumbsUp size={12} /> Approve</button>
+                      <button onClick={() => deferRecommendation(rec.id)} className="btn btn--sm btn--outline"><ThumbsDown size={12} /> Defer</button>
                     </div>
                   </div>
                 ))}

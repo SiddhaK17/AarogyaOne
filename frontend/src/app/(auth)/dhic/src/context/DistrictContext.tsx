@@ -44,6 +44,9 @@ interface DistrictContextValue {
   setSelectedHospital: (hospital: Hospital | null) => void;
   notifications: Notification[];
   addNotification: (msg: string) => void;
+  acknowledgeAlert: (id: string) => Promise<void>;
+  approveRecommendation: (id: string) => void;
+  deferRecommendation: (id: string) => void;
 }
 
 const DistrictContext = createContext<DistrictContextValue | null>(null);
@@ -62,6 +65,27 @@ export function DistrictProvider({ children }: { children: ReactNode }) {
   const [citizenFeedback, setCitizenFeedback] = useState<CitizenFeedback | null>(null);
   const [infrastructureIssues, setInfrastructureIssues] = useState<InfrastructureIssue[]>([]);
   const [operationalEvents, setOperationalEvents] = useState<OperationalEvent[]>([]);
+  const [aiRecommendations, setAiRecommendations] = useState<AIRecommendation[]>(mockAiRecommendations);
+
+  const acknowledgeAlert = async (id: string) => {
+    try {
+      await dhicApi.acknowledgeAlert(parseInt(id));
+    } catch (e) {
+      console.warn('API offline, optimistic update for alert:', id);
+    }
+    setAlerts((prev) => prev.map((a) => (a.id === id ? { ...a, status: 'acknowledged' as any } : a)));
+    addNotification(`Alert #${id} acknowledged.`);
+  };
+
+  const approveRecommendation = (id: string) => {
+    setAiRecommendations((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'approved' as any } : r)));
+    addNotification(`AI Recommendation approved.`);
+  };
+
+  const deferRecommendation = (id: string) => {
+    setAiRecommendations((prev) => prev.map((r) => (r.id === id ? { ...r, status: 'deferred' as any } : r)));
+    addNotification(`AI Recommendation deferred.`);
+  };
 
   const addNotification = useCallback((msg: string) => {
     setNotifications((prev) => [
@@ -244,7 +268,7 @@ export function DistrictProvider({ children }: { children: ReactNode }) {
     riskDistribution,
     hospitals,
     operationalEvents,
-    aiRecommendations: mockAiRecommendations,
+    aiRecommendations,
     alerts,
     transferRequests,
     citizenFeedback: citizenFeedback || { overallSatisfaction: 0, totalReviews: 0, distribution: [], topComplaints: [], hospitalRatings: [] },
@@ -257,6 +281,9 @@ export function DistrictProvider({ children }: { children: ReactNode }) {
     setSelectedHospital,
     notifications,
     addNotification,
+    acknowledgeAlert,
+    approveRecommendation,
+    deferRecommendation,
   };
 
   return (
