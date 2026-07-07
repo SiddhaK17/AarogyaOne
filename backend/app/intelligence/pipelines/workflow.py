@@ -209,6 +209,18 @@ class WorkflowEngine:
                 
             if not text_to_process:
                 return
+
+            # Translate regional language text to English before classification
+            try:
+                from app.intelligence.core.engine_registry import EngineRegistry
+                registry = EngineRegistry.get_instance()
+                translator = registry.get_engine("indictrans2_translator")
+                translated_text = translator.translate(text_to_process)
+                if translated_text != text_to_process:
+                    logger.info(f"Translated input for NLP processing: '{text_to_process}' -> '{translated_text}'")
+                    text_to_process = translated_text
+            except Exception as trans_err:
+                logger.warning(f"Translation engine fallback error: {trans_err}. Using original text.")
                 
             engine = NLPEngine()
             raw_res = engine.predict(text_to_process)

@@ -52,6 +52,8 @@ soundfile==0.12.1         # Reads and writes audio files securely
 
 sentencepiece==0.2.0      # Tokeniser required for IndicBERT and Whisper
 safetensors==0.4.3        # Fast and secure model weight loading
+einops==0.8.0             # Required for Florence-2 model tensor manipulations
+timm==1.0.7               # Required for Florence-2 vision model backbone
 
 # NOTE:
 # Florence-2 is loaded using a compatibility patch to bypass the

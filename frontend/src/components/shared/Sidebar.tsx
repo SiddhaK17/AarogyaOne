@@ -80,6 +80,7 @@ const citizenNavItems = [
 
 const dhicNavItems = [
   { label: 'District Dashboard', href: '/dhic', icon: LayoutDashboard },
+  { label: 'Live District Map', href: '/dhic/map', icon: Map },
   { label: 'Hospital Intelligence', href: '/dhic/hospitals', icon: Building2 },
   { label: 'Resource Management', href: '/dhic/resources', icon: GitBranch },
   { label: 'AI Alert Centre', href: '/dhic/alerts', icon: Bell },

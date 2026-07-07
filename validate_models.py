@@ -45,3 +45,15 @@ try:
     print("Scoring: Successfully loaded.")
 except Exception as e:
     print(f"Scoring Failed: {type(e).__name__} - {e}")
+
+try:
+    from app.intelligence.pipelines.translation import TranslationEngine
+    translation = TranslationEngine()
+    translation.load()
+    print("Translation: Successfully loaded.")
+    test_in = "अस्पताल में डॉक्टर नहीं है"
+    test_out = translation.translate(test_in)
+    print(f"Translation Test: '{test_in}' -> '{test_out}'")
+except Exception as e:
+    print(f"Translation Failed: {type(e).__name__} - {e}")
+

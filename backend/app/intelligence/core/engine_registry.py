@@ -22,6 +22,7 @@ from app.intelligence.pipelines.scoring import ScorerSingleton
 from app.intelligence.pipelines.nlp import NLPEngine
 from app.intelligence.pipelines.speech import SpeechEngine
 from app.intelligence.pipelines.vision import VisionEngine
+from app.intelligence.pipelines.translation import TranslationEngine
 
 class EngineRegistry:
     _instance = None
@@ -35,6 +36,7 @@ class EngineRegistry:
         self.register_engine("whisper_large_v3", SpeechEngine())
         self.register_engine("indicbert_classifier", NLPEngine())
         self.register_engine("florence_2_vision", VisionEngine())
+        self.register_engine("indictrans2_translator", TranslationEngine())
 
     def register_engine(self, engine_name: str, engine: BaseAIEngine) -> None:
         """Validates and registers an engine."""

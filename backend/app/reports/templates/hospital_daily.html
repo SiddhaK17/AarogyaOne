@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hospital Daily Summary - {{ hospital.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #1e293b;
+            line-height: 1.5;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+        }
+        .header {
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+        .header-title-section h1 {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+            margin: 0 0 4px 0;
+            text-transform: uppercase;
+            letter-spacing: -0.5px;
+        }
+        .header-title-section p {
+            font-size: 14px;
+            color: #64748b;
+            margin: 0;
+        }
+        .header-meta {
+            text-align: right;
+        }
+        .header-meta p {
+            font-size: 12px;
+            margin: 2px 0;
+            color: #475569;
+        }
+        .meta-date {
+            font-weight: bold;
+            color: #0f172a;
+        }
+
+        /* Health Score Badge */
+        .health-score-container {
+            display: flex;
+            align-items: center;
+            background-color: #f1f5f9;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-bottom: 20px;
+        }
+        .health-score-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+            margin-right: auto;
+        }
+        .health-score-value {
+            font-size: 18px;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 6px;
+        }
+        .score-good {
+            background-color: #dcfce7;
+            color: #15803d;
+        }
+        .score-warning {
+            background-color: #fef9c3;
+            color: #a16207;
+        }
+        .score-critical {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
+        /* Hospital Metadata Info */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .info-card {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+        }
+        .info-card-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 4px;
+        }
+        .info-card-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        /* Section layout */
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #475569;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 6px;
+            margin: 24px 0 16px 0;
+            letter-spacing: 0.5px;
+        }
+
+        /* Metrics grid */
+        .metrics-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        .metric-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            background-color: #ffffff;
+        }
+        .metric-title {
+            font-size: 12px;
+            font-weight: bold;
+            color: #64748b;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .metric-val {
+            font-size: 24px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        .metric-desc {
+            font-size: 11px;
+            color: #475569;
+            margin-top: 4px;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f1f5f9;
+            font-weight: bold;
+            color: #334155;
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        .badge-critical {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+        .badge-warning {
+            background-color: #ffedd5;
+            color: #c2410c;
+        }
+        .badge-info {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+
+        /* Recommendations */
+        .rec-item {
+            background-color: #f0fdf4;
+            border-left: 4px solid #16a34a;
+            padding: 12px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+        }
+        .rec-item-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #14532d;
+            margin-bottom: 4px;
+        }
+        .rec-item-desc {
+            font-size: 12px;
+            color: #166534;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 12px;
+            font-size: 10px;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <div class="header">
+        <div class="header-title-section">
+            <h1>Hospital Daily Summary</h1>
+            <p>AarogyaOne Healthcare Intelligence & Logistics Engine</p>
+        </div>
+        <div class="header-meta">
+            <p>Report Date: <span class="meta-date">{{ report_date }}</span></p>
+            <p>Generated: {{ generated_at }}</p>
+        </div>
+    </div>
+
+    <!-- Hospital Overview -->
+    <div class="health-score-container">
+        <span class="health-score-label">Hospital Health Score</span>
+        {% if hospital.health_score >= 75 %}
+            <span class="health-score-value score-good">{{ hospital.health_score }} / 100</span>
+        {% elif hospital.health_score >= 50 %}
+            <span class="health-score-value score-warning">{{ hospital.health_score }} / 100</span>
+        {% else %}
+            <span class="health-score-value score-critical">{{ hospital.health_score }} / 100</span>
+        {% endif %}
+    </div>
+
+    <div class="info-grid">
+        <div class="info-card">
+            <div class="info-card-label">Hospital Name</div>
+            <div class="info-card-value">{{ hospital.name }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-card-label">Facility Type</div>
+            <div class="info-card-value">{{ hospital.type }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-card-label">Taluka</div>
+            <div class="info-card-value">{{ hospital.taluka }}</div>
+        </div>
+        <div class="info-card">
+            <div class="info-card-label">District</div>
+            <div class="info-card-value">{{ hospital.district }}</div>
+        </div>
+    </div>
+
+    <!-- Bed Capacity & Patient Flow -->
+    <div class="section-title">Bed Capacity & Patient Stats</div>
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div class="metric-title">Bed Occupancy</div>
+            <div class="metric-val">{{ beds.occupancy_percent }}%</div>
+            <div class="metric-desc">{{ beds.occupied }} occupied / {{ beds.total_capacity }} total ({{ beds.available }} available)</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Patients Logged (Today)</div>
+            <div class="metric-val">
+                OPD: {{ patients.opd }} / IPD: {{ patients.ipd }}
+            </div>
+            <div class="metric-desc">Emergency Admits: {{ patients.emergency }} | Discharges: {{ patients.discharges }}</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Avg Patient Wait Time</div>
+            <div class="metric-val">
+                {% if patients.avg_wait_minutes is not none %}
+                    {{ patients.avg_wait_minutes }} min
+                {% else %}
+                    N/A
+                {% endif %}
+            </div>
+            <div class="metric-desc">Average dispatch wait duration</div>
+        </div>
+    </div>
+
+    <!-- Inventory & Logistics -->
+    <div class="section-title">Inventory & Stock Alerts</div>
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div class="metric-title">Total Catalog Items</div>
+            <div class="metric-val">{{ inventory.total_items }}</div>
+            <div class="metric-desc">Stock lines monitored</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Low Stock Alert Count</div>
+            <div class="metric-val" style="color: {% if inventory.low_stock_count > 0 %}#c2410c{% else %}inherit{% endif %};">
+                {{ inventory.low_stock_count }}
+            </div>
+            <div class="metric-desc">Items at or below safety margins</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Critical/Stockout Items</div>
+            <div class="metric-val" style="color: {% if inventory.critical_stock_count > 0 %}#b91c1c{% else %}inherit{% endif %};">
+                {{ inventory.critical_stock_count }}
+            </div>
+            <div class="metric-desc">Items completely out of stock</div>
+        </div>
+    </div>
+
+    {% if inventory.critical_items %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Item Name</th>
+                    <th>Current Quantity</th>
+                    <th>Safety Threshold</th>
+                    <th>Predicted Stockout (Days)</th>
+                    <th>Urgency</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in inventory.critical_items %}
+                    <tr>
+                        <td><strong>{{ item.name }}</strong></td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.threshold }}</td>
+                        <td>
+                            {% if item.days_remaining is not none %}
+                                {{ item.days_remaining }} days
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if item.quantity == 0 %}
+                                <span class="badge badge-critical">Critical (Stockout)</span>
+                            {% else %}
+                                <span class="badge badge-warning">Low Stock</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="font-size: 12px; color: #64748b; margin-top: -8px;">No critical or low-stock inventory items reported.</p>
+    {% endif %}
+
+    <!-- Staff Attendance & Infrastructure -->
+    <div class="section-title">Staffing & Infrastructure Status</div>
+    <div class="metrics-row">
+        <div class="metric-card">
+            <div class="metric-title">Staff Attendance</div>
+            <div class="metric-val">{{ staff.attendance_percent }}%</div>
+            <div class="metric-desc">{{ staff.present }} present on duty out of {{ staff.total_logged }} registered</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Doctors On Duty</div>
+            <div class="metric-val">{{ staff.doctors_on_duty }}</div>
+            <div class="metric-desc">Active clinical practitioners on shift</div>
+        </div>
+        <div class="metric-card">
+            <div class="metric-title">Open Facility Issues</div>
+            <div class="metric-val" style="color: {% if issues.open_count > 0 %}#b91c1c{% else %}inherit{% endif %};">
+                {{ issues.open_count }}
+            </div>
+            <div class="metric-desc">{{ issues.critical_count }} critical unresolved issues</div>
+        </div>
+    </div>
+
+    {% if issues.list %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Issue Title</th>
+                    <th>Category</th>
+                    <th>Priority</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for issue in issues.list %}
+                    <tr>
+                        <td><strong>{{ issue.title }}</strong></td>
+                        <td>{{ issue.type }}</td>
+                        <td><span class="badge badge-critical">{{ issue.priority }}</span></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <!-- Citizen Feedback (Last 7 Days) -->
+    <div class="section-title">Citizen Grievances & Sentiment (Last 7 Days)</div>
+    <div style="display: flex; gap: 24px; margin-bottom: 20px;">
+        <div style="flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Total Grievances Submitted</div>
+            <div style="font-size: 20px; font-weight: 800; color: #0f172a; margin-top: 4px;">{{ complaints.count_last_7_days }}</div>
+        </div>
+        <div style="flex: 1; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <div style="font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase;">Grievances with Negative Sentiment</div>
+            <div style="font-size: 20px; font-weight: 800; color: {% if complaints.negative_count > 0 %}#b91c1c{% else %}#0f172a{% endif %}; margin-top: 4px;">
+                {{ complaints.negative_count }}
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Prescriptive Recommendations -->
+    <div class="section-title">AI Prescriptive Recommendations</div>
+    {% if recommendations %}
+        {% for rec in recommendations %}
+            <div class="rec-item">
+                <div class="rec-item-title">{{ rec.title }} <span class="badge badge-info" style="margin-left: 8px;">{{ rec.type }}</span></div>
+                <div class="rec-item-desc">{{ rec.description }}</div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="font-size: 12px; color: #64748b; margin-top: -8px;">No current prescriptive recommendations needed. Facility operating within baseline parameters.</p>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="footer">
+        <div>AarogyaOne Command Dashboard &copy; 2026. Confidential and Proprietary.</div>
+        <div>System Reference ID: {{ hospital.id }} | Generated Offline</div>
+    </div>
+
+</body>
+</html>
