@@ -158,7 +158,10 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Main nav */}
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 no-scrollbar" aria-label="Main Navigation">
         {items.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          const isDashboard = item.href.endsWith('/dashboard') || item.href === '/citizen' || item.href === '/dhic';
+          const isActive = isDashboard 
+            ? pathname === item.href 
+            : (pathname === item.href || pathname.startsWith(item.href + '/'));
           const Icon = item.icon;
           return (
             <Link

@@ -51,6 +51,13 @@ class UserProfileResponse(BaseModel):
     hospital_id: Optional[int] = None
     district: Optional[str] = None
     department: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
+    language: Optional[str] = None
+    sms_alerts: bool = True
+    whatsapp_alerts: bool = True
+    email_alerts: bool = False
+    aadhaar_verified: bool = False
     is_active: bool
 
     model_config = {"from_attributes": True}
@@ -58,6 +65,13 @@ class UserProfileResponse(BaseModel):
 
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = None
+    location: Optional[str] = None
+    phone: Optional[str] = None
+    language: Optional[str] = None
+    sms_alerts: Optional[bool] = None
+    whatsapp_alerts: Optional[bool] = None
+    email_alerts: Optional[bool] = None
+    aadhaar_verified: Optional[bool] = None
 
 
 # ---------------------------------------------------------------------------
@@ -209,6 +223,20 @@ async def update_my_profile(
 
     if body.full_name is not None:
         user.full_name = body.full_name
+    if body.location is not None:
+        user.location = body.location
+    if body.phone is not None:
+        user.phone = body.phone
+    if body.language is not None:
+        user.language = body.language
+    if body.sms_alerts is not None:
+        user.sms_alerts = body.sms_alerts
+    if body.whatsapp_alerts is not None:
+        user.whatsapp_alerts = body.whatsapp_alerts
+    if body.email_alerts is not None:
+        user.email_alerts = body.email_alerts
+    if body.aadhaar_verified is not None:
+        user.aadhaar_verified = body.aadhaar_verified
 
     db.commit()
     db.refresh(user)

@@ -7,8 +7,21 @@ import {
   BrainCircuit, PhoneCall, AlertTriangle, CheckCircle, 
   Clock, ArrowRight, ShieldAlert, Sparkles, Activity
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function CitizenDashboard() {
+  const { user } = useAuth();
+  
+  const getCookie = (name: string) => {
+    if (typeof document === 'undefined') return '';
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(';').shift() || '');
+    return '';
+  };
+  
+  const userName = user ? (getCookie('user_name') || user.displayName || 'Citizen') : 'Guest';
+
   const [complaints, setComplaints] = useState<any[]>([]);
   const [stats, setStats] = useState({
     total: 0,
@@ -61,7 +74,7 @@ export default function CitizenDashboard() {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-4 max-w-2xl">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-500/15 border border-teal-500/30 text-teal-400 text-xs font-bold uppercase tracking-wider">
-              <Sparkles className="h-3.5 w-3.5" /> Welcome Citizen
+              <Sparkles className="h-3.5 w-3.5" /> Welcome {userName}
             </div>
             <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
               Empowering Public Healthcare through Transparency

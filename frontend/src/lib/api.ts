@@ -124,6 +124,13 @@ export interface UserProfile {
   hospital_id?: number;
   district?: string;
   department?: string;
+  location?: string;
+  phone?: string;
+  language?: string;
+  sms_alerts?: boolean;
+  whatsapp_alerts?: boolean;
+  email_alerts?: boolean;
+  aadhaar_verified?: boolean;
   is_active: boolean;
 }
 
@@ -143,7 +150,16 @@ export const authApi = {
       headers: token ? { Authorization: `Bearer ${token}` } : undefined 
     }),
 
-  updateMe: (data: { full_name?: string }) =>
+  updateMe: (data: { 
+    full_name?: string; 
+    location?: string;
+    phone?: string;
+    language?: string;
+    sms_alerts?: boolean;
+    whatsapp_alerts?: boolean;
+    email_alerts?: boolean;
+    aadhaar_verified?: boolean;
+  }) =>
     request<UserProfile>('/api/auth/me', { method: 'PUT', body: JSON.stringify(data) }),
 };
 

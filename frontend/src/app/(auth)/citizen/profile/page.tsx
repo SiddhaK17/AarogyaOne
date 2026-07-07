@@ -1,35 +1,131 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   User, ShieldCheck, Mail, Phone, Globe, Bell, 
-  Lock, Save, Sparkles, MessageSquare, AlertCircle
+  Lock, Save, Sparkles, MessageSquare, AlertCircle, MapPin
 } from "lucide-react";
+import { useAuth } from '@/context/AuthContext';
+import { authApi } from '@/lib/api';
 
 export default function ProfileSettingsPage() {
+  const { user, refreshToken } = useAuth();
+  
   const [profile, setProfile] = useState({
-    name: "Rahul Sharma",
-    phone: "+91 98765 43210",
-    email: "rahul.sharma@govmail.in",
+    name: "",
+    phone: "",
+    email: "",
+    location: "",
     language: "EN",
     smsAlerts: true,
     whatsappAlerts: true,
     emailAlerts: false,
-    mfaActive: true
+    aadhaarVerified: false,
   });
 
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [showSavedToast, setShowSavedToast] = useState(false);
+  const [verifyingAadhaar, setVerifyingAadhaar] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    async function loadProfile() {
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          const data = await authApi.getMe(token);
+          setProfile(prev => ({
+            ...prev,
+            name: data.full_name || "",
+            email: data.email || "",
+            location: data.location || "",
+            phone: data.phone || "",
+            language: data.language || "EN",
+            smsAlerts: data.sms_alerts ?? true,
+            whatsappAlerts: data.whatsapp_alerts ?? true,
+            emailAlerts: data.email_alerts ?? false,
+            aadhaarVerified: true,
+          }));
+        } catch (e) {
+          console.error("Failed to load profile", e);
+        }
+      }
+      setLoading(false);
+    }
+    loadProfile();
+  }, [user]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      if (user) {
+        await authApi.updateMe({
+          full_name: profile.name,
+          location: profile.location,
+          phone: profile.phone,
+          language: profile.language,
+          sms_alerts: profile.smsAlerts,
+          whatsapp_alerts: profile.whatsappAlerts,
+          email_alerts: profile.emailAlerts,
+          aadhaar_verified: profile.aadhaarVerified,
+        });
+        
+        // Update cookies for Navbar sync
+        document.cookie = `user_name=${encodeURIComponent(profile.name)}; path=/; max-age=86400`;
+        if (profile.location) {
+          document.cookie = `user_location=${encodeURIComponent(profile.location)}; path=/; max-age=86400`;
+        }
+        
+        await refreshToken(); // to update AuthContext if needed
+      }
       setShowSavedToast(true);
       setTimeout(() => setShowSavedToast(false), 3000);
-    }, 1000);
+    } catch (e) {
+      console.error("Failed to save profile", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAadhaarVerify = () => {
+    setVerifyingAadhaar(true);
+    setTimeout(() => {
+      setVerifyingAadhaar(false);
+      setProfile({ ...profile, aadhaarVerified: true });
+    }, 2000);
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center text-slate-500 font-semibold animate-pulse">Loading profile...</div>;
+  }
+
+  const getInitials = (name: string) => {
+    if (!name) return "U";
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return parts[0].slice(0, 2).toUpperCase();
+  };
+
+  const formatPhoneDisplay = (phone: string) => {
+    const digits = phone.replace(/\D/g, '');
+    let local = digits;
+    if (local.startsWith('91') && local.length > 2) {
+      local = local.substring(2);
+    }
+    const part1 = local.substring(0, 5).padEnd(5, 'X');
+    const part2 = local.substring(5, 10).padEnd(5, 'X');
+    return `+91 ${part1} ${part2}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').substring(0, 10);
+    let formatted = digits;
+    if (digits.length > 5) {
+      formatted = `${digits.substring(0, 5)} ${digits.substring(5)}`;
+    }
+    setProfile({ ...profile, phone: `+91 ${formatted}` });
   };
 
   return (
@@ -40,20 +136,20 @@ export default function ProfileSettingsPage() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-teal-500/5 to-transparent pointer-events-none"></div>
         
         <div className="h-20 w-20 rounded-full bg-gradient-to-br from-teal-500/20 to-blue-500/20 flex items-center justify-center text-teal-600 font-extrabold text-2xl border border-teal-500/30 shrink-0 shadow-inner">
-          RS
+          {getInitials(profile.name)}
         </div>
 
         <div className="space-y-1.5 text-center sm:text-left">
-          <h3 className="text-xl font-black text-slate-900 tracking-tight">{profile.name}</h3>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight">{profile.name || "Citizen User"}</h3>
           <p className="text-xs text-slate-500 font-semibold flex items-center justify-center sm:justify-start gap-1">
-            <Phone className="h-3.5 w-3.5" /> {profile.phone} | <Mail className="h-3.5 w-3.5" /> {profile.email}
+            <Phone className="h-3.5 w-3.5" /> {formatPhoneDisplay(profile.phone)} | <Mail className="h-3.5 w-3.5" /> {profile.email}
           </p>
           <div className="flex items-center justify-center sm:justify-start gap-2 pt-1">
             <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 flex items-center gap-1">
               <ShieldCheck className="h-3.5 w-3.5" /> Aadhaar Verified
             </span>
-            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200">
-              UIDAI Code: XXXX-XXXX-5566
+            <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+              <MapPin className="h-3 w-3" /> {profile.location || "Location Not Set"}
             </span>
           </div>
         </div>
@@ -75,6 +171,7 @@ export default function ProfileSettingsPage() {
               value={profile.name}
               onChange={(e) => setProfile({ ...profile, name: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
+              required
             />
           </div>
 
@@ -84,9 +181,39 @@ export default function ProfileSettingsPage() {
             <input
               type="email"
               value={profile.email}
-              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+              disabled
+              className="w-full bg-slate-100 border border-slate-200 rounded-xl py-3 px-4 text-xs font-semibold text-slate-500 cursor-not-allowed"
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
+          {/* City/State */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">City & State</label>
+            <input
+              type="text"
+              placeholder="e.g. Mumbai, Maharashtra"
+              value={profile.location}
+              onChange={(e) => setProfile({ ...profile, location: e.target.value })}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all"
             />
+          </div>
+
+          {/* Phone Number */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider block">Phone Number</label>
+            <div className="flex items-center w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-teal-500 transition-all">
+              <span className="pl-4 pr-2 py-3 text-xs font-bold text-slate-500 bg-slate-100 border-r border-slate-200">+91</span>
+              <input
+                type="tel"
+                placeholder="98765 43210"
+                value={profile.phone.replace(/^\+?91\s*/, '')}
+                onChange={handlePhoneChange}
+                maxLength={11}
+                className="w-full bg-transparent py-3 px-3 text-xs font-semibold focus:outline-none"
+              />
+            </div>
           </div>
         </div>
 
@@ -102,8 +229,28 @@ export default function ProfileSettingsPage() {
               className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all cursor-pointer"
             >
               <option value="EN">English (National Standard)</option>
+              <option value="AS">অসমীয়া (Assamese)</option>
+              <option value="BN">বাংলা (Bengali)</option>
+              <option value="BRX">बड़ो (Bodo)</option>
+              <option value="DOI">डोगरी (Dogri)</option>
+              <option value="GU">ગુજરાતી (Gujarati)</option>
               <option value="HI">हिन्दी (Hindi)</option>
+              <option value="KN">ಕನ್ನಡ (Kannada)</option>
+              <option value="KS">کأشُر (Kashmiri)</option>
+              <option value="KOK">कोंकणी (Konkani)</option>
+              <option value="MAI">मैथिली (Maithili)</option>
+              <option value="ML">മലയാളം (Malayalam)</option>
+              <option value="MNI">ꯃꯤꯇꯩꯂꯣꯟ (Manipuri)</option>
               <option value="MR">मराठी (Marathi)</option>
+              <option value="NE">नेपाली (Nepali)</option>
+              <option value="OR">ଓଡ଼ିଆ (Odia)</option>
+              <option value="PA">ਪੰਜਾਬੀ (Punjabi)</option>
+              <option value="SA">संस्कृत (Sanskrit)</option>
+              <option value="SAT">ᱥᱟᱱᱛᱟᱲᱤ (Santali)</option>
+              <option value="SD">سنڌي (Sindhi)</option>
+              <option value="TA">தமிழ் (Tamil)</option>
+              <option value="TE">తెలుగు (Telugu)</option>
+              <option value="UR">اردو (Urdu)</option>
             </select>
           </div>
 
@@ -113,8 +260,8 @@ export default function ProfileSettingsPage() {
               <Lock className="h-4 w-4 text-slate-400" /> Aadhaar OTP Authentication
             </label>
             <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex items-center justify-between text-xs font-bold">
-              <span className="text-slate-700">MFA via registered mobile number</span>
-              <span className="text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded text-[10px]">Active</span>
+              <span className="text-slate-700">Verify Identity via UIDAI</span>
+              <span className="text-teal-600 bg-teal-50 border border-teal-100 px-2 py-0.5 rounded text-[10px]">Verified</span>
             </div>
           </div>
         </div>

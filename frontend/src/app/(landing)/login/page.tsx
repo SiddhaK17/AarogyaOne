@@ -173,7 +173,10 @@ function LoginContent() {
     const resolvedPortalRole = getPortalByRole(profile.role);
     document.cookie = `portal_role=${resolvedPortalRole}; path=/; max-age=86400; SameSite=Lax;`;
     document.cookie = `user_name=${encodeURIComponent(profile.full_name)}; path=/; max-age=86400; SameSite=Lax;`;
-    
+    if (profile.location) {
+      document.cookie = `user_location=${encodeURIComponent(profile.location)}; path=/; max-age=86400; SameSite=Lax;`;
+    }
+
     // Scoped context cookie setting
     if (resolvedPortalRole === 'hospital' && profile.hospital_id) {
       const h = PALGHAR_HOSPITALS.find(hospital => hospital.id === profile.hospital_id);

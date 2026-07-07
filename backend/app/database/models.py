@@ -68,6 +68,13 @@ class User(Base):
     hospital_id = Column(Integer, ForeignKey("hospitals.id"), nullable=True)
     district = Column(String(100), nullable=True, index=True)   # for DHIC users
     department = Column(String(100), nullable=True)              # for Government users
+    location = Column(String(255), nullable=True)                # City/State info
+    phone = Column(String(20), nullable=True)
+    language = Column(String(10), default="EN")
+    sms_alerts = Column(Boolean, default=True)
+    whatsapp_alerts = Column(Boolean, default=True)
+    email_alerts = Column(Boolean, default=False)
+    aadhaar_verified = Column(Boolean, default=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
