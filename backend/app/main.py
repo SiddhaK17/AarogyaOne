@@ -87,6 +87,7 @@ async def generic_exception_handler(request: Request, exc: Exception):
 @app.on_event("startup")
 async def startup_event():
     logger.info(f"🚀 {settings.app_name} v{settings.app_version} starting up…")
+    logger.info(f"🔒 Allowed CORS origins: {settings.cors_origins}")
 
     # Ensure Supabase Storage buckets exist (creates them if missing)
     if settings.supabase_url and settings.supabase_service_role_key:
