@@ -88,6 +88,15 @@ async def generic_exception_handler(request: Request, exc: Exception):
 async def startup_event():
     logger.info(f"🚀 {settings.app_name} v{settings.app_version} starting up…")
     logger.info(f"🔒 Allowed CORS origins: {settings.cors_origins}")
+    
+    db_url = settings.database_url
+    if "@" in db_url:
+        parts = db_url.split("@")
+        user_part = parts[0].split(":")
+        masked_db = f"{user_part[0]}:{user_part[1]}//...:****@{parts[1]}" if len(user_part) > 1 else f"{user_part[0]}//...:****@{parts[1]}"
+    else:
+        masked_db = db_url
+    logger.info(f"🗄️ Database URL: {masked_db}")
 
     # Ensure Supabase Storage buckets exist (creates them if missing)
     if settings.supabase_url and settings.supabase_service_role_key:
