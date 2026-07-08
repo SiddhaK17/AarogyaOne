@@ -47,7 +47,7 @@ export default function ReportIssuePage() {
   const [selectedHospitalId, setSelectedHospitalId] = useState<number | null>(null);
 
   // Step 2 — Complaint details
-  const [category, setCategory] = useState<ComplaintCategory>("Other");
+  const [categories, setCategories] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [dateOfVisit, setDateOfVisit] = useState(new Date().toISOString().split("T")[0]);
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -60,6 +60,15 @@ export default function ReportIssuePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaFile, setMediaFile] = useState<File | Blob | null>(null);
   const [activeTab, setActiveTab] = useState<"text" | "voice" | "image">("text");
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, '').substring(0, 10);
+    let formatted = digits;
+    if (digits.length > 5) {
+      formatted = `${digits.substring(0, 5)} ${digits.substring(5)}`;
+    }
+    setContactInfo(`+91 ${formatted}`);
+  };
 
   // Protect against unsaved changes
   const isDirty = step < 3 && (description.trim().length > 0 || mediaFile !== null);
@@ -102,17 +111,25 @@ export default function ReportIssuePage() {
     setIsSubmitting(true);
     
     try {
-      const result = await citizenApi.submitComplaint({
-        hospital_id: selectedHospital.id,
-        category,
+      const payload = {
+        hospital_id: selectedHospitalId!,
+        category: categories.length > 0 ? categories.join(", ") : "Other",
         description,
-        date_of_visit: dateOfVisit,
         is_anonymous: isAnonymous,
+        date_of_visit: dateOfVisit,
         contact_info: isAnonymous ? undefined : contactInfo,
-      }) as any;
+      };
+      
+      const result = await citizenApi.submitComplaint(payload) as any;
 
       if (mediaFile && result.id) {
         await citizenApi.uploadMedia(result.id, mediaFile);
+      }
+      
+      if (typeof window !== 'undefined') {
+        const history = JSON.parse(localStorage.getItem('my_grievances') || '[]');
+        history.unshift(result.reference_number);
+        localStorage.setItem('my_grievances', JSON.stringify([...new Set(history)].slice(0, 10)));
       }
 
       setSubmittedReference(result.reference_number);
@@ -150,7 +167,7 @@ export default function ReportIssuePage() {
           <button onClick={() => router.push(`/citizen/track?ref=${submittedReference}`)} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors">
             Track Progress
           </button>
-          <button onClick={() => { setStep(1); setSelectedTaluka(""); setSelectedHospitalId(null); setDescription(""); setCategory("Other"); setSubmittedReference(null); setMediaFile(null); }}
+          <button onClick={() => { setStep(1); setSelectedTaluka(""); setSelectedHospitalId(null); setDescription(""); setCategories([]); setSubmittedReference(null); setMediaFile(null); }}
             className="flex-1 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-sm hover:bg-slate-50 transition-colors">
             File Another
           </button>
@@ -255,7 +272,7 @@ export default function ReportIssuePage() {
             onClick={() => setStep(2)}
             className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {selectedHospital ? `Continue — ${selectedHospital.short_name} →` : "Select a Hospital to Continue"}
+            {selectedHospital ? `Continue — ${selectedHospital.name} →` : "Select a Hospital to Continue"}
           </button>
         </div>
       )}
@@ -277,14 +294,21 @@ export default function ReportIssuePage() {
             <div>
               <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Issue Category *</label>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {CATEGORIES.map((cat) => (
-                  <button key={cat} type="button" onClick={() => setCategory(cat)}
-                    className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left transition-all border-2 ${
-                      category === cat ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
-                    }`}>
-                    {cat}
-                  </button>
-                ))}
+                {CATEGORIES.map((cat) => {
+                  const isSelected = categories.includes(cat);
+                  return (
+                    <button key={cat} type="button" 
+                      onClick={() => {
+                        if (isSelected) setCategories(categories.filter(c => c !== cat));
+                        else setCategories([...categories, cat]);
+                      }}
+                      className={`px-3 py-2.5 rounded-xl text-xs font-bold text-left transition-all border-2 ${
+                        isSelected ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                      }`}>
+                      {cat}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -382,8 +406,17 @@ export default function ReportIssuePage() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Mobile Number</label>
-                  <input type="tel" value={contactInfo} onChange={(e) => setContactInfo(e.target.value)} placeholder="10-digit mobile"
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900" />
+                  <div className="flex items-center w-full bg-slate-50 border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-slate-900 transition-all">
+                    <span className="pl-4 pr-2 py-3 text-sm font-bold text-slate-500 bg-slate-100 border-r border-slate-200">+91</span>
+                    <input
+                      type="tel"
+                      placeholder="98765 43210"
+                      value={contactInfo.replace(/^\+?91\s*/, '')}
+                      onChange={handlePhoneChange}
+                      maxLength={11}
+                      className="w-full bg-transparent py-3 px-3 text-sm font-semibold focus:outline-none"
+                    />
+                  </div>
                 </div>
               </div>
             )}

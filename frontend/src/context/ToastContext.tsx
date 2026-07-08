@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
 import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
 
 type ToastType = "success" | "error" | "info";
@@ -35,6 +35,22 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const originalAlert = window.alert;
+      window.alert = (msg: string) => {
+        if (msg.toLowerCase().includes('fail') || msg.toLowerCase().includes('error')) {
+          addToast(msg, "error");
+        } else {
+          addToast(msg, "info");
+        }
+      };
+      return () => {
+        window.alert = originalAlert;
+      };
+    }
+  }, [addToast]);
 
   return (
     <ToastContext.Provider

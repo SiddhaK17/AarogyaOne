@@ -13,15 +13,24 @@ import AIIntelligenceReport from "@/components/shared/AIIntelligenceReport";
 function TrackComplaintContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialId = searchParams.get("id") || "";
+  const initialId = searchParams.get("id") || searchParams.get("ref") || "";
 
   const [searchId, setSearchId] = useState(initialId);
   const [complaint, setComplaint] = useState<any>(null);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [history, setHistory] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = JSON.parse(localStorage.getItem('my_grievances') || '[]');
+      setHistory(stored);
+    }
+  }, []);
 
   useEffect(() => {
     if (initialId) {
+      setSearchId(initialId);
       fetchComplaint(initialId);
     } else {
       setComplaint(null);
@@ -87,6 +96,28 @@ function TrackComplaintContent() {
           </button>
         </form>
       </section>
+
+      {/* 1.5 RECENT HISTORY (only shown if not actively searching or right after viewing one) */}
+      {!searched && history.length > 0 && (
+        <section className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <Clock className="h-5 w-5 text-teal-600" />
+            <h3 className="font-black text-slate-900 tracking-tight text-base">Your Recent Grievances</h3>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {history.map(refId => (
+              <button
+                key={refId}
+                onClick={() => router.push(`/citizen/track?ref=${refId}`)}
+                className="px-4 py-2 bg-slate-50 hover:bg-teal-50 border border-slate-200 hover:border-teal-200 rounded-xl text-sm font-bold text-slate-700 hover:text-teal-700 transition-colors flex items-center gap-2"
+              >
+                <ClipboardList className="h-4 w-4" />
+                {refId}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 2. MAIN LAYOUT GRID */}
       {searched && !loading ? (

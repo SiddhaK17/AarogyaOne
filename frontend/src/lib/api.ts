@@ -40,7 +40,14 @@ class ApiError extends Error {
 
 async function getFirebaseToken(): Promise<string | null> {
   const user = auth.currentUser;
-  if (!user) return null;
+  if (!user) {
+    if (typeof document !== 'undefined') {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; aarogya_token=`);
+      if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+    }
+    return null;
+  }
   try {
     return await user.getIdToken(/* forceRefresh */ false);
   } catch {
