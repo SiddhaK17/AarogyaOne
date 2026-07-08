@@ -129,7 +129,7 @@ export default function ReportIssuePage() {
       if (typeof window !== 'undefined') {
         const history = JSON.parse(localStorage.getItem('my_grievances') || '[]');
         history.unshift(result.reference_number);
-        localStorage.setItem('my_grievances', JSON.stringify([...new Set(history)].slice(0, 10)));
+        localStorage.setItem('my_grievances', JSON.stringify(Array.from(new Set(history)).slice(0, 10)));
       }
 
       setSubmittedReference(result.reference_number);
