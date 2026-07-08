@@ -15,11 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libharfbuzz0b \
     libpangoft2-1.0-0 \
-    libjpeg-dev \
+    libjpeg62-turbo-dev \
     libopenjp2-7-dev \
     libffi-dev \
     shared-mime-info \
-    libgl1-mesa-glx \
+    libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
