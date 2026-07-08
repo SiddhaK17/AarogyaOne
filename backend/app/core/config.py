@@ -8,6 +8,7 @@ across all modules, keeping configuration in one place.
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from typing import List
 
