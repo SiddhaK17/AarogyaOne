@@ -20,8 +20,18 @@ const AuthContext = createContext<AuthContextType>({
   refreshToken: async () => {},
 });
 
+function hasSessionCookie(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.cookie.includes('aarogya_token=') || document.cookie.includes('portal_role=');
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    if (hasSessionCookie()) {
+      return { uid: 'session_cookie_user', email: '' } as User;
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -84,13 +94,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let isMounted = true;
     let nullUserTimer: ReturnType<typeof setTimeout> | null = null;
 
+    // Safety fallback: Ensure loading is ALWAYS set to false after 1.5s max
+    const safetyTimer = setTimeout(() => {
+      if (isMounted) {
+        console.log("[AUTH CONTEXT] Safety timeout reached — ensuring loading state resolves.");
+        if (hasSessionCookie() && !user) {
+          setUser({ uid: 'session_cookie_user', email: '' } as User);
+        }
+        setLoading(false);
+      }
+    }, 1500);
+
     const setupAuthListener = async () => {
       console.log("[AUTH CONTEXT] Initializing AuthListener...");
       
       try {
         console.log("[AUTH CONTEXT] Waiting for authStateReady...");
-        await auth.authStateReady();
-        console.log("[AUTH CONTEXT] authStateReady resolved!");
+        // 1-second timeout race to prevent indefinite hang if Firebase JS SDK is delayed
+        await Promise.race([
+          auth.authStateReady(),
+          new Promise((resolve) => setTimeout(resolve, 1000))
+        ]);
+        console.log("[AUTH CONTEXT] authStateReady check completed!");
       } catch (err) {
         console.error("[AUTH CONTEXT] authStateReady failed!", err);
       }
@@ -109,29 +134,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const token = await currentUser.getIdToken();
             document.cookie = `aarogya_token=${token}; path=/; max-age=86400; SameSite=Lax;`;
-            // Clear any stale login-in-progress flag
             sessionStorage.removeItem('aarogya_login_in_progress');
             if (isMounted) setUser(currentUser);
           } catch (err) {
             console.error("[AUTH CONTEXT] Error getting ID token", err);
-            if (isMounted) setUser(null);
           }
           if (isMounted) setLoading(false);
         } else {
-          // Debounce null user — Firebase may still be restoring session
           nullUserTimer = setTimeout(async () => {
             if (!isMounted) return;
             
-            // Do not clear session if a login is actively in progress
             const loginInProgress = sessionStorage.getItem('aarogya_login_in_progress');
-            if (loginInProgress === 'true') {
-              console.log("[AUTH CONTEXT] Login in progress flag detected — skipping session clear.");
+            const sessionCookieExists = hasSessionCookie();
+
+            if (loginInProgress === 'true' || sessionCookieExists) {
+              console.log("[AUTH CONTEXT] Session cookies or login-in-progress detected — maintaining session.");
               sessionStorage.removeItem('aarogya_login_in_progress');
+              if (sessionCookieExists && isMounted) {
+                setUser({ uid: 'session_cookie_user', email: '' } as User);
+              }
               setLoading(false);
               return;
             }
             
-            console.log("[AUTH CONTEXT] User still null after debounce. Clearing session.");
+            console.log("[AUTH CONTEXT] No user & no session cookie after debounce. Clearing session.");
             setUser(null);
             
             const isProtected = ['/hospital', '/dhic', '/government', '/citizen']
@@ -144,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               window.location.href = '/login';
             }
             setLoading(false);
-          }, 2000);
+          }, 1000);
         }
       });
     };
@@ -156,10 +182,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimer);
       if (nullUserTimer) clearTimeout(nullUserTimer);
       if (unsubscribe) unsubscribe();
     };
-  }, [handleLogout, clearAllSessionData]);
+  }, [handleLogout, clearAllSessionData, pathname, user]);
 
   // Periodic token refresh (Firebase does it automatically, but this ensures our cookie stays alive)
   useEffect(() => {

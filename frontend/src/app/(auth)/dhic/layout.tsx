@@ -13,17 +13,19 @@ export default function DhicLayout({ children }: { children: ReactNode }) {
 
   const router = useRouter();
 
+  const hasCookie = typeof document !== 'undefined' && document.cookie.includes('aarogya_token=');
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !hasCookie) {
       router.replace('/login?role=dhic');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, hasCookie]);
 
-  if (!user && !loading) {
+  if (!user && !loading && !hasCookie) {
     return null; // useEffect above handles redirect
   }
 
-  if (loading) {
+  if (loading && !hasCookie) {
     return <PageLoader message="Authenticating DHIC session..." />;
   }
 

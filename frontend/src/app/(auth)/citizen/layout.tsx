@@ -15,11 +15,13 @@ export default function CitizenLayout({ children }: { children: React.ReactNode 
 
   const isSearchException = pathname?.startsWith('/citizen/search') || pathname?.startsWith('/citizen/nearby');
 
-  if (loading) {
+  const hasCookie = typeof document !== 'undefined' && document.cookie.includes('aarogya_token=');
+
+  if (loading && !hasCookie) {
     return <PageLoader message="Authenticating session..." />;
   }
 
-  if (!user && !isSearchException) {
+  if (!user && !hasCookie && !isSearchException) {
     return null;
   }
 

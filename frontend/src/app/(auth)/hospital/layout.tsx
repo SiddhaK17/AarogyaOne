@@ -47,11 +47,13 @@ export default function HospitalLayout({ children }: { children: React.ReactNode
     }
   }, []); // Run once on mount only — empty deps, no re-runs
 
-  if (loading && !activeHospital) {
+  const hasCookie = typeof document !== 'undefined' && document.cookie.includes('aarogya_token=');
+
+  if (loading && !activeHospital && !hasCookie) {
     return <PageLoader message="Restoring hospital session..." />;
   }
 
-  if (!user && !loading) {
+  if (!user && !loading && !hasCookie) {
     router.replace('/login?role=hospital');
     return null;
   }

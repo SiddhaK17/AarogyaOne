@@ -16,17 +16,19 @@ export default function GovernmentLayout({
   const { user, loading } = useAuth();
   const router = useRouter();
 
+  const hasCookie = typeof document !== 'undefined' && document.cookie.includes('aarogya_token=');
+
   useEffect(() => {
-    if (!loading && !user) {
+    if (!loading && !user && !hasCookie) {
       router.replace('/login?role=government');
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, hasCookie]);
 
-  if (loading) {
+  if (loading && !hasCookie) {
     return <PageLoader message="Authenticating Government session..." />;
   }
 
-  if (!user && !loading) {
+  if (!user && !loading && !hasCookie) {
     return null;
   }
 
